@@ -1,55 +1,55 @@
 {% extends "base.html" %}
 
-{% block title %}Publications · HAL Publication Manager{% endblock %}
+{% block title %}Publications · Gestionnaire de publications HAL{% endblock %}
 
 {% block content %}
   <header class="page-heading">
     <div>
-      <p class="eyebrow">Reviewed corpus</p>
+      <p class="eyebrow">Corpus révisé</p>
       <h1>Publications</h1>
-      <p>{{ page.paginator.count }} record{{ page.paginator.count|pluralize }}</p>
+      <p>{{ page.paginator.count }} notice{{ page.paginator.count|pluralize }}</p>
     </div>
   </header>
 
   <form class="filters" method="get">
     <label class="wide">
-      Search
-      <input name="q" type="search" value="{{ filters.q }}" placeholder="Title, publication ID, HAL ID or author">
+      Recherche
+      <input name="q" type="search" value="{{ filters.q }}" placeholder="Titre, identifiant de publication, identifiant HAL ou auteur">
     </label>
     <label>
       Type
       <select name="type">
-        <option value="">All</option>
+        <option value="">Tous</option>
         {% for value in filter_options.types %}
           <option value="{{ value }}" {% if filters.type == value %}selected{% endif %}>{{ value }}</option>
         {% endfor %}
       </select>
     </label>
     <label>
-      Readiness
+      État de préparation
       <select name="readiness">
-        <option value="">All</option>
-        {% for value in filter_options.readiness %}
-          <option value="{{ value }}" {% if filters.readiness == value %}selected{% endif %}>{{ value }}</option>
+        <option value="">Tous</option>
+        {% for value, label in filter_options.readiness %}
+          <option value="{{ value }}" {% if filters.readiness == value %}selected{% endif %}>{{ label }}</option>
         {% endfor %}
       </select>
     </label>
     <label>
-      HAL state
+      État HAL
       <select name="hal_status">
-        <option value="">All</option>
+        <option value="">Tous</option>
         {% for value in filter_options.hal_statuses %}
           <option value="{{ value }}" {% if filters.hal_status == value %}selected{% endif %}>{{ value }}</option>
         {% endfor %}
       </select>
     </label>
     <label>
-      Missing field
-      <input name="missing" value="{{ filters.missing }}" placeholder="e.g. conference_city">
+      Champ manquant
+      <input name="missing" value="{{ filters.missing }}" placeholder="ex. conference_city">
     </label>
     <div class="filter-actions">
-      <button class="primary-button" type="submit">Filter</button>
-      <a href="{% url 'publication-list' %}">Clear</a>
+      <button class="primary-button" type="submit">Filtrer</button>
+      <a href="{% url 'publication-list' %}">Réinitialiser</a>
     </div>
   </form>
 
@@ -58,9 +58,9 @@
       <thead>
         <tr>
           <th scope="col">Publication</th>
-          <th scope="col">Year</th>
+          <th scope="col">Année</th>
           <th scope="col">Type</th>
-          <th scope="col">Readiness</th>
+          <th scope="col">Préparation</th>
           <th scope="col">HAL</th>
         </tr>
       </thead>
@@ -88,20 +88,20 @@
             </td>
           </tr>
         {% empty %}
-          <tr><td colspan="5">No publications match these filters.</td></tr>
+          <tr><td colspan="5">Aucune publication ne correspond à ces filtres.</td></tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
 
   {% if page.paginator.num_pages > 1 %}
-    <nav class="pagination" aria-label="Publication pages">
+    <nav class="pagination" aria-label="Pages de publications">
       {% if page.has_previous %}
-        <a href="?q={{ filters.q|urlencode }}&amp;type={{ filters.type|urlencode }}&amp;readiness={{ filters.readiness|urlencode }}&amp;hal_status={{ filters.hal_status|urlencode }}&amp;missing={{ filters.missing|urlencode }}&amp;page={{ page.previous_page_number }}">Previous</a>
+        <a href="?q={{ filters.q|urlencode }}&amp;type={{ filters.type|urlencode }}&amp;readiness={{ filters.readiness|urlencode }}&amp;hal_status={{ filters.hal_status|urlencode }}&amp;missing={{ filters.missing|urlencode }}&amp;page={{ page.previous_page_number }}">Précédent</a>
       {% endif %}
-      <span>Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+      <span>Page {{ page.number }} sur {{ page.paginator.num_pages }}</span>
       {% if page.has_next %}
-        <a href="?q={{ filters.q|urlencode }}&amp;type={{ filters.type|urlencode }}&amp;readiness={{ filters.readiness|urlencode }}&amp;hal_status={{ filters.hal_status|urlencode }}&amp;missing={{ filters.missing|urlencode }}&amp;page={{ page.next_page_number }}">Next</a>
+        <a href="?q={{ filters.q|urlencode }}&amp;type={{ filters.type|urlencode }}&amp;readiness={{ filters.readiness|urlencode }}&amp;hal_status={{ filters.hal_status|urlencode }}&amp;missing={{ filters.missing|urlencode }}&amp;page={{ page.next_page_number }}">Suivant</a>
       {% endif %}
     </nav>
   {% endif %}

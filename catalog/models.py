@@ -18,18 +18,18 @@ class ImmutableModel(models.Model):
 
 class Publication(models.Model):
     class ReviewState(models.TextChoices):
-        DRAFT = "draft", "Draft"
-        NEEDS_REVIEW = "needs_review", "Needs review"
-        APPROVED = "approved", "Approved"
-        BLOCKED = "blocked", "Blocked"
+        DRAFT = "draft", "Brouillon"
+        NEEDS_REVIEW = "needs_review", "À vérifier"
+        APPROVED = "approved", "Approuvé"
+        BLOCKED = "blocked", "Bloqué"
 
     class ReadinessState(models.TextChoices):
-        PARSED = "parsed", "Parsed"
-        NEEDS_ENRICHMENT = "needs_enrichment", "Needs enrichment"
-        NEEDS_REVIEW = "needs_review", "Needs review"
-        HAL_READY = "hal_ready", "HAL ready"
-        PREPROD_VALIDATED = "preprod_validated", "Preproduction validated"
-        PRODUCTION_SUBMITTED = "production_submitted", "Production submitted"
+        PARSED = "parsed", "Analysé"
+        NEEDS_ENRICHMENT = "needs_enrichment", "À enrichir"
+        NEEDS_REVIEW = "needs_review", "À vérifier"
+        HAL_READY = "hal_ready", "Prêt pour HAL"
+        PREPROD_VALIDATED = "preprod_validated", "Validé en préproduction"
+        PRODUCTION_SUBMITTED = "production_submitted", "Soumis en production"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     publication_key = models.CharField(max_length=80, unique=True)
@@ -81,7 +81,10 @@ class Publication(models.Model):
             models.Index(fields=["hal_status"]),
         ]
         permissions = [
-            ("review_publication", "Can accept or reject proposed field changes"),
+            (
+                "review_publication",
+                "Peut accepter ou rejeter les modifications de champs proposées",
+            ),
         ]
 
     def __str__(self) -> str:
@@ -92,9 +95,9 @@ class SourceImport(ImmutableModel):
     class SourceType(models.TextChoices):
         DOCX = "docx", "DOCX"
         XLSX = "xlsx", "XLSX"
-        GOOGLE_SHEET = "google_sheet", "Google Sheet snapshot"
-        HAL_API = "hal_api", "HAL API snapshot"
-        MANUAL = "manual", "Manual"
+        GOOGLE_SHEET = "google_sheet", "Instantané Google Sheet"
+        HAL_API = "hal_api", "Instantané API HAL"
+        MANUAL = "manual", "Manuel"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     source_type = models.CharField(max_length=24, choices=SourceType.choices)
@@ -148,10 +151,10 @@ class SourceRecord(ImmutableModel):
 
 class FieldAssertion(ImmutableModel):
     class State(models.TextChoices):
-        PROPOSED = "proposed", "Proposed"
-        ACCEPTED = "accepted", "Accepted"
-        REJECTED = "rejected", "Rejected"
-        SUPERSEDED = "superseded", "Superseded"
+        PROPOSED = "proposed", "Proposé"
+        ACCEPTED = "accepted", "Accepté"
+        REJECTED = "rejected", "Rejeté"
+        SUPERSEDED = "superseded", "Remplacé"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     publication = models.ForeignKey(
@@ -190,9 +193,9 @@ class AssertionDecision(ImmutableModel):
     """
 
     class Outcome(models.TextChoices):
-        ACCEPTED = "accepted", "Accepted"
-        REJECTED = "rejected", "Rejected"
-        EDITED = "edited", "Edited"
+        ACCEPTED = "accepted", "Accepté"
+        REJECTED = "rejected", "Rejeté"
+        EDITED = "edited", "Modifié"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     publication = models.ForeignKey(

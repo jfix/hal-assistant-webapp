@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 
-{% block title %}{{ publication.title }} · HAL Publication Manager{% endblock %}
+{% block title %}{{ publication.title }} · Gestionnaire de publications HAL{% endblock %}
 
 {% block content %}
-  <nav class="breadcrumb" aria-label="Breadcrumb">
+  <nav class="breadcrumb" aria-label="Fil d'Ariane">
     <a href="{% url 'publication-list' %}">Publications</a>
     <span aria-hidden="true">/</span>
     <span>{{ publication.publication_key }}</span>
@@ -20,25 +20,25 @@
     </div>
     <div class="detail-actions">
       {% if publication.hal_id %}
-        <a class="secondary-button" href="https://hal.science/{{ publication.hal_id }}" rel="noreferrer">Open {{ publication.hal_id }}</a>
+        <a class="secondary-button" href="https://hal.science/{{ publication.hal_id }}" rel="noreferrer">Ouvrir {{ publication.hal_id }}</a>
       {% endif %}
-      <a class="secondary-button" href="{% url 'publication-xml' publication.id %}">Submission XML</a>
+      <a class="secondary-button" href="{% url 'publication-xml' publication.id %}">XML de soumission</a>
     </div>
   </header>
 
   <div class="detail-grid">
     <section class="panel">
-      <h2>Structured metadata</h2>
+      <h2>Métadonnées structurées</h2>
       <dl class="metadata">
-        <div><dt>Year</dt><dd>{{ publication.publication_year|default:"—" }}</dd></div>
-        <div><dt>HAL type</dt><dd>{{ publication.hal_document_type|default:"—" }}</dd></div>
-        <div><dt>Authors</dt><dd>{{ publication.authors|join:", "|default:"—" }}</dd></div>
-        <div><dt>Editors</dt><dd>{{ publication.editors|join:", "|default:"—" }}</dd></div>
-        <div><dt>Journal</dt><dd>{{ publication.journal_title|default:"—" }}</dd></div>
-        <div><dt>Book/proceedings</dt><dd>{{ publication.book_title|default:"—" }}</dd></div>
-        <div><dt>Volume / issue</dt><dd>{{ publication.volume|default:"—" }} / {{ publication.issue|default:"—" }}</dd></div>
+        <div><dt>Année</dt><dd>{{ publication.publication_year|default:"—" }}</dd></div>
+        <div><dt>Type HAL</dt><dd>{{ publication.hal_document_type|default:"—" }}</dd></div>
+        <div><dt>Auteurs</dt><dd>{{ publication.authors|join:", "|default:"—" }}</dd></div>
+        <div><dt>Directeurs d'ouvrage</dt><dd>{{ publication.editors|join:", "|default:"—" }}</dd></div>
+        <div><dt>Revue</dt><dd>{{ publication.journal_title|default:"—" }}</dd></div>
+        <div><dt>Ouvrage / actes</dt><dd>{{ publication.book_title|default:"—" }}</dd></div>
+        <div><dt>Volume / numéro</dt><dd>{{ publication.volume|default:"—" }} / {{ publication.issue|default:"—" }}</dd></div>
         <div><dt>Pages</dt><dd>{{ publication.pages|default:"—" }}</dd></div>
-        <div><dt>Publisher</dt><dd>{{ publication.publisher|default:"—" }}{% if publication.publisher_city %}, {{ publication.publisher_city }}{% endif %}</dd></div>
+        <div><dt>Éditeur</dt><dd>{{ publication.publisher|default:"—" }}{% if publication.publisher_city %}, {{ publication.publisher_city }}{% endif %}</dd></div>
         <div><dt>DOI</dt><dd>{% if publication.doi %}<a href="https://doi.org/{{ publication.doi }}" rel="noreferrer">{{ publication.doi }}</a>{% else %}—{% endif %}</dd></div>
         <div><dt>ISBN</dt><dd>{% for isbn in publication.isbn %}<a href="https://search.worldcat.org/isbn/{{ isbn|urlencode }}" rel="noreferrer">{{ isbn }}</a>{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}</dd></div>
         <div><dt>ISSN</dt><dd>{{ publication.issn|join:", "|default:"—" }}</dd></div>
@@ -46,21 +46,21 @@
     </section>
 
     <section class="panel">
-      <h2>Readiness</h2>
+      <h2>Préparation</h2>
       {% if publication.missing_required_fields %}
-        <p>This record is missing:</p>
+        <p>Cette notice n'a pas les champs suivants :</p>
         <ul>
           {% for field in publication.missing_required_fields %}<li>{{ field }}</li>{% endfor %}
         </ul>
       {% else %}
-        <p>No required-field gaps were reported by the pinned package.</p>
+        <p>Aucun champ obligatoire manquant signalé par le paquet épinglé.</p>
       {% endif %}
       {% if publication.conference_title %}
-        <h3>Conference</h3>
+        <h3>Conférence</h3>
         <dl class="metadata">
-          <div><dt>Event</dt><dd>{{ publication.conference_title }}</dd></div>
+          <div><dt>Événement</dt><dd>{{ publication.conference_title }}</dd></div>
           <div><dt>Dates</dt><dd>{{ publication.conference_start_date|default:"—" }} – {{ publication.conference_end_date|default:"—" }}</dd></div>
-          <div><dt>Place</dt><dd>{{ publication.conference_city|default:"—" }}, {{ publication.conference_country|default:"—" }}</dd></div>
+          <div><dt>Lieu</dt><dd>{{ publication.conference_city|default:"—" }}, {{ publication.conference_country|default:"—" }}</dd></div>
         </dl>
       {% endif %}
     </section>
@@ -68,36 +68,36 @@
 
   {% if proposals %}
     <section class="panel" aria-labelledby="proposed-changes">
-      <h2 id="proposed-changes">Proposed changes <span class="badge">{{ proposals|length }} pending</span></h2>
+      <h2 id="proposed-changes">Modifications proposées <span class="badge">{{ proposals|length }} en attente</span></h2>
       {% if not can_review %}
-        <p class="subtle">You can view proposed changes but do not have permission to accept or reject them.</p>
+        <p class="subtle">Vous pouvez consulter les modifications proposées mais n'avez pas le droit de les accepter ou de les rejeter.</p>
       {% endif %}
       {% for item in proposals %}
         <article class="proposal">
           <div class="proposal-field"><code>{{ item.assertion.field_path }}</code>
-            <span class="subtle">from {{ item.assertion.origin }}{% if item.assertion.confidence %} · {{ item.assertion.confidence }}{% endif %}</span>
+            <span class="subtle">issu de {{ item.assertion.origin }}{% if item.assertion.confidence %} · {{ item.assertion.confidence }}{% endif %}</span>
           </div>
           <div class="proposal-diff">
-            <div><dt>Current</dt><dd class="before">{{ item.current|default:"—" }}</dd></div>
-            <div><dt>Proposed</dt><dd class="after">{{ item.assertion.value|default:"—" }}</dd></div>
+            <div><dt>Valeur actuelle</dt><dd class="before">{{ item.current|default:"—" }}</dd></div>
+            <div><dt>Valeur proposée</dt><dd class="after">{{ item.assertion.value|default:"—" }}</dd></div>
           </div>
           {% if can_review %}
             <form method="post" action="{% url 'assertion-decide' publication.id item.assertion.id %}" class="decision-form">
               {% csrf_token %}
               <input type="hidden" name="base_version" value="{{ publication.version }}">
-              <label>Reason (optional)
+              <label>Motif (facultatif)
                 <input type="text" name="reason" maxlength="500" autocomplete="off">
               </label>
               <div class="decision-actions">
-                <button class="primary-button" type="submit" name="outcome" value="accepted">Accept proposed</button>
-                <button class="secondary-button" type="submit" name="outcome" value="rejected">Reject</button>
+                <button class="primary-button" type="submit" name="outcome" value="accepted">Accepter la proposition</button>
+                <button class="secondary-button" type="submit" name="outcome" value="rejected">Rejeter</button>
               </div>
-              <label class="edit-field">Or apply a different value
+              <label class="edit-field">Ou appliquer une autre valeur
                 <input type="text" name="edited_value" value="{{ item.proposed_text }}" autocomplete="off">
-                {% if item.assertion.field_path in list_fields %}<span class="subtle">Separate multiple values with “;”.</span>{% endif %}
+                {% if item.assertion.field_path in list_fields %}<span class="subtle">Séparez plusieurs valeurs par « ; ».</span>{% endif %}
               </label>
               <div class="decision-actions">
-                <button class="secondary-button" type="submit" name="outcome" value="edited">Apply this value</button>
+                <button class="secondary-button" type="submit" name="outcome" value="edited">Appliquer cette valeur</button>
               </div>
             </form>
           {% endif %}
@@ -107,7 +107,7 @@
   {% endif %}
 
   <section class="panel">
-    <h2>Original source evidence</h2>
+    <h2>Sources d'origine</h2>
     {% for source in publication.source_records.all %}
       <article class="source-record">
         <div class="source-meta">
@@ -115,18 +115,18 @@
           <span>{{ source.locator }}</span>
           <code>{{ source.source_import.file_sha256|slice:":12" }}</code>
         </div>
-        <blockquote>{{ source.original_citation|default:"No original citation supplied." }}</blockquote>
+        <blockquote>{{ source.original_citation|default:"Aucune citation d'origine fournie." }}</blockquote>
       </article>
     {% empty %}
-      <p>No immutable source record has been linked.</p>
+      <p>Aucune source immuable n'est associée.</p>
     {% endfor %}
   </section>
 
   <section class="panel">
-    <h2>Field assertions</h2>
+    <h2>Assertions de champs</h2>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Field</th><th>Value</th><th>State</th><th>Origin</th><th>Source</th></tr></thead>
+        <thead><tr><th>Champ</th><th>Valeur</th><th>État</th><th>Origine</th><th>Source</th></tr></thead>
         <tbody>
           {% for assertion in publication.assertions.all %}
             <tr>
@@ -137,7 +137,7 @@
               <td>{{ assertion.source_record.locator }}</td>
             </tr>
           {% empty %}
-            <tr><td colspan="5">No assertions recorded.</td></tr>
+            <tr><td colspan="5">Aucune assertion enregistrée.</td></tr>
           {% endfor %}
         </tbody>
       </table>
@@ -145,23 +145,23 @@
   </section>
 
   <section class="panel">
-    <h2>Decision history</h2>
+    <h2>Historique des décisions</h2>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>When</th><th>Field</th><th>Outcome</th><th>Applied value</th><th>Reviewer</th><th>Version</th><th>Reason</th></tr></thead>
+        <thead><tr><th>Date</th><th>Champ</th><th>Décision</th><th>Valeur appliquée</th><th>Réviseur</th><th>Version</th><th>Motif</th></tr></thead>
         <tbody>
           {% for decision in decisions %}
             <tr>
               <td>{{ decision.created_at }}</td>
               <td><code>{{ decision.field_path }}</code></td>
               <td>{{ decision.get_outcome_display }}</td>
-              <td>{% if decision.outcome == "rejected" %}<span class="subtle">— (kept current)</span>{% else %}{{ decision.applied_value|default:"—" }}{% endif %}</td>
+              <td>{% if decision.outcome == "rejected" %}<span class="subtle">— (valeur actuelle conservée)</span>{% else %}{{ decision.applied_value|default:"—" }}{% endif %}</td>
               <td>{{ decision.actor.get_username|default:"—" }}</td>
               <td>{{ decision.base_version }} → {{ decision.resulting_version }}</td>
               <td>{{ decision.reason|default:"—" }}</td>
             </tr>
           {% empty %}
-            <tr><td colspan="7">No review decisions recorded yet.</td></tr>
+            <tr><td colspan="7">Aucune décision de révision enregistrée pour l'instant.</td></tr>
           {% endfor %}
         </tbody>
       </table>

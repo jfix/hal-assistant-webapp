@@ -43,19 +43,20 @@ def decide_assertion(
     an audit event.
     """
     if outcome not in AssertionDecision.Outcome.values:
-        raise ReviewError(f"Unknown outcome: {outcome}")
+        raise ReviewError(f"Décision inconnue : {outcome}")
     if assertion.field_path not in MATERIALIZED_FIELDS:
-        raise ReviewError(f"Field is not reviewable: {assertion.field_path}")
+        raise ReviewError(f"Champ non révisable : {assertion.field_path}")
     if assertion.state != FieldAssertion.State.PROPOSED:
-        raise ReviewError("Only proposed changes can be decided")
+        raise ReviewError("Seules les modifications proposées peuvent être décidées.")
     if outcome == AssertionDecision.Outcome.EDITED and edited_value is None:
-        raise ReviewError("An edited value is required")
+        raise ReviewError("Une valeur modifiée est requise.")
 
     # Lock the publication row for the duration of the decision.
     publication = Publication.objects.select_for_update().get(pk=assertion.publication_id)
     if publication.version != base_version:
         raise ReviewConflict(
-            "This record changed since you loaded it. Reload and review the current values."
+            "Cette notice a changé depuis son chargement. "
+            "Rechargez la page et vérifiez les valeurs actuelles."
         )
 
     if outcome == AssertionDecision.Outcome.ACCEPTED:
@@ -85,7 +86,7 @@ def decide_assertion(
             resulting_version=resulting_version,
         )
     except IntegrityError as exc:  # one decision per assertion (OneToOne)
-        raise ReviewError("This change has already been decided") from exc
+        raise ReviewError("Cette modification a déjà été décidée.") from exc
 
     AuditEvent.objects.create(
         actor=decision.actor,

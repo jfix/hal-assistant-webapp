@@ -72,9 +72,7 @@ def publication_list(request: HttpRequest):
         "types": Publication.objects.order_by("publication_type")
         .values_list("publication_type", flat=True)
         .distinct(),
-        "readiness": Publication.objects.order_by("readiness_state")
-        .values_list("readiness_state", flat=True)
-        .distinct(),
+        "readiness": Publication.ReadinessState.choices,
         "hal_statuses": Publication.objects.exclude(hal_status="")
         .order_by("hal_status")
         .values_list("hal_status", flat=True)
@@ -133,7 +131,7 @@ def publication_detail(request: HttpRequest, publication_id):
 @require_POST
 def decide_assertion_view(request: HttpRequest, publication_id, assertion_id):
     if not request.user.has_perm(REVIEW_PERMISSION):
-        messages.error(request, "You do not have permission to review changes.")
+        messages.error(request, "Vous n'avez pas le droit de réviser les modifications.")
         return redirect("publication-detail", publication_id=publication_id)
 
     assertion = get_object_or_404(
@@ -144,7 +142,10 @@ def decide_assertion_view(request: HttpRequest, publication_id, assertion_id):
     try:
         base_version = int(request.POST.get("base_version", ""))
     except ValueError:
-        messages.error(request, "Missing or invalid version token; reload and try again.")
+        messages.error(
+            request,
+            "Jeton de version manquant ou invalide ; rechargez la page et réessayez.",
+        )
         return redirect("publication-detail", publication_id=publication_id)
 
     try:
@@ -166,7 +167,7 @@ def decide_assertion_view(request: HttpRequest, publication_id, assertion_id):
     else:
         messages.success(
             request,
-            f"{decision.get_outcome_display()} change to “{decision.field_path}”.",
+            f"Champ « {decision.field_path} » — {decision.get_outcome_display()}.",
         )
     return redirect("publication-detail", publication_id=publication_id)
 

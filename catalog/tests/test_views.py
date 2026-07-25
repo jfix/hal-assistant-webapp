@@ -139,7 +139,7 @@ def test_submission_xml_debug_view_renders_tei(
     content = response.content.decode()
     # The notice is HTML-escaped for safe display on the page.
     assert "&lt;TEI" in content
-    assert "Debug preview" in content
+    assert "Aperçu de débogage" in content
 
 
 def test_submission_xml_raw_format_returns_xml(

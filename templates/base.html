@@ -1,25 +1,25 @@
 {% load static %}
 <!doctype html>
-<html lang="en">
+<html lang="fr">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{% block title %}HAL Publication Manager{% endblock %}</title>
+    <title>{% block title %}Gestionnaire de publications HAL{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'catalog/app.css' %}">
   </head>
   <body>
-    <a class="skip-link" href="#main">Skip to content</a>
+    <a class="skip-link" href="#main">Aller au contenu</a>
     <header class="site-header">
       <div>
-        <a class="brand" href="{% url 'publication-list' %}">HAL Publication Manager</a>
-        <span class="environment">Read-only milestone</span>
+        <a class="brand" href="{% url 'publication-list' %}">Gestionnaire de publications HAL</a>
+        <span class="environment">Espace de révision</span>
       </div>
       {% if user.is_authenticated %}
         <div class="account">
           <span>{{ user.get_username }}</span>
           <form action="{% url 'logout' %}" method="post">
             {% csrf_token %}
-            <button class="link-button" type="submit">Sign out</button>
+            <button class="link-button" type="submit">Se déconnecter</button>
           </form>
         </div>
       {% endif %}
