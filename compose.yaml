@@ -1,0 +1,15 @@
+services:
+  web:
+    build: .
+    command:
+      - sh
+      - -c
+      - python manage.py migrate && gunicorn hal_webapp.wsgi:application --bind 0.0.0.0:8080 --workers 2 --threads 2 --access-logfile - --error-logfile -
+    environment:
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
+      DJANGO_DEBUG: "1"
+      SQLITE_PATH: /app/var/db.sqlite3
+    ports:
+      - "8000:8080"
+    volumes:
+      - ./var:/app/var

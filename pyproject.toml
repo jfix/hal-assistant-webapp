@@ -1,0 +1,43 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "hal-assistant-webapp"
+version = "0.1.0"
+description = "Auditable publication-management web application for HAL workflows."
+readme = "README.md"
+requires-python = ">=3.12,<3.15"
+dependencies = [
+  "django>=5.2,<5.3",
+  "django-storages[s3]>=1.14.6,<2",
+  "gunicorn>=23,<24",
+  "hal-assistant @ git+https://github.com/jfix/hal-assistant.git@03315f76c5887f7f64a61687270b2e45b97d5072",
+  "psycopg[binary]>=3.2,<4",
+  "whitenoise>=6.9,<7",
+]
+
+[dependency-groups]
+dev = [
+  "pytest>=8.4,<9",
+  "pytest-django>=4.11,<5",
+  "ruff>=0.12,<1",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["hal_webapp", "catalog"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "hal_webapp.settings"
+python_files = ["test_*.py"]
+testpaths = ["catalog/tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "DJ"]

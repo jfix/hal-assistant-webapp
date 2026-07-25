@@ -1,0 +1,38 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "hal-publication-manager",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-07-25",
+  "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    "DJANGO_DEBUG": "0",
+    "DJANGO_ALLOWED_HOSTS": ".workers.dev",
+    "DJANGO_CSRF_TRUSTED_ORIGINS": "https://*.workers.dev"
+  },
+  "containers": [
+    {
+      "class_name": "DjangoContainer",
+      "image": "./Dockerfile",
+      "max_instances": 1,
+      "instance_type": "basic"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "DJANGO_CONTAINER",
+        "class_name": "DjangoContainer"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["DjangoContainer"]
+    }
+  ],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  }
+}

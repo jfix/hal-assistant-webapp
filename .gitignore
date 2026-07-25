@@ -1,0 +1,14 @@
+.DS_Store
+.env
+.dev.vars
+.pytest_cache/
+.ruff_cache/
+.venv/
+.wrangler/
+__pycache__/
+*.py[cod]
+db.sqlite3
+htmlcov/
+node_modules/
+staticfiles/
+var/

@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}{{ publication.title }} · HAL Publication Manager{% endblock %}
+
+{% block content %}
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'publication-list' %}">Publications</a>
+    <span aria-hidden="true">/</span>
+    <span>{{ publication.publication_key }}</span>
+  </nav>
+
+  <header class="detail-heading">
+    <div>
+      <p class="eyebrow">{{ publication.publication_type }} · {{ publication.publication_key }}</p>
+      <h1>{{ publication.title }}</h1>
+      <div class="badges">
+        <span class="badge badge-{{ publication.readiness_state }}">{{ publication.get_readiness_state_display }}</span>
+        <span class="badge">{{ publication.get_review_state_display }}</span>
+      </div>
+    </div>
+    {% if publication.hal_id %}
+      <a class="secondary-button" href="https://hal.science/{{ publication.hal_id }}" rel="noreferrer">Open {{ publication.hal_id }}</a>
+    {% endif %}
+  </header>
+
+  <div class="detail-grid">
+    <section class="panel">
+      <h2>Structured metadata</h2>
+      <dl class="metadata">
+        <div><dt>Year</dt><dd>{{ publication.publication_year|default:"—" }}</dd></div>
+        <div><dt>HAL type</dt><dd>{{ publication.hal_document_type|default:"—" }}</dd></div>
+        <div><dt>Authors</dt><dd>{{ publication.authors|join:", "|default:"—" }}</dd></div>
+        <div><dt>Editors</dt><dd>{{ publication.editors|join:", "|default:"—" }}</dd></div>
+        <div><dt>Journal</dt><dd>{{ publication.journal_title|default:"—" }}</dd></div>
+        <div><dt>Book/proceedings</dt><dd>{{ publication.book_title|default:"—" }}</dd></div>
+        <div><dt>Volume / issue</dt><dd>{{ publication.volume|default:"—" }} / {{ publication.issue|default:"—" }}</dd></div>
+        <div><dt>Pages</dt><dd>{{ publication.pages|default:"—" }}</dd></div>
+        <div><dt>Publisher</dt><dd>{{ publication.publisher|default:"—" }}{% if publication.publisher_city %}, {{ publication.publisher_city }}{% endif %}</dd></div>
+        <div><dt>DOI</dt><dd>{% if publication.doi %}<a href="https://doi.org/{{ publication.doi }}" rel="noreferrer">{{ publication.doi }}</a>{% else %}—{% endif %}</dd></div>
+        <div><dt>ISBN</dt><dd>{{ publication.isbn|join:", "|default:"—" }}</dd></div>
+        <div><dt>ISSN</dt><dd>{{ publication.issn|join:", "|default:"—" }}</dd></div>
+      </dl>
+    </section>
+
+    <section class="panel">
+      <h2>Readiness</h2>
+      {% if publication.missing_required_fields %}
+        <p>This record is missing:</p>
+        <ul>
+          {% for field in publication.missing_required_fields %}<li>{{ field }}</li>{% endfor %}
+        </ul>
+      {% else %}
+        <p>No required-field gaps were reported by the pinned package.</p>
+      {% endif %}
+      {% if publication.conference_title %}
+        <h3>Conference</h3>
+        <dl class="metadata">
+          <div><dt>Event</dt><dd>{{ publication.conference_title }}</dd></div>
+          <div><dt>Dates</dt><dd>{{ publication.conference_start_date|default:"—" }} – {{ publication.conference_end_date|default:"—" }}</dd></div>
+          <div><dt>Place</dt><dd>{{ publication.conference_city|default:"—" }}, {{ publication.conference_country|default:"—" }}</dd></div>
+        </dl>
+      {% endif %}
+    </section>
+  </div>
+
+  <section class="panel">
+    <h2>Original source evidence</h2>
+    {% for source in publication.source_records.all %}
+      <article class="source-record">
+        <div class="source-meta">
+          <strong>{{ source.source_import.source_name }}</strong>
+          <span>{{ source.locator }}</span>
+          <code>{{ source.source_import.file_sha256|slice:":12" }}</code>
+        </div>
+        <blockquote>{{ source.original_citation|default:"No original citation supplied." }}</blockquote>
+      </article>
+    {% empty %}
+      <p>No immutable source record has been linked.</p>
+    {% endfor %}
+  </section>
+
+  <section class="panel">
+    <h2>Field assertions</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Field</th><th>Value</th><th>State</th><th>Origin</th><th>Source</th></tr></thead>
+        <tbody>
+          {% for assertion in publication.assertions.all %}
+            <tr>
+              <td><code>{{ assertion.field_path }}</code></td>
+              <td>{{ assertion.value }}</td>
+              <td>{{ assertion.get_state_display }}</td>
+              <td>{{ assertion.origin }}</td>
+              <td>{{ assertion.source_record.locator }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="5">No assertions recorded.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+{% endblock %}

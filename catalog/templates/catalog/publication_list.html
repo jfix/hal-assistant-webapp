@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Publications · HAL Publication Manager{% endblock %}
+
+{% block content %}
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">Reviewed corpus</p>
+      <h1>Publications</h1>
+      <p>{{ page.paginator.count }} record{{ page.paginator.count|pluralize }}</p>
+    </div>
+  </header>
+
+  <form class="filters" method="get">
+    <label class="wide">
+      Search
+      <input name="q" type="search" value="{{ filters.q }}" placeholder="Title, publication ID, HAL ID or author">
+    </label>
+    <label>
+      Type
+      <select name="type">
+        <option value="">All</option>
+        {% for value in filter_options.types %}
+          <option value="{{ value }}" {% if filters.type == value %}selected{% endif %}>{{ value }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>
+      Readiness
+      <select name="readiness">
+        <option value="">All</option>
+        {% for value in filter_options.readiness %}
+          <option value="{{ value }}" {% if filters.readiness == value %}selected{% endif %}>{{ value }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>
+      HAL state
+      <select name="hal_status">
+        <option value="">All</option>
+        {% for value in filter_options.hal_statuses %}
+          <option value="{{ value }}" {% if filters.hal_status == value %}selected{% endif %}>{{ value }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>
+      Missing field
+      <input name="missing" value="{{ filters.missing }}" placeholder="e.g. conference_city">
+    </label>
+    <div class="filter-actions">
+      <button class="primary-button" type="submit">Filter</button>
+      <a href="{% url 'publication-list' %}">Clear</a>
+    </div>
+  </form>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">Publication</th>
+          <th scope="col">Year</th>
+          <th scope="col">Type</th>
+          <th scope="col">Readiness</th>
+          <th scope="col">HAL</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for publication in page %}
+          <tr>
+            <td>
+              <a class="record-title" href="{% url 'publication-detail' publication.id %}">{{ publication.title }}</a>
+              <span class="record-key">{{ publication.publication_key }}</span>
+            </td>
+            <td>{{ publication.publication_year|default:"—" }}</td>
+            <td>{{ publication.publication_type }}</td>
+            <td>
+              <span class="badge badge-{{ publication.readiness_state }}">{{ publication.get_readiness_state_display }}</span>
+              {% if publication.missing_required_fields %}
+                <span class="subtle">{{ publication.missing_required_fields|join:", " }}</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if publication.hal_id %}
+                <a href="https://hal.science/{{ publication.hal_id }}" rel="noreferrer">{{ publication.hal_id }}</a>
+              {% else %}
+                {{ publication.hal_status|default:"—" }}
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="5">No publications match these filters.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if page.paginator.num_pages > 1 %}
+    <nav class="pagination" aria-label="Publication pages">
+      {% if page.has_previous %}
+        <a href="?q={{ filters.q|urlencode }}&amp;type={{ filters.type|urlencode }}&amp;readiness={{ filters.readiness|urlencode }}&amp;hal_status={{ filters.hal_status|urlencode }}&amp;missing={{ filters.missing|urlencode }}&amp;page={{ page.previous_page_number }}">Previous</a>
+      {% endif %}
+      <span>Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+      {% if page.has_next %}
+        <a href="?q={{ filters.q|urlencode }}&amp;type={{ filters.type|urlencode }}&amp;readiness={{ filters.readiness|urlencode }}&amp;hal_status={{ filters.hal_status|urlencode }}&amp;missing={{ filters.missing|urlencode }}&amp;page={{ page.next_page_number }}">Next</a>
+      {% endif %}
+    </nav>
+  {% endif %}
+{% endblock %}
