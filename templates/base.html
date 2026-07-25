@@ -25,6 +25,13 @@
       {% endif %}
     </header>
     <main id="main" class="page-shell">
+      {% if messages %}
+        <div class="messages">
+          {% for message in messages %}
+            <p class="alert alert-{{ message.tags }}" role="status">{{ message }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
       {% block content %}{% endblock %}
     </main>
   </body>

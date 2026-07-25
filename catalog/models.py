@@ -80,6 +80,9 @@ class Publication(models.Model):
             models.Index(fields=["readiness_state"]),
             models.Index(fields=["hal_status"]),
         ]
+        permissions = [
+            ("review_publication", "Can accept or reject proposed field changes"),
+        ]
 
     def __str__(self) -> str:
         return self.title
@@ -177,6 +180,54 @@ class FieldAssertion(ImmutableModel):
 
     def __str__(self) -> str:
         return f"{self.publication.publication_key}.{self.field_path} ({self.state})"
+
+
+class AssertionDecision(ImmutableModel):
+    """An append-only reviewer decision on one proposed field assertion.
+
+    Recorded rather than mutating the immutable ``FieldAssertion``. A proposed
+    assertion is "pending" until exactly one decision exists for it.
+    """
+
+    class Outcome(models.TextChoices):
+        ACCEPTED = "accepted", "Accepted"
+        REJECTED = "rejected", "Rejected"
+        EDITED = "edited", "Edited"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    publication = models.ForeignKey(
+        Publication,
+        on_delete=models.PROTECT,
+        related_name="decisions",
+    )
+    assertion = models.OneToOneField(
+        "FieldAssertion",
+        on_delete=models.PROTECT,
+        related_name="decision",
+    )
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="hal_assertion_decisions",
+    )
+    field_path = models.CharField(max_length=200)
+    outcome = models.CharField(max_length=20, choices=Outcome.choices)
+    applied_value = models.JSONField(null=True, blank=True)
+    reason = models.TextField(blank=True)
+    base_version = models.PositiveIntegerField()
+    resulting_version = models.PositiveIntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["publication", "-created_at"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.field_path}: {self.outcome} (v{self.resulting_version})"
 
 
 class AuditEvent(ImmutableModel):

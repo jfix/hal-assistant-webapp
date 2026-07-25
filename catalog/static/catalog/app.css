@@ -72,9 +72,29 @@ tbody tr:last-child td { border-bottom: 0; }
 .source-record + .source-record { border-top: 1px solid var(--line); margin-top: 1rem; padding-top: 1rem; }
 .source-meta { display: flex; flex-wrap: wrap; gap: .7rem; align-items: baseline; color: var(--muted); font-size: .82rem; }
 blockquote { margin: .8rem 0 0; padding: .8rem 1rem; border-left: 4px solid var(--accent); background: #f5f7f4; font-family: Georgia, serif; font-size: 1.05rem; }
+.detail-actions { display: flex; flex-wrap: wrap; gap: .6rem; align-items: start; }
+.xml-block { margin: 0; padding: 1rem 1.2rem; background: #0f1f1e; color: #e6f2ee; font-size: .82rem; line-height: 1.5; white-space: pre; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.xml-block code { font: inherit; color: inherit; }
 .login-panel { width: min(28rem, 100%); margin: 8vh auto; padding: 2rem; background: var(--paper); border: 1px solid var(--line); }
 .stack { display: grid; gap: 1rem; }
 .alert { margin: 1rem 0; padding: .75rem; border-left: 4px solid #a32626; background: #ffeded; }
+.messages { margin-bottom: 1rem; }
+.alert-success { border-left-color: var(--accent); background: var(--accent-soft); }
+.alert-warning { border-left-color: var(--warning); background: var(--warning-soft); }
+.alert-error { border-left-color: #a32626; background: #ffeded; }
+.proposal { padding: 1rem 0; border-bottom: 1px solid var(--line); }
+.proposal:last-child { border-bottom: 0; }
+.proposal-field { display: flex; flex-wrap: wrap; gap: .6rem; align-items: baseline; margin-bottom: .6rem; }
+.proposal-diff { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-bottom: .8rem; }
+.proposal-diff dt { color: var(--muted); font-size: .72rem; font-weight: 750; text-transform: uppercase; letter-spacing: .05em; }
+.proposal-diff dd { margin: .2rem 0 0; padding: .5rem .6rem; border-radius: .2rem; }
+.proposal-diff .before { background: #fbeaea; }
+.proposal-diff .after { background: var(--accent-soft); }
+.decision-form { display: flex; flex-wrap: wrap; gap: .8rem; align-items: end; }
+.decision-form label { flex: 1 1 16rem; }
+.decision-actions { display: flex; gap: .6rem; }
+.decision-form .edit-field { flex: 1 1 100%; border-top: 1px dashed var(--line); padding-top: .8rem; }
+@media (max-width: 560px) { .proposal-diff { grid-template-columns: 1fr; } }
 
 @media (max-width: 900px) {
   .filters { grid-template-columns: repeat(2, 1fr); }

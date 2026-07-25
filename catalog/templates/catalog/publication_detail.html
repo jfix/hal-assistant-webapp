@@ -18,9 +18,12 @@
         <span class="badge">{{ publication.get_review_state_display }}</span>
       </div>
     </div>
-    {% if publication.hal_id %}
-      <a class="secondary-button" href="https://hal.science/{{ publication.hal_id }}" rel="noreferrer">Open {{ publication.hal_id }}</a>
-    {% endif %}
+    <div class="detail-actions">
+      {% if publication.hal_id %}
+        <a class="secondary-button" href="https://hal.science/{{ publication.hal_id }}" rel="noreferrer">Open {{ publication.hal_id }}</a>
+      {% endif %}
+      <a class="secondary-button" href="{% url 'publication-xml' publication.id %}">Submission XML</a>
+    </div>
   </header>
 
   <div class="detail-grid">
@@ -37,7 +40,7 @@
         <div><dt>Pages</dt><dd>{{ publication.pages|default:"—" }}</dd></div>
         <div><dt>Publisher</dt><dd>{{ publication.publisher|default:"—" }}{% if publication.publisher_city %}, {{ publication.publisher_city }}{% endif %}</dd></div>
         <div><dt>DOI</dt><dd>{% if publication.doi %}<a href="https://doi.org/{{ publication.doi }}" rel="noreferrer">{{ publication.doi }}</a>{% else %}—{% endif %}</dd></div>
-        <div><dt>ISBN</dt><dd>{{ publication.isbn|join:", "|default:"—" }}</dd></div>
+        <div><dt>ISBN</dt><dd>{% for isbn in publication.isbn %}<a href="https://search.worldcat.org/isbn/{{ isbn|urlencode }}" rel="noreferrer">{{ isbn }}</a>{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}</dd></div>
         <div><dt>ISSN</dt><dd>{{ publication.issn|join:", "|default:"—" }}</dd></div>
       </dl>
     </section>
@@ -62,6 +65,46 @@
       {% endif %}
     </section>
   </div>
+
+  {% if proposals %}
+    <section class="panel" aria-labelledby="proposed-changes">
+      <h2 id="proposed-changes">Proposed changes <span class="badge">{{ proposals|length }} pending</span></h2>
+      {% if not can_review %}
+        <p class="subtle">You can view proposed changes but do not have permission to accept or reject them.</p>
+      {% endif %}
+      {% for item in proposals %}
+        <article class="proposal">
+          <div class="proposal-field"><code>{{ item.assertion.field_path }}</code>
+            <span class="subtle">from {{ item.assertion.origin }}{% if item.assertion.confidence %} · {{ item.assertion.confidence }}{% endif %}</span>
+          </div>
+          <div class="proposal-diff">
+            <div><dt>Current</dt><dd class="before">{{ item.current|default:"—" }}</dd></div>
+            <div><dt>Proposed</dt><dd class="after">{{ item.assertion.value|default:"—" }}</dd></div>
+          </div>
+          {% if can_review %}
+            <form method="post" action="{% url 'assertion-decide' publication.id item.assertion.id %}" class="decision-form">
+              {% csrf_token %}
+              <input type="hidden" name="base_version" value="{{ publication.version }}">
+              <label>Reason (optional)
+                <input type="text" name="reason" maxlength="500" autocomplete="off">
+              </label>
+              <div class="decision-actions">
+                <button class="primary-button" type="submit" name="outcome" value="accepted">Accept proposed</button>
+                <button class="secondary-button" type="submit" name="outcome" value="rejected">Reject</button>
+              </div>
+              <label class="edit-field">Or apply a different value
+                <input type="text" name="edited_value" value="{{ item.proposed_text }}" autocomplete="off">
+                {% if item.assertion.field_path in list_fields %}<span class="subtle">Separate multiple values with “;”.</span>{% endif %}
+              </label>
+              <div class="decision-actions">
+                <button class="secondary-button" type="submit" name="outcome" value="edited">Apply this value</button>
+              </div>
+            </form>
+          {% endif %}
+        </article>
+      {% endfor %}
+    </section>
+  {% endif %}
 
   <section class="panel">
     <h2>Original source evidence</h2>
@@ -95,6 +138,30 @@
             </tr>
           {% empty %}
             <tr><td colspan="5">No assertions recorded.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Decision history</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>When</th><th>Field</th><th>Outcome</th><th>Applied value</th><th>Reviewer</th><th>Version</th><th>Reason</th></tr></thead>
+        <tbody>
+          {% for decision in decisions %}
+            <tr>
+              <td>{{ decision.created_at }}</td>
+              <td><code>{{ decision.field_path }}</code></td>
+              <td>{{ decision.get_outcome_display }}</td>
+              <td>{% if decision.outcome == "rejected" %}<span class="subtle">— (kept current)</span>{% else %}{{ decision.applied_value|default:"—" }}{% endif %}</td>
+              <td>{{ decision.actor.get_username|default:"—" }}</td>
+              <td>{{ decision.base_version }} → {{ decision.resulting_version }}</td>
+              <td>{{ decision.reason|default:"—" }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="7">No review decisions recorded yet.</td></tr>
           {% endfor %}
         </tbody>
       </table>

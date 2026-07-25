@@ -18,6 +18,9 @@ from catalog.models import AuditEvent, FieldAssertion, Publication, SourceImport
 
 PARSER_VERSION = f"hal-assistant/{version('hal-assistant')}"
 
+LIST_FIELDS = ("authors", "editors", "isbn", "issn")
+DATE_FIELDS = ("conference_start_date", "conference_end_date")
+
 MATERIALIZED_FIELDS = (
     "publication_type",
     "hal_document_type",
@@ -178,6 +181,21 @@ def _date(value: Any) -> str | None:
         return date.fromisoformat(text).isoformat()
     except ValueError:
         return None
+
+
+def coerce_field_value(field_name: str, raw: Any) -> Any:
+    """Coerce a reviewer-supplied raw value into the shape a field materializes.
+
+    Uses the same normalization rules as snapshot import so an edited value is
+    stored exactly as an imported one would be.
+    """
+    if field_name in LIST_FIELDS:
+        return _list(raw)
+    if field_name == "publication_year":
+        return _integer(raw)
+    if field_name in DATE_FIELDS:
+        return _date(raw)
+    return _text(raw)
 
 
 def _review_state(row: dict[str, Any]) -> str:

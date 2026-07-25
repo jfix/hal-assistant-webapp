@@ -1,13 +1,32 @@
 from __future__ import annotations
 
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db import connection
 from django.db.models import Q
-from django.http import HttpRequest, JsonResponse
+from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 
-from .models import Publication
+from .integrations.hal_assistant import build_submission_xml
+from .models import FieldAssertion, Publication
+from .services.imports import LIST_FIELDS
+from .services.review import (
+    ReviewConflict,
+    ReviewError,
+    decide_assertion,
+    pending_proposals,
+)
+
+REVIEW_PERMISSION = "catalog.review_publication"
+
+
+def _edit_text(value) -> str:
+    """Render a materialized value as an editable single-line string."""
+    if isinstance(value, list | tuple):
+        return "; ".join(str(item) for item in value)
+    return "" if value is None else str(value)
 
 
 def health(request: HttpRequest) -> JsonResponse:
@@ -88,8 +107,98 @@ def publication_detail(request: HttpRequest, publication_id):
         ),
         id=publication_id,
     )
+    proposals = [
+        {
+            "assertion": assertion,
+            "current": getattr(publication, assertion.field_path, None),
+            "proposed_text": _edit_text(assertion.value),
+        }
+        for assertion in pending_proposals(publication)
+    ]
+    decisions = publication.decisions.select_related("actor", "assertion")
     return render(
         request,
         "catalog/publication_detail.html",
-        {"publication": publication},
+        {
+            "publication": publication,
+            "proposals": proposals,
+            "decisions": decisions,
+            "can_review": request.user.has_perm(REVIEW_PERMISSION),
+            "list_fields": LIST_FIELDS,
+        },
+    )
+
+
+@login_required
+@require_POST
+def decide_assertion_view(request: HttpRequest, publication_id, assertion_id):
+    if not request.user.has_perm(REVIEW_PERMISSION):
+        messages.error(request, "You do not have permission to review changes.")
+        return redirect("publication-detail", publication_id=publication_id)
+
+    assertion = get_object_or_404(
+        FieldAssertion,
+        id=assertion_id,
+        publication_id=publication_id,
+    )
+    try:
+        base_version = int(request.POST.get("base_version", ""))
+    except ValueError:
+        messages.error(request, "Missing or invalid version token; reload and try again.")
+        return redirect("publication-detail", publication_id=publication_id)
+
+    try:
+        outcome = request.POST.get("outcome", "")
+        decision = decide_assertion(
+            assertion=assertion,
+            actor=request.user,
+            outcome=outcome,
+            base_version=base_version,
+            reason=request.POST.get("reason", ""),
+            edited_value=(
+                request.POST.get("edited_value", "") if outcome == "edited" else None
+            ),
+        )
+    except ReviewConflict as exc:
+        messages.warning(request, str(exc))
+    except ReviewError as exc:
+        messages.error(request, str(exc))
+    else:
+        messages.success(
+            request,
+            f"{decision.get_outcome_display()} change to “{decision.field_path}”.",
+        )
+    return redirect("publication-detail", publication_id=publication_id)
+
+
+@login_required
+def publication_xml(request: HttpRequest, publication_id):
+    """Debug-only preview of the HAL AOfr submission notice for one record.
+
+    Generated locally by the pinned package from the immutable source row. It
+    performs no HAL request and is not a submission route.
+    """
+    publication = get_object_or_404(
+        Publication.objects.prefetch_related("source_records__source_import"),
+        id=publication_id,
+    )
+    source_record = publication.source_records.order_by("-created_at").first()
+    submission = (
+        build_submission_xml(source_record.raw_data)
+        if source_record is not None
+        else None
+    )
+    if request.GET.get("format") == "raw" and submission and submission.xml:
+        return HttpResponse(
+            submission.xml,
+            content_type="application/xml; charset=utf-8",
+        )
+    return render(
+        request,
+        "catalog/publication_xml.html",
+        {
+            "publication": publication,
+            "submission": submission,
+            "source_record": source_record,
+        },
     )

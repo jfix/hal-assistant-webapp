@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Submission XML · {{ publication.title }}{% endblock %}
+
+{% block content %}
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'publication-list' %}">Publications</a>
+    <span aria-hidden="true">/</span>
+    <a href="{% url 'publication-detail' publication.id %}">{{ publication.publication_key }}</a>
+    <span aria-hidden="true">/</span>
+    <span>Submission XML</span>
+  </nav>
+
+  <header class="detail-heading">
+    <div>
+      <p class="eyebrow">Debug preview · not a submission</p>
+      <h1>Submission XML</h1>
+      <p class="subtle">{{ publication.title }}</p>
+    </div>
+    {% if submission and submission.xml %}
+      <a class="secondary-button" href="?format=raw">View raw XML</a>
+    {% endif %}
+  </header>
+
+  <p class="alert" role="note">
+    This AOfr TEI notice is generated locally by the pinned <code>hal-assistant</code>
+    package from the immutable source row, for debugging only. Nothing here contacts
+    HAL or submits anything.
+  </p>
+
+  {% if submission is None %}
+    <section class="panel"><p>No immutable source record is linked to this publication, so no notice can be generated.</p></section>
+  {% else %}
+    <section class="panel">
+      <h2>Generation parameters</h2>
+      <dl class="metadata">
+        <div><dt>HAL domain</dt><dd>{{ submission.domain|default:"—" }}</dd></div>
+        <div><dt>IdHAL</dt><dd>{{ submission.idhal|default:"—" }}</dd></div>
+        <div><dt>Structure ID</dt><dd>{{ submission.structure_id|default:"—" }}</dd></div>
+        <div><dt>Source row</dt><dd>{{ source_record.source_import.source_name }} · {{ source_record.locator }}</dd></div>
+      </dl>
+    </section>
+
+    <section class="panel">
+      <h2>Local validation</h2>
+      {% if submission.errors %}
+        <p>The package reports {{ submission.errors|length }} blocking issue{{ submission.errors|length|pluralize }}:</p>
+        <ul>
+          {% for error in submission.errors %}<li>{{ error }}</li>{% endfor %}
+        </ul>
+      {% else %}
+        <p>No local schema or mandatory-metadata errors were reported.</p>
+      {% endif %}
+    </section>
+
+    {% if submission.xml %}
+      <section class="panel">
+        <h2>AOfr TEI notice</h2>
+        <div class="table-wrap"><pre class="xml-block"><code>{{ submission.xml }}</code></pre></div>
+      </section>
+    {% endif %}
+  {% endif %}
+{% endblock %}

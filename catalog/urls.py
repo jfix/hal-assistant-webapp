@@ -10,4 +10,14 @@ urlpatterns = [
         views.publication_detail,
         name="publication-detail",
     ),
+    path(
+        "publications/<uuid:publication_id>/xml/",
+        views.publication_xml,
+        name="publication-xml",
+    ),
+    path(
+        "publications/<uuid:publication_id>/assertions/<uuid:assertion_id>/decide/",
+        views.decide_assertion_view,
+        name="assertion-decide",
+    ),
 ]
