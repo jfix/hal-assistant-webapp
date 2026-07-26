@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+from io import BytesIO
+
 import pytest
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.utils import timezone
+from openpyxl import load_workbook
 
 from catalog.models import Publication, SourceImport, SourceRecord
 
@@ -83,6 +86,53 @@ def test_authenticated_user_can_view_publication_detail(
     content = response.content.decode()
     assert "Cloud deployment" in content
     assert "conference_city" in content
+
+
+def test_detail_page_has_no_unrendered_template_syntax(client, user, publications) -> None:
+    """Guard against leaked template comments/tags (e.g. multi-line {# #})."""
+    client.force_login(user)
+
+    response = client.get(reverse("publication-detail", args=[publications[0].id]))
+
+    content = response.content.decode()
+    assert response.status_code == 200
+    for leak in ("{#", "{%", "Renders one metadata field", "surrounding context"):
+        assert leak not in content
+
+
+def test_export_returns_a_filtered_xlsx_snapshot(client, user, publications) -> None:
+    client.force_login(user)
+
+    response = client.get(reverse("publication-export"))
+
+    assert response.status_code == 200
+    assert response["Content-Type"].startswith(
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    assert "attachment" in response["Content-Disposition"]
+    sheet = load_workbook(BytesIO(response.content))["Publications"]
+    header = [cell.value for cell in sheet[1]]
+    assert header[0] == "publication_id"
+    assert "title" in header
+    keys = {row[0] for row in sheet.iter_rows(min_row=2, values_only=True)}
+    assert {"pub-0001", "pub-0002"} <= keys
+
+
+def test_export_respects_active_filters(client, user, publications) -> None:
+    client.force_login(user)
+
+    response = client.get(reverse("publication-export"), {"type": "conference_paper"})
+
+    sheet = load_workbook(BytesIO(response.content))["Publications"]
+    keys = [row[0] for row in sheet.iter_rows(min_row=2, values_only=True)]
+    assert keys == ["pub-0002"]
+
+
+def test_export_requires_authentication(client) -> None:
+    response = client.get(reverse("publication-export"))
+
+    assert response.status_code == 302
+    assert response.url.startswith(reverse("login"))
 
 
 @pytest.fixture

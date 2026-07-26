@@ -18,6 +18,7 @@ from catalog.services.review import (
     ReviewConflict,
     ReviewError,
     decide_assertion,
+    edit_field,
     pending_proposals,
 )
 
@@ -197,6 +198,86 @@ def test_reviewer_can_edit_through_the_view(client, proposal) -> None:
     publication = Publication.objects.get(pk=proposal.publication_id)
     assert publication.title == "Edited via the view"
     assert publication.version == 2
+
+
+def test_edit_field_changes_value_without_a_proposal(proposal) -> None:
+    publication = Publication.objects.get(pk=proposal.publication_id)
+
+    decision = edit_field(
+        publication=publication,
+        field_path="publisher",
+        actor=None,
+        edited_value="Éditions du Test",
+        base_version=1,
+        reason="Correction directe",
+    )
+
+    publication.refresh_from_db()
+    assert publication.publisher == "Éditions du Test"
+    assert publication.version == 2
+    assert decision.outcome == AssertionDecision.Outcome.EDITED
+    assert decision.assertion is None
+    assert decision.previous_value == ""
+    assert decision.applied_value == "Éditions du Test"
+    assert AuditEvent.objects.filter(action="field.edited").count() == 1
+
+
+def test_edit_field_refuses_non_editable_fields(proposal) -> None:
+    publication = Publication.objects.get(pk=proposal.publication_id)
+    for protected in ("doi", "hal_id", "publication_type", "readiness_state"):
+        with pytest.raises(ReviewError):
+            edit_field(
+                publication=publication,
+                field_path=protected,
+                actor=None,
+                edited_value="x",
+                base_version=1,
+            )
+
+
+def test_edit_field_honours_the_optimistic_version(proposal) -> None:
+    publication = Publication.objects.get(pk=proposal.publication_id)
+    with pytest.raises(ReviewConflict):
+        edit_field(
+            publication=publication,
+            field_path="publisher",
+            actor=None,
+            edited_value="x",
+            base_version=999,
+        )
+    publication.refresh_from_db()
+    assert publication.version == 1
+
+
+def test_reviewer_can_edit_a_field_through_the_view(client, proposal) -> None:
+    reviewer = get_user_model().objects.create_user(username="rev3", password="pw")
+    reviewer.user_permissions.add(
+        Permission.objects.get(codename="review_publication")
+    )
+    client.force_login(reviewer)
+
+    response = client.post(
+        reverse("publication-edit-field", args=[proposal.publication_id]),
+        {"field": "pages", "edited_value": "12-42", "base_version": "1"},
+    )
+
+    assert response.status_code == 302
+    publication = Publication.objects.get(pk=proposal.publication_id)
+    assert publication.pages == "12-42"
+    assert publication.version == 2
+
+
+def test_edit_field_view_requires_permission(client, proposal) -> None:
+    plain = get_user_model().objects.create_user(username="plain2", password="pw")
+    client.force_login(plain)
+
+    response = client.post(
+        reverse("publication-edit-field", args=[proposal.publication_id]),
+        {"field": "pages", "edited_value": "999", "base_version": "1"},
+    )
+
+    assert response.status_code == 302
+    assert Publication.objects.get(pk=proposal.publication_id).pages != "999"
 
 
 def test_view_requires_review_permission(client, proposal) -> None:

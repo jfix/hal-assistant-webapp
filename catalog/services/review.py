@@ -1,10 +1,50 @@
 from __future__ import annotations
 
+from datetime import date, datetime
+from typing import Any
+
 from django.contrib.auth.models import AbstractBaseUser
 from django.db import IntegrityError, transaction
 
 from catalog.models import AssertionDecision, AuditEvent, FieldAssertion, Publication
 from catalog.services.imports import MATERIALIZED_FIELDS, coerce_field_value
+
+
+def _json_safe(value: Any) -> Any:
+    """Make a materialized value safe to store in a JSON decision column."""
+    if isinstance(value, datetime | date):
+        return value.isoformat()
+    if isinstance(value, list | tuple):
+        return [_json_safe(item) for item in value]
+    if isinstance(value, dict):
+        return {str(key): _json_safe(item) for key, item in value.items()}
+    return value
+
+# Bibliographic fields a reviewer may edit directly. Identity fields (doi,
+# hal_id), workflow/state fields, and controlled-vocabulary types are excluded:
+# they drive de-duplication, readiness, and XML generation.
+EDITABLE_FIELDS: tuple[str, ...] = (
+    "title",
+    "publication_year",
+    "language",
+    "pages",
+    "authors",
+    "editors",
+    "journal_title",
+    "book_title",
+    "publisher",
+    "publisher_city",
+    "volume",
+    "issue",
+    "isbn",
+    "issn",
+    "conference_title",
+    "conference_start_date",
+    "conference_end_date",
+    "conference_city",
+    "conference_country",
+    "source_url",
+)
 
 
 class ReviewError(Exception):
@@ -59,6 +99,7 @@ def decide_assertion(
             "Rechargez la page et vérifiez les valeurs actuelles."
         )
 
+    previous_value = _json_safe(getattr(publication, assertion.field_path))
     if outcome == AssertionDecision.Outcome.ACCEPTED:
         applied_value = assertion.value
     elif outcome == AssertionDecision.Outcome.EDITED:
@@ -80,6 +121,7 @@ def decide_assertion(
             actor=actor if getattr(actor, "is_authenticated", False) else None,
             field_path=assertion.field_path,
             outcome=outcome,
+            previous_value=previous_value,
             applied_value=applied_value,
             reason=reason.strip(),
             base_version=base_version,
@@ -96,6 +138,67 @@ def decide_assertion(
         metadata={
             "publication_key": publication.publication_key,
             "field_path": assertion.field_path,
+            "base_version": base_version,
+            "resulting_version": resulting_version,
+            "applied_value": applied_value,
+        },
+    )
+    return decision
+
+
+@transaction.atomic
+def edit_field(
+    *,
+    publication: Publication,
+    field_path: str,
+    actor: AbstractBaseUser | None,
+    edited_value: str,
+    base_version: int,
+    reason: str = "",
+) -> AssertionDecision:
+    """Edit one bibliographic field directly, without a prior proposal.
+
+    Recorded exactly like a proposal decision (append-only, audited, optimistic
+    version check) but with no linked assertion. Only fields in EDITABLE_FIELDS
+    may be changed. Never contacts HAL.
+    """
+    if field_path not in EDITABLE_FIELDS:
+        raise ReviewError(f"Champ non modifiable : {field_path}")
+
+    locked = Publication.objects.select_for_update().get(pk=publication.pk)
+    if locked.version != base_version:
+        raise ReviewConflict(
+            "Cette notice a changé depuis son chargement. "
+            "Rechargez la page et vérifiez les valeurs actuelles."
+        )
+
+    previous_value = _json_safe(getattr(locked, field_path))
+    applied_value = coerce_field_value(field_path, edited_value)
+    resulting_version = locked.version + 1
+    setattr(locked, field_path, applied_value)
+    locked.version = resulting_version
+    locked.save(update_fields=[field_path, "version", "updated_at"])
+
+    decision = AssertionDecision.objects.create(
+        publication=locked,
+        assertion=None,
+        actor=actor if getattr(actor, "is_authenticated", False) else None,
+        field_path=field_path,
+        outcome=AssertionDecision.Outcome.EDITED,
+        previous_value=previous_value,
+        applied_value=applied_value,
+        reason=reason.strip(),
+        base_version=base_version,
+        resulting_version=resulting_version,
+    )
+    AuditEvent.objects.create(
+        actor=decision.actor,
+        action="field.edited",
+        object_type="publication",
+        object_id=str(locked.id),
+        metadata={
+            "publication_key": locked.publication_key,
+            "field_path": field_path,
             "base_version": base_version,
             "resulting_version": resulting_version,
             "applied_value": applied_value,

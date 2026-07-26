@@ -1,0 +1,34 @@
+{% comment %}
+Renders one metadata field: display value + optional inline (click-to-edit) form.
+Expects `field` (descriptor) plus `publication`, `can_review`, `list_fields`
+from the surrounding context.
+{% endcomment %}
+<div class="{% if can_review and field.editable %}editable-field{% endif %}">
+  <dt>{{ field.label }}</dt>
+  <dd>
+    <span class="field-display">
+      {% if field.kind == "doi" %}
+        <span class="editable-value">{{ field.value|default:"—" }}</span>{% if field.value %} <a class="ext" href="https://doi.org/{{ field.value }}" rel="noreferrer" title="Ouvrir">↗</a>{% endif %}
+      {% elif field.kind == "isbn" %}
+        <span class="editable-value">{{ field.value|join:"; "|default:"—" }}</span>{% for isbn in field.value %} <a class="ext" href="https://search.worldcat.org/isbn/{{ isbn|urlencode }}" rel="noreferrer" title="WorldCat">↗</a>{% endfor %}
+      {% elif field.kind == "url" %}
+        <span class="editable-value">{{ field.value|default:"—" }}</span>{% if field.value %} <a class="ext" href="{{ field.value }}" rel="noreferrer" title="Ouvrir">↗</a>{% endif %}
+      {% elif field.kind == "list" %}
+        <span class="editable-value">{{ field.value|join:", "|default:"—" }}</span>
+      {% else %}
+        <span class="editable-value">{{ field.value|default:"—" }}</span>
+      {% endif %}
+    </span>
+    {% if can_review and field.editable %}
+      <form class="inline-edit" method="post" action="{% url 'publication-edit-field' publication.id %}">
+        {% csrf_token %}
+        <input type="hidden" name="base_version" value="{{ publication.version }}">
+        <input type="hidden" name="field" value="{{ field.name }}">
+        <input type="text" name="edited_value" value="{{ field.edit_value }}" autocomplete="off" aria-label="{{ field.label }}">
+        {% if field.name in list_fields %}<span class="subtle">Séparez plusieurs valeurs par « ; ».</span>{% endif %}
+        <span class="subtle edit-hint">Entrée ou clic à l'extérieur pour enregistrer · Échap pour annuler</span>
+        <noscript><button class="primary-button" type="submit">Enregistrer</button></noscript>
+      </form>
+    {% endif %}
+  </dd>
+</div>

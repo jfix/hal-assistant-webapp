@@ -9,6 +9,7 @@
       <h1>Publications</h1>
       <p>{{ page.paginator.count }} notice{{ page.paginator.count|pluralize }}</p>
     </div>
+    <a class="secondary-button" href="{% url 'publication-export' %}{% if request.GET.urlencode %}?{{ request.GET.urlencode }}{% endif %}">Exporter (XLSX)</a>
   </header>
 
   <form class="filters" method="get">

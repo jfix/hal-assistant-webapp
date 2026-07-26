@@ -4,8 +4,10 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script>document.documentElement.classList.add('js');</script>
     <title>{% block title %}Gestionnaire de publications HAL{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'catalog/app.css' %}">
+    <link rel="stylesheet" href="{% static 'catalog/app.css' %}?v={{ asset_version }}">
+    <script src="{% static 'catalog/app.js' %}?v={{ asset_version }}" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#main">Aller au contenu</a>

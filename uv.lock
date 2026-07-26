@@ -138,6 +138,7 @@ dependencies = [
     { name = "django-storages", extra = ["s3"] },
     { name = "gunicorn" },
     { name = "hal-assistant" },
+    { name = "openpyxl" },
     { name = "psycopg", extra = ["binary"] },
     { name = "whitenoise" },
 ]
@@ -155,6 +156,7 @@ requires-dist = [
     { name = "django-storages", extras = ["s3"], specifier = ">=1.14.6,<2" },
     { name = "gunicorn", specifier = ">=23,<24" },
     { name = "hal-assistant", git = "https://github.com/jfix/hal-assistant.git?rev=03315f76c5887f7f64a61687270b2e45b97d5072" },
+    { name = "openpyxl", specifier = ">=3.1,<4" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2,<4" },
     { name = "whitenoise", specifier = ">=6.9,<7" },
 ]

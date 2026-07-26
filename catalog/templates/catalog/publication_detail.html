@@ -30,18 +30,7 @@
     <section class="panel">
       <h2>Métadonnées structurées</h2>
       <dl class="metadata">
-        <div><dt>Année</dt><dd>{{ publication.publication_year|default:"—" }}</dd></div>
-        <div><dt>Type HAL</dt><dd>{{ publication.hal_document_type|default:"—" }}</dd></div>
-        <div><dt>Auteurs</dt><dd>{{ publication.authors|join:", "|default:"—" }}</dd></div>
-        <div><dt>Directeurs d'ouvrage</dt><dd>{{ publication.editors|join:", "|default:"—" }}</dd></div>
-        <div><dt>Revue</dt><dd>{{ publication.journal_title|default:"—" }}</dd></div>
-        <div><dt>Ouvrage / actes</dt><dd>{{ publication.book_title|default:"—" }}</dd></div>
-        <div><dt>Volume / numéro</dt><dd>{{ publication.volume|default:"—" }} / {{ publication.issue|default:"—" }}</dd></div>
-        <div><dt>Pages</dt><dd>{{ publication.pages|default:"—" }}</dd></div>
-        <div><dt>Éditeur</dt><dd>{{ publication.publisher|default:"—" }}{% if publication.publisher_city %}, {{ publication.publisher_city }}{% endif %}</dd></div>
-        <div><dt>DOI</dt><dd>{% if publication.doi %}<a href="https://doi.org/{{ publication.doi }}" rel="noreferrer">{{ publication.doi }}</a>{% else %}—{% endif %}</dd></div>
-        <div><dt>ISBN</dt><dd>{% for isbn in publication.isbn %}<a href="https://search.worldcat.org/isbn/{{ isbn|urlencode }}" rel="noreferrer">{{ isbn }}</a>{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}</dd></div>
-        <div><dt>ISSN</dt><dd>{{ publication.issn|join:", "|default:"—" }}</dd></div>
+        {% for field in metadata_fields %}{% include "catalog/_field_row.html" %}{% endfor %}
       </dl>
     </section>
 
@@ -58,9 +47,7 @@
       {% if publication.conference_title %}
         <h3>Conférence</h3>
         <dl class="metadata">
-          <div><dt>Événement</dt><dd>{{ publication.conference_title }}</dd></div>
-          <div><dt>Dates</dt><dd>{{ publication.conference_start_date|default:"—" }} – {{ publication.conference_end_date|default:"—" }}</dd></div>
-          <div><dt>Lieu</dt><dd>{{ publication.conference_city|default:"—" }}, {{ publication.conference_country|default:"—" }}</dd></div>
+          {% for field in conference_fields %}{% include "catalog/_field_row.html" %}{% endfor %}
         </dl>
       {% endif %}
     </section>

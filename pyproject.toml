@@ -13,6 +13,7 @@ dependencies = [
   "django-storages[s3]>=1.14.6,<2",
   "gunicorn>=23,<24",
   "hal-assistant @ git+https://github.com/jfix/hal-assistant.git@03315f76c5887f7f64a61687270b2e45b97d5072",
+  "openpyxl>=3.1,<4",
   "psycopg[binary]>=3.2,<4",
   "whitenoise>=6.9,<7",
 ]

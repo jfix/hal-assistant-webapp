@@ -205,6 +205,8 @@ class AssertionDecision(ImmutableModel):
     )
     assertion = models.OneToOneField(
         "FieldAssertion",
+        null=True,
+        blank=True,
         on_delete=models.PROTECT,
         related_name="decision",
     )
@@ -217,6 +219,7 @@ class AssertionDecision(ImmutableModel):
     )
     field_path = models.CharField(max_length=200)
     outcome = models.CharField(max_length=20, choices=Outcome.choices)
+    previous_value = models.JSONField(null=True, blank=True)
     applied_value = models.JSONField(null=True, blank=True)
     reason = models.TextField(blank=True)
     base_version = models.PositiveIntegerField()

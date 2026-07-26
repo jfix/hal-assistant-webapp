@@ -94,6 +94,16 @@ blockquote { margin: .8rem 0 0; padding: .8rem 1rem; border-left: 4px solid var(
 .decision-form label { flex: 1 1 16rem; }
 .decision-actions { display: flex; gap: .6rem; }
 .decision-form .edit-field { flex: 1 1 100%; border-top: 1px dashed var(--line); padding-top: .8rem; }
+.ext { text-decoration: none; font-size: .82rem; }
+.editable-value { border-radius: .15rem; }
+.editable-field .editable-value { cursor: text; padding: .05rem .2rem; margin: -.05rem -.2rem; border-bottom: 1px dashed #9ca8ad; }
+.editable-field .editable-value:hover, .editable-field .editable-value:focus { background: var(--accent-soft); outline: none; }
+.inline-edit { display: grid; gap: .4rem; padding: .6rem; margin-top: .3rem; background: var(--canvas); border: 1px solid var(--line); border-radius: .2rem; }
+.edit-hint { font-size: .72rem; }
+/* With JS, the form is hidden until the value is clicked. */
+.js .editable-field .inline-edit { display: none; }
+.js .editable-field.editing .inline-edit { display: grid; }
+.js .editable-field.editing .field-display { display: none; }
 @media (max-width: 560px) { .proposal-diff { grid-template-columns: 1fr; } }
 
 @media (max-width: 900px) {

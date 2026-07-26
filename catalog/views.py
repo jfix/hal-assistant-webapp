@@ -7,19 +7,51 @@ from django.db import connection
 from django.db.models import Q
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from .integrations.hal_assistant import build_submission_xml
 from .models import FieldAssertion, Publication
+from .services.exports import export_publications_xlsx
 from .services.imports import LIST_FIELDS
 from .services.review import (
+    EDITABLE_FIELDS,
     ReviewConflict,
     ReviewError,
     decide_assertion,
+    edit_field,
     pending_proposals,
 )
 
 REVIEW_PERMISSION = "catalog.review_publication"
+
+# (label, field name, display kind) in detail-page order.
+METADATA_FIELDS = (
+    ("Titre", "title", "text"),
+    ("Année", "publication_year", "year"),
+    ("Type HAL", "hal_document_type", "text"),
+    ("Auteurs", "authors", "list"),
+    ("Directeurs d'ouvrage", "editors", "list"),
+    ("Revue", "journal_title", "text"),
+    ("Ouvrage / actes", "book_title", "text"),
+    ("Volume", "volume", "text"),
+    ("Numéro", "issue", "text"),
+    ("Pages", "pages", "text"),
+    ("Éditeur", "publisher", "text"),
+    ("Ville d'édition", "publisher_city", "text"),
+    ("DOI", "doi", "doi"),
+    ("ISBN", "isbn", "isbn"),
+    ("ISSN", "issn", "list"),
+    ("Langue", "language", "text"),
+    ("URL source", "source_url", "url"),
+)
+CONFERENCE_FIELDS = (
+    ("Événement", "conference_title", "text"),
+    ("Début", "conference_start_date", "date"),
+    ("Fin", "conference_end_date", "date"),
+    ("Ville", "conference_city", "text"),
+    ("Pays", "conference_country", "text"),
+)
 
 
 def _edit_text(value) -> str:
@@ -27,6 +59,23 @@ def _edit_text(value) -> str:
     if isinstance(value, list | tuple):
         return "; ".join(str(item) for item in value)
     return "" if value is None else str(value)
+
+
+def _field_descriptors(publication, specs):
+    descriptors = []
+    for label, name, kind in specs:
+        value = getattr(publication, name)
+        descriptors.append(
+            {
+                "label": label,
+                "name": name,
+                "kind": kind,
+                "value": value,
+                "edit_value": _edit_text(value),
+                "editable": name in EDITABLE_FIELDS,
+            }
+        )
+    return descriptors
 
 
 def health(request: HttpRequest) -> JsonResponse:
@@ -39,33 +88,39 @@ def home(request: HttpRequest):
     return redirect("publication-list")
 
 
+def _filtered_publications(request: HttpRequest):
+    """Apply the list filters from the query string to the publication set."""
+    publications = Publication.objects.all()
+    filters = {
+        "q": request.GET.get("q", "").strip(),
+        "type": request.GET.get("type", "").strip(),
+        "readiness": request.GET.get("readiness", "").strip(),
+        "hal_status": request.GET.get("hal_status", "").strip(),
+        "missing": request.GET.get("missing", "").strip(),
+    }
+    if filters["q"]:
+        publications = publications.filter(
+            Q(title__icontains=filters["q"])
+            | Q(publication_key__icontains=filters["q"])
+            | Q(hal_id__icontains=filters["q"])
+            | Q(authors__icontains=filters["q"])
+        )
+    if filters["type"]:
+        publications = publications.filter(publication_type=filters["type"])
+    if filters["readiness"]:
+        publications = publications.filter(readiness_state=filters["readiness"])
+    if filters["hal_status"]:
+        publications = publications.filter(hal_status=filters["hal_status"])
+    if filters["missing"]:
+        publications = publications.filter(
+            missing_required_fields__icontains=filters["missing"]
+        )
+    return publications, filters
+
+
 @login_required
 def publication_list(request: HttpRequest):
-    publications = Publication.objects.all()
-    query = request.GET.get("q", "").strip()
-    publication_type = request.GET.get("type", "").strip()
-    readiness = request.GET.get("readiness", "").strip()
-    hal_status = request.GET.get("hal_status", "").strip()
-    missing_field = request.GET.get("missing", "").strip()
-
-    if query:
-        publications = publications.filter(
-            Q(title__icontains=query)
-            | Q(publication_key__icontains=query)
-            | Q(hal_id__icontains=query)
-            | Q(authors__icontains=query)
-        )
-    if publication_type:
-        publications = publications.filter(publication_type=publication_type)
-    if readiness:
-        publications = publications.filter(readiness_state=readiness)
-    if hal_status:
-        publications = publications.filter(hal_status=hal_status)
-    if missing_field:
-        publications = publications.filter(
-            missing_required_fields__icontains=missing_field
-        )
-
+    publications, filters = _filtered_publications(request)
     paginator = Paginator(publications, 25)
     page = paginator.get_page(request.GET.get("page"))
     filter_options = {
@@ -83,16 +138,24 @@ def publication_list(request: HttpRequest):
         "catalog/publication_list.html",
         {
             "page": page,
-            "filters": {
-                "q": query,
-                "type": publication_type,
-                "readiness": readiness,
-                "hal_status": hal_status,
-                "missing": missing_field,
-            },
+            "filters": filters,
             "filter_options": filter_options,
         },
     )
+
+
+@login_required
+def publication_export(request: HttpRequest) -> HttpResponse:
+    """Download the currently-filtered corpus as a one-way XLSX snapshot."""
+    publications, _ = _filtered_publications(request)
+    content = export_publications_xlsx(publications.order_by("publication_key"))
+    stamp = timezone.now().strftime("%Y%m%d-%H%M")
+    response = HttpResponse(
+        content,
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+    response["Content-Disposition"] = f'attachment; filename="publications-{stamp}.xlsx"'
+    return response
 
 
 @login_required
@@ -123,8 +186,45 @@ def publication_detail(request: HttpRequest, publication_id):
             "decisions": decisions,
             "can_review": request.user.has_perm(REVIEW_PERMISSION),
             "list_fields": LIST_FIELDS,
+            "metadata_fields": _field_descriptors(publication, METADATA_FIELDS),
+            "conference_fields": _field_descriptors(publication, CONFERENCE_FIELDS),
         },
     )
+
+
+@login_required
+@require_POST
+def edit_field_view(request: HttpRequest, publication_id):
+    if not request.user.has_perm(REVIEW_PERMISSION):
+        messages.error(request, "Vous n'avez pas le droit de modifier les champs.")
+        return redirect("publication-detail", publication_id=publication_id)
+
+    publication = get_object_or_404(Publication, id=publication_id)
+    try:
+        base_version = int(request.POST.get("base_version", ""))
+    except ValueError:
+        messages.error(
+            request,
+            "Jeton de version manquant ou invalide ; rechargez la page et réessayez.",
+        )
+        return redirect("publication-detail", publication_id=publication_id)
+
+    try:
+        decision = edit_field(
+            publication=publication,
+            field_path=request.POST.get("field", ""),
+            actor=request.user,
+            edited_value=request.POST.get("edited_value", ""),
+            base_version=base_version,
+            reason=request.POST.get("reason", ""),
+        )
+    except ReviewConflict as exc:
+        messages.warning(request, str(exc))
+    except ReviewError as exc:
+        messages.error(request, str(exc))
+    else:
+        messages.success(request, f"Champ « {decision.field_path} » modifié.")
+    return redirect("publication-detail", publication_id=publication_id)
 
 
 @login_required
