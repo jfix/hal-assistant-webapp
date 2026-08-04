@@ -4,7 +4,6 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script>document.documentElement.classList.add('js');</script>
     <title>{% block title %}Gestionnaire de publications HAL{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'catalog/app.css' %}?v={{ asset_version }}">
     <script src="{% static 'catalog/app.js' %}?v={{ asset_version }}" defer></script>
@@ -13,8 +12,12 @@
     <a class="skip-link" href="#main">Aller au contenu</a>
     <header class="site-header">
       <div>
-        <a class="brand" href="{% url 'publication-list' %}">Gestionnaire de publications HAL</a>
-        <span class="environment">Espace de révision</span>
+        <a class="brand" href="{% url 'document-summary' %}">Assistant de publications</a>
+        <nav class="site-nav" aria-label="Navigation principale">
+          <a href="{% url 'document-summary' %}">Résumés</a>
+          <a href="{% url 'publication-list' %}">Publications HAL</a>
+          {% if user.is_staff %}<a href="{% url 'admin:index' %}">Administration</a>{% endif %}
+        </nav>
       </div>
       {% if user.is_authenticated %}
         <div class="account">

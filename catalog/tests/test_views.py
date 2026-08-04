@@ -1,14 +1,18 @@
 from __future__ import annotations
 
 from io import BytesIO
+from unittest.mock import patch
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from django.utils import timezone
+from docx import Document
 from openpyxl import load_workbook
 
-from catalog.models import Publication, SourceImport, SourceRecord
+from catalog.models import DocumentSummaryCache, Publication, SourceImport, SourceRecord
+from catalog.services.document_summaries import BilingualSummary
 
 pytestmark = pytest.mark.django_db
 
@@ -56,6 +60,130 @@ def test_catalog_routes_require_authentication(client, name: str) -> None:
 
     assert response.status_code == 302
     assert response.url.startswith(reverse("login"))
+
+
+def test_document_summary_requires_authentication(client) -> None:
+    response = client.get(reverse("document-summary"))
+
+    assert response.status_code == 302
+    assert response.url.startswith(reverse("login"))
+
+
+def test_admin_navigation_is_visible_only_to_staff(client, user) -> None:
+    client.force_login(user)
+    regular_response = client.get(reverse("document-summary"))
+
+    user.is_staff = True
+    user.save(update_fields=["is_staff"])
+    staff_response = client.get(reverse("document-summary"))
+
+    admin_url = reverse("admin:index")
+    assert f'href="{admin_url}"' not in regular_response.content.decode()
+    assert f'href="{admin_url}"' in staff_response.content.decode()
+    assert "Administration" in staff_response.content.decode()
+
+
+def test_application_responses_include_restrictive_security_headers(client, user) -> None:
+    client.force_login(user)
+
+    response = client.get(reverse("document-summary"))
+
+    csp = response["Content-Security-Policy"]
+    assert "default-src 'self'" in csp
+    assert "script-src 'self';" in csp
+    assert "unsafe-inline" not in csp.split("style-src")[0]
+    assert response["Referrer-Policy"] == "same-origin"
+    assert "camera=()" in response["Permissions-Policy"]
+    assert response["Cross-Origin-Opener-Policy"] == "same-origin"
+
+
+def test_admin_csp_allows_legacy_inline_admin_scripts(client) -> None:
+    admin_user = get_user_model().objects.create_superuser(
+        username="header-admin",
+        password="local-test-password",
+    )
+    client.force_login(admin_user)
+
+    response = client.get(reverse("admin:index"))
+
+    assert "script-src 'self' 'unsafe-inline'" in response["Content-Security-Policy"]
+
+
+def test_document_summary_page_accepts_docx(client, user) -> None:
+    document = Document()
+    document.add_paragraph("A humanities argument about archives and cultural memory. " * 12)
+    file_contents = BytesIO()
+    document.save(file_contents)
+    upload = SimpleUploadedFile(
+        "article.docx",
+        file_contents.getvalue(),
+        content_type=(
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        ),
+    )
+    generated = BilingualSummary(
+        abstract_en="English abstract.",
+        abstract_fr="Résumé français.",
+        keywords_en=["archives", "memory"],
+        keywords_fr=["archives", "mémoire"],
+    )
+    client.force_login(user)
+
+    with patch(
+        "catalog.views.generate_bilingual_summary", return_value=generated
+    ) as generate:
+        response = client.post(reverse("document-summary"), {"document": upload})
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "Résumé français." in content
+    assert "English abstract." in content
+    assert "archives, mémoire" in content
+    assert "cultural memory" in generate.call_args.args[0]
+    assert DocumentSummaryCache.objects.count() == 1
+    cache_entry = DocumentSummaryCache.objects.get()
+    assert cache_entry.source_filename == "article.docx"
+    assert cache_entry.document_title
+
+
+def test_document_summary_reuses_cached_result(client, user) -> None:
+    document = Document()
+    document.add_paragraph("An analysis of archives, memory, and material history. " * 12)
+    file_contents = BytesIO()
+    document.save(file_contents)
+    file_bytes = file_contents.getvalue()
+    generated = BilingualSummary(
+        abstract_en="Cached English abstract.",
+        abstract_fr="Résumé français en cache.",
+        keywords_en=["archives"],
+        keywords_fr=["archives"],
+    )
+    client.force_login(user)
+
+    with patch("catalog.views.generate_bilingual_summary", return_value=generated) as generate:
+        first = client.post(
+            reverse("document-summary"),
+            {"document": SimpleUploadedFile("first-name.docx", file_bytes)},
+        )
+        second = client.post(
+            reverse("document-summary"),
+            {"document": SimpleUploadedFile("renamed.docx", file_bytes)},
+        )
+
+    assert first.status_code == second.status_code == 200
+    assert generate.call_count == 1
+    assert "aucun appel API" in second.content.decode()
+    assert DocumentSummaryCache.objects.count() == 1
+
+
+def test_document_summary_rejects_unsupported_upload(client, user) -> None:
+    client.force_login(user)
+    upload = SimpleUploadedFile("article.txt", b"plain text" * 100)
+
+    response = client.post(reverse("document-summary"), {"document": upload})
+
+    assert response.status_code == 200
+    assert "Formats acceptés" in response.content.decode()
 
 
 def test_authenticated_user_can_filter_publications(client, user, publications) -> None:

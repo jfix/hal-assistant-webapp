@@ -4,6 +4,17 @@ from . import views
 
 urlpatterns = [
     path("", views.home, name="home"),
+    path("summaries/", views.document_summary, name="document-summary"),
+    path(
+        "summaries/cache/<uuid:cache_id>/",
+        views.document_summary_cache_detail,
+        name="document-summary-cache-detail",
+    ),
+    path(
+        "summaries/cache/<uuid:cache_id>/delete/",
+        views.delete_document_summary_cache,
+        name="document-summary-cache-delete",
+    ),
     path("publications/", views.publication_list, name="publication-list"),
     path("publications/export/", views.publication_export, name="publication-export"),
     path(

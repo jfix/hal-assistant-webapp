@@ -28,6 +28,38 @@ CSRF_TRUSTED_ORIGINS = [
     if origin.strip()
 ]
 
+
+def validate_production_configuration() -> None:
+    if DEBUG:
+        return
+    if not os.getenv("DJANGO_ALLOWED_HOSTS", "").strip():
+        raise ImproperlyConfigured("DJANGO_ALLOWED_HOSTS must be explicitly set in production")
+    unsafe_hosts = [host for host in ALLOWED_HOSTS if host == "*" or host.startswith(".")]
+    if unsafe_hosts:
+        raise ImproperlyConfigured(
+            "DJANGO_ALLOWED_HOSTS must contain exact hostnames only: " + ", ".join(unsafe_hosts)
+        )
+    if not CSRF_TRUSTED_ORIGINS:
+        raise ImproperlyConfigured(
+            "DJANGO_CSRF_TRUSTED_ORIGINS must be explicitly set in production"
+        )
+    unsafe_origins = [
+        origin
+        for origin in CSRF_TRUSTED_ORIGINS
+        if "*" in origin or not origin.startswith("https://")
+    ]
+    if unsafe_origins:
+        raise ImproperlyConfigured(
+            "CSRF trusted origins must use exact HTTPS origins: " + ", ".join(unsafe_origins)
+        )
+    if len(SECRET_KEY) < 50:
+        raise ImproperlyConfigured("DJANGO_SECRET_KEY must contain at least 50 characters")
+    if not os.getenv("OPENAI_API_KEY", "").strip():
+        raise ImproperlyConfigured("OPENAI_API_KEY is required in production")
+
+
+validate_production_configuration()
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -46,6 +78,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "hal_webapp.middleware.SecurityHeadersMiddleware",
 ]
 if not DEBUG:
     MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
@@ -157,6 +190,11 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "publication-list"
 LOGOUT_REDIRECT_URL = "login"
+SESSION_COOKIE_AGE = 3600
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = "Lax"
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_CONTENT_TYPE_NOSNIFF = True

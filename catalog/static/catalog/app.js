@@ -4,6 +4,7 @@
 // Without JS, the inline form stays visible with a submit button (see <noscript>).
 (function () {
   "use strict";
+  document.documentElement.classList.add("js");
 
   function wire(cell) {
     var form = cell.querySelector(".inline-edit");
@@ -67,4 +68,40 @@
   }
 
   document.querySelectorAll(".editable-field").forEach(wire);
+
+  var fileInput = document.querySelector("[data-file-input]");
+  var dropZone = document.querySelector("[data-drop-zone]");
+  var fileLabel = document.querySelector("[data-file-label]");
+  if (fileInput && dropZone && fileLabel) {
+    function showFile() {
+      if (fileInput.files.length) fileLabel.textContent = fileInput.files[0].name;
+    }
+    fileInput.addEventListener("change", showFile);
+    ["dragenter", "dragover"].forEach(function (name) {
+      dropZone.addEventListener(name, function () { dropZone.classList.add("dragging"); });
+    });
+    ["dragleave", "drop"].forEach(function (name) {
+      dropZone.addEventListener(name, function () { dropZone.classList.remove("dragging"); });
+    });
+  }
+
+  document.querySelectorAll("[data-copy-target]").forEach(function (button) {
+    button.addEventListener("click", async function () {
+      var target = document.getElementById(button.dataset.copyTarget);
+      if (!target) return;
+      await navigator.clipboard.writeText(target.value);
+      var original = button.textContent;
+      button.textContent = "Copié ✓";
+      setTimeout(function () { button.textContent = original; }, 1400);
+    });
+  });
+
+  var uploadForm = document.querySelector("[data-upload-form]");
+  if (uploadForm) {
+    uploadForm.addEventListener("submit", function () {
+      var submit = uploadForm.querySelector("[data-submit]");
+      submit.disabled = true;
+      submit.textContent = "Analyse en cours…";
+    });
+  }
 })();

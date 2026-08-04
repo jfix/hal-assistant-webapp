@@ -11,7 +11,17 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from .integrations.hal_assistant import build_submission_xml
-from .models import FieldAssertion, Publication
+from .models import DocumentSummaryCache, FieldAssertion, Publication
+from .services.document_summaries import (
+    SUMMARY_GENERATOR_VERSION,
+    BilingualSummary,
+    DocumentSummaryError,
+    document_sha256,
+    extract_document_text,
+    extract_document_title,
+    generate_bilingual_summary,
+    summary_model,
+)
 from .services.exports import export_publications_xlsx
 from .services.imports import LIST_FIELDS
 from .services.review import (
@@ -22,6 +32,12 @@ from .services.review import (
     edit_field,
     pending_proposals,
 )
+from .services.summary_cache import (
+    cache_retention_days,
+    delete_summary_cache_entry,
+    purge_expired_summary_cache,
+)
+from .services.summary_limits import SummaryLimitError, generation_slot
 
 REVIEW_PERMISSION = "catalog.review_publication"
 
@@ -85,7 +101,104 @@ def health(request: HttpRequest) -> JsonResponse:
 
 @login_required
 def home(request: HttpRequest):
-    return redirect("publication-list")
+    return redirect("document-summary")
+
+
+@login_required
+def document_summary(request: HttpRequest):
+    purge_expired_summary_cache()
+    result = None
+    filename = ""
+    cache_hit = False
+    if request.method == "POST":
+        upload = request.FILES.get("document")
+        if upload is None:
+            messages.error(request, "Sélectionnez un document PDF ou Word.")
+        else:
+            filename = upload.name
+            try:
+                fingerprint = document_sha256(upload)
+                model_name = summary_model()
+                text = extract_document_text(upload)
+                document_title = extract_document_title(upload, text)
+                source_filename = upload.name.rsplit("/", 1)[-1].rsplit("\\", 1)[-1][:255]
+                cached = DocumentSummaryCache.objects.filter(
+                    owner=request.user,
+                    document_sha256=fingerprint,
+                    model_name=model_name,
+                    generator_version=SUMMARY_GENERATOR_VERSION,
+                ).first()
+                if cached:
+                    DocumentSummaryCache.objects.filter(id=cached.id).update(
+                        source_filename=source_filename,
+                        document_title=document_title,
+                    )
+                    cached.source_filename = source_filename
+                    cached.document_title = document_title
+                    result = BilingualSummary(
+                        abstract_en=cached.abstract_en,
+                        abstract_fr=cached.abstract_fr,
+                        keywords_en=cached.keywords_en,
+                        keywords_fr=cached.keywords_fr,
+                    )
+                    cache_hit = True
+                else:
+                    with generation_slot(
+                        owner=request.user,
+                        document_sha256=fingerprint,
+                        model_name=model_name,
+                    ):
+                        result = generate_bilingual_summary(text)
+                    DocumentSummaryCache.objects.create(
+                        owner=request.user,
+                        source_filename=source_filename,
+                        document_title=document_title,
+                        document_sha256=fingerprint,
+                        model_name=model_name,
+                        generator_version=SUMMARY_GENERATOR_VERSION,
+                        abstract_en=result.abstract_en,
+                        abstract_fr=result.abstract_fr,
+                        keywords_en=result.keywords_en,
+                        keywords_fr=result.keywords_fr,
+                    )
+            except (DocumentSummaryError, SummaryLimitError) as exc:
+                messages.error(request, str(exc))
+    return render(
+        request,
+        "catalog/document_summary.html",
+        {
+            "result": result,
+            "filename": filename,
+            "cache_hit": cache_hit,
+            "cache_entries": DocumentSummaryCache.objects.filter(owner=request.user)[:20],
+            "cache_retention_days": cache_retention_days(),
+        },
+    )
+
+
+@login_required
+@require_POST
+def delete_document_summary_cache(request: HttpRequest, cache_id):
+    entry = get_object_or_404(DocumentSummaryCache, id=cache_id, owner=request.user)
+    delete_summary_cache_entry(entry=entry, actor=request.user, reason="owner_request")
+    messages.success(request, "Le résultat mis en cache a été supprimé.")
+    return redirect("document-summary")
+
+
+@login_required
+def document_summary_cache_detail(request: HttpRequest, cache_id):
+    entry = get_object_or_404(DocumentSummaryCache, id=cache_id, owner=request.user)
+    result = BilingualSummary(
+        abstract_en=entry.abstract_en,
+        abstract_fr=entry.abstract_fr,
+        keywords_en=entry.keywords_en,
+        keywords_fr=entry.keywords_fr,
+    )
+    return render(
+        request,
+        "catalog/document_summary_cache_detail.html",
+        {"entry": entry, "result": result},
+    )
 
 
 def _filtered_publications(request: HttpRequest):
