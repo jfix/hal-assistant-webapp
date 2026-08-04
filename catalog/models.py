@@ -91,6 +91,80 @@ class Publication(models.Model):
         return self.title
 
 
+class DocumentSummaryCache(ImmutableModel):
+    """Generated output cache; source files and extracted text are never stored."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="document_summary_cache_entries",
+        null=True,
+        blank=True,
+    )
+    source_filename = models.CharField(max_length=255, blank=True)
+    document_title = models.CharField(max_length=500, blank=True)
+    document_sha256 = models.CharField(max_length=64)
+    model_name = models.CharField(max_length=100)
+    generator_version = models.CharField(max_length=80)
+    abstract_en = models.TextField()
+    abstract_fr = models.TextField()
+    keywords_en = models.JSONField(default=list)
+    keywords_fr = models.JSONField(default=list)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["owner", "document_sha256", "model_name", "generator_version"],
+                name="unique_user_document_summary_generation",
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.document_sha256[:12]} · {self.model_name}"
+
+
+class DocumentSummaryGenerationAttempt(ImmutableModel):
+    """Immutable cost-control record created immediately before an AI request."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="document_summary_generation_attempts",
+    )
+    document_sha256 = models.CharField(max_length=64)
+    model_name = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["owner", "created_at"]),
+            models.Index(fields=["created_at"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.owner} · {self.model_name} · {self.created_at}"
+
+
+class ActiveDocumentSummaryGeneration(models.Model):
+    """Short-lived per-user mutex preventing simultaneous paid generations."""
+
+    owner = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        primary_key=True,
+        related_name="active_document_summary_generation",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self) -> str:
+        return f"{self.owner} · {self.created_at}"
+
+
 class SourceImport(ImmutableModel):
     class SourceType(models.TextChoices):
         DOCX = "docx", "DOCX"

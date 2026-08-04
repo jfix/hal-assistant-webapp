@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}{{ entry.document_title|default:"Résultat en cache" }} · Assistant de publications{% endblock %}
+
+{% block content %}
+  <nav class="breadcrumb" aria-label="Fil d’Ariane">
+    <a href="{% url 'document-summary' %}">Résumés</a><span aria-hidden="true">/</span><span>Résultat en cache</span>
+  </nav>
+  <header class="detail-heading">
+    <div>
+      <p class="eyebrow">Résultat en cache</p>
+      <h1>{{ entry.document_title|default:entry.source_filename|default:"Document sans titre" }}</h1>
+      <p>{{ entry.source_filename|default:"Nom de fichier non disponible" }} · {{ entry.model_name }} · {{ entry.created_at }}</p>
+    </div>
+    <form method="post" action="{% url 'document-summary-cache-delete' entry.id %}">
+      {% csrf_token %}
+      <button class="secondary-button danger-link" type="submit">Supprimer ce résultat</button>
+    </form>
+  </header>
+  <div class="result-grid">
+    <article class="result-card">
+      <div class="card-heading"><h2>Résumé français</h2><button type="button" class="copy-button" data-copy-target="cached-abstract-fr">Copier</button></div>
+      <textarea id="cached-abstract-fr" readonly>{{ result.abstract_fr }}</textarea>
+    </article>
+    <article class="result-card">
+      <div class="card-heading"><h2>English abstract</h2><button type="button" class="copy-button" data-copy-target="cached-abstract-en">Copy</button></div>
+      <textarea id="cached-abstract-en" readonly>{{ result.abstract_en }}</textarea>
+    </article>
+    <article class="result-card">
+      <div class="card-heading"><h2>Mots-clés français</h2><button type="button" class="copy-button" data-copy-target="cached-keywords-fr">Copier</button></div>
+      <textarea id="cached-keywords-fr" class="keyword-output" readonly>{{ result.keywords_fr|join:", " }}</textarea>
+    </article>
+    <article class="result-card">
+      <div class="card-heading"><h2>English keywords</h2><button type="button" class="copy-button" data-copy-target="cached-keywords-en">Copy</button></div>
+      <textarea id="cached-keywords-en" class="keyword-output" readonly>{{ result.keywords_en|join:", " }}</textarea>
+    </article>
+  </div>
+{% endblock %}

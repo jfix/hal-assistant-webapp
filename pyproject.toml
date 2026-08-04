@@ -14,7 +14,9 @@ dependencies = [
   "gunicorn>=23,<24",
   "hal-assistant @ git+https://github.com/jfix/hal-assistant.git@03315f76c5887f7f64a61687270b2e45b97d5072",
   "openpyxl>=3.1,<4",
+  "pypdf>=6,<7",
   "psycopg[binary]>=3.2,<4",
+  "python-docx>=1.2,<2",
   "whitenoise>=6.9,<7",
 ]
 

@@ -1,0 +1,32 @@
+{% extends "admin/change_list.html" %}
+
+{% block content %}
+  <section class="module" aria-labelledby="usage-summary-title">
+    <h2 id="usage-summary-title">Utilisation des résumés par utilisateur</h2>
+    <div class="results">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Utilisateur</th>
+            <th scope="col">Appels IA</th>
+            <th scope="col">Résultats en cache</th>
+            <th scope="col">Dernier appel IA</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for usage_user in summary_usage_users %}
+            <tr>
+              <th scope="row">{{ usage_user.get_username }}</th>
+              <td>{{ usage_user.generation_attempt_count }}</td>
+              <td>{{ usage_user.cached_result_count }}</td>
+              <td>{{ usage_user.last_generation_at|default:"—" }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="4">Aucun utilisateur.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {{ block.super }}
+{% endblock %}
