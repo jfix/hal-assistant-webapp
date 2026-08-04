@@ -1,6 +1,7 @@
 .DS_Store
 .env
 .dev.vars
+.neon
 .pytest_cache/
 .ruff_cache/
 .venv/
