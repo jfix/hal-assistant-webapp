@@ -8,6 +8,11 @@
     "DJANGO_DEBUG": "0",
     "DJANGO_ALLOWED_HOSTS": ".workers.dev",
     "DJANGO_CSRF_TRUSTED_ORIGINS": "https://*.workers.dev"
+    ,"OPENAI_MODEL": "gpt-5.6-terra",
+    "SUMMARY_USER_MINUTE_LIMIT": "3",
+    "SUMMARY_USER_DAILY_LIMIT": "20",
+    "SUMMARY_GLOBAL_DAILY_LIMIT": "100",
+    "SUMMARY_CACHE_RETENTION_DAYS": "90"
   },
   "containers": [
     {

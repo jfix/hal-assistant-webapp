@@ -19,7 +19,12 @@ COPY catalog ./catalog
 COPY templates ./templates
 
 RUN uv sync --frozen --no-dev --no-editable \
-    && DJANGO_DEBUG=1 python manage.py collectstatic --noinput \
+    && DJANGO_DEBUG=0 \
+       DJANGO_SECRET_KEY="BuildOnly9xQ2mV7kR4tN8pL5sF1hJ6cD3wE0yU7iO2aB9gH4zX8vK" \
+       OPENAI_API_KEY="build-only-placeholder" \
+       DJANGO_ALLOWED_HOSTS="build.invalid" \
+       DJANGO_CSRF_TRUSTED_ORIGINS="https://build.invalid" \
+       python manage.py collectstatic --noinput \
     && adduser --disabled-password --gecos "" app \
     && mkdir -p /app/var/media \
     && chown -R app:app /app/var
@@ -27,4 +32,4 @@ RUN uv sync --frozen --no-dev --no-editable \
 USER app
 EXPOSE 8080
 
-CMD ["gunicorn", "hal_webapp.wsgi:application", "--bind", "0.0.0.0:8080", "--workers", "2", "--threads", "2", "--timeout", "60", "--access-logfile", "-", "--error-logfile", "-"]
+CMD ["gunicorn", "hal_webapp.wsgi:application", "--bind", "0.0.0.0:8080", "--workers", "2", "--threads", "2", "--timeout", "120", "--access-logfile", "-", "--error-logfile", "-"]

@@ -20,6 +20,32 @@ uv run python manage.py createsuperuser
 uv run python manage.py runserver
 ```
 
+The bilingual summary page accepts PDF and DOCX files. It extracts text in
+memory (the uploaded file is not stored) and uses the OpenAI Responses API.
+Generated summaries and keywords are cached in the database by document hash,
+model, and prompt version, so uploading the same file again does not call the
+API. Neither the document bytes nor its extracted text are cached.
+Cache entries belong to the user who generated them and are retained for 90
+days by default. Users can delete their own results from the summary page; all
+manual and retention deletions create content-free audit records.
+
+Inspect retention without changing data, then apply it explicitly:
+
+```bash
+uv run python manage.py purge_summary_cache
+uv run python manage.py purge_summary_cache --apply
+```
+
+```bash
+export OPENAI_API_KEY="your-api-key"
+# Optional; defaults to the balanced gpt-5.6-terra model:
+export OPENAI_MODEL="gpt-5.6-terra"
+uv run python manage.py runserver
+```
+
+Open <http://127.0.0.1:8000/>, sign in, and drag a document onto the upload
+area. Image-only scanned PDFs are rejected for now because they require OCR.
+
 Local development uses `db.sqlite3` and stores immutable snapshots under
 `var/media/`. Neither path is committed.
 
@@ -80,7 +106,14 @@ npx wrangler secret put DATABASE_URL
 npx wrangler secret put R2_ACCESS_KEY_ID
 npx wrangler secret put R2_SECRET_ACCESS_KEY
 npx wrangler secret put R2_ENDPOINT_URL
+npx wrangler secret put OPENAI_API_KEY
 ```
+
+Production startup fails closed unless `DJANGO_ALLOWED_HOSTS` contains exact
+hostnames, `DJANGO_CSRF_TRUSTED_ORIGINS` contains exact HTTPS origins, the
+Django secret is at least 50 characters, and the OpenAI key is configured. The
+placeholder broad `workers.dev` values in `wrangler.jsonc` must therefore be
+replaced with the exact deployment hostname before deployment.
 
 Set the non-secret R2 bucket name and final allowed hosts in `wrangler.jsonc`
 before deployment. Run database migrations as a controlled release step before
