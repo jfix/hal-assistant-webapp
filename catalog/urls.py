@@ -15,6 +15,16 @@ urlpatterns = [
         views.delete_document_summary_cache,
         name="document-summary-cache-delete",
     ),
+    path(
+        "summaries/cache/<uuid:cache_id>/link/",
+        views.link_document_summary,
+        name="document-summary-link",
+    ),
+    path(
+        "summaries/cache/<uuid:cache_id>/create-publication/",
+        views.create_publication_from_document,
+        name="document-summary-create-publication",
+    ),
     path("publications/", views.publication_list, name="publication-list"),
     path("publications/export/", views.publication_export, name="publication-export"),
     path(

@@ -92,7 +92,7 @@ class Publication(models.Model):
 
 
 class DocumentSummaryCache(ImmutableModel):
-    """Generated output cache; source files and extracted text are never stored."""
+    """Generated analysis and its immutable uploaded source document."""
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     owner = models.ForeignKey(
@@ -104,6 +104,7 @@ class DocumentSummaryCache(ImmutableModel):
     )
     source_filename = models.CharField(max_length=255, blank=True)
     document_title = models.CharField(max_length=500, blank=True)
+    source_file = models.FileField(upload_to="document-sources/%Y/%m/", blank=True)
     document_sha256 = models.CharField(max_length=64)
     model_name = models.CharField(max_length=100)
     generator_version = models.CharField(max_length=80)
@@ -111,6 +112,10 @@ class DocumentSummaryCache(ImmutableModel):
     abstract_fr = models.TextField()
     keywords_en = models.JSONField(default=list)
     keywords_fr = models.JSONField(default=list)
+    suggested_authors = models.JSONField(default=list)
+    suggested_publication_year = models.PositiveSmallIntegerField(null=True, blank=True)
+    suggested_publication_type = models.CharField(max_length=40, blank=True)
+    suggested_doi = models.CharField(max_length=255, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -124,6 +129,39 @@ class DocumentSummaryCache(ImmutableModel):
 
     def __str__(self) -> str:
         return f"{self.document_sha256[:12]} · {self.model_name}"
+
+
+class DocumentPublicationLink(ImmutableModel):
+    """Append-only human decision associating one analysis with one publication."""
+
+    class Action(models.TextChoices):
+        LINKED = "linked", "Notice existante"
+        CREATED = "created", "Nouveau brouillon local"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    summary = models.OneToOneField(
+        DocumentSummaryCache,
+        on_delete=models.PROTECT,
+        related_name="publication_link",
+    )
+    publication = models.ForeignKey(
+        Publication,
+        on_delete=models.PROTECT,
+        related_name="document_links",
+    )
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="document_publication_links",
+    )
+    action = models.CharField(max_length=20, choices=Action.choices)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return f"{self.summary_id} → {self.publication_id}"
 
 
 class DocumentSummaryGenerationAttempt(ImmutableModel):

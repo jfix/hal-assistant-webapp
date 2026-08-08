@@ -21,7 +21,7 @@ MAX_DOCX_ENTRIES = 2_000
 MAX_DOCX_UNCOMPRESSED_BYTES = 50 * 1024 * 1024
 MAX_DOCX_COMPRESSION_RATIO = 200
 ALLOWED_EXTENSIONS = {".pdf", ".docx"}
-SUMMARY_GENERATOR_VERSION = "humanities-bilingual-v1"
+SUMMARY_GENERATOR_VERSION = "humanities-bilingual-v2"
 
 
 class DocumentSummaryError(Exception):
@@ -34,6 +34,11 @@ class BilingualSummary:
     abstract_fr: str
     keywords_en: list[str]
     keywords_fr: list[str]
+    suggested_title: str = ""
+    suggested_authors: list[str] | None = None
+    suggested_publication_year: int | None = None
+    suggested_publication_type: str = ""
+    suggested_doi: str = ""
 
 
 def document_sha256(upload) -> str:
@@ -264,8 +269,23 @@ def generate_bilingual_summary(text: str) -> BilingualSummary:
             "abstract_fr": {"type": "string"},
             "keywords_en": {"type": "array", "items": {"type": "string"}, "maxItems": 10},
             "keywords_fr": {"type": "array", "items": {"type": "string"}, "maxItems": 10},
+            "suggested_title": {"type": "string"},
+            "suggested_authors": {"type": "array", "items": {"type": "string"}},
+            "suggested_publication_year": {"type": ["integer", "null"]},
+            "suggested_publication_type": {"type": "string"},
+            "suggested_doi": {"type": "string"},
         },
-        "required": ["abstract_en", "abstract_fr", "keywords_en", "keywords_fr"],
+        "required": [
+            "abstract_en",
+            "abstract_fr",
+            "keywords_en",
+            "keywords_fr",
+            "suggested_title",
+            "suggested_authors",
+            "suggested_publication_year",
+            "suggested_publication_type",
+            "suggested_doi",
+        ],
         "additionalProperties": False,
     }
     request_body = {
@@ -277,7 +297,11 @@ def generate_bilingual_summary(text: str) -> BilingualSummary:
             "and one in French, of 150–220 words each. Preserve nuance, method, corpus, central "
             "argument, and contribution. Do not invent missing facts. Extract at most ten concise "
             "concepts or keywords in each language; the two lists must be aligned translations in "
-            "the same order. Return only the requested structured data."
+            "the same order. Also extract bibliographic suggestions: the document title, named "
+            "authors, four-digit publication year, DOI, and a conservative publication type "
+            "(article, book_chapter, conference_paper, book, edited_book, other, or empty). "
+            "Use empty values when the document does not establish a fact. Return only the "
+            "requested structured data."
         ),
         "input": text,
         "text": {
@@ -319,6 +343,13 @@ def generate_bilingual_summary(text: str) -> BilingualSummary:
             abstract_fr=result["abstract_fr"].strip(),
             keywords_en=[item.strip() for item in result["keywords_en"][:10]],
             keywords_fr=[item.strip() for item in result["keywords_fr"][:10]],
+            suggested_title=result["suggested_title"].strip(),
+            suggested_authors=[
+                item.strip() for item in result["suggested_authors"] if item.strip()
+            ],
+            suggested_publication_year=result["suggested_publication_year"],
+            suggested_publication_type=result["suggested_publication_type"].strip(),
+            suggested_doi=result["suggested_doi"].strip(),
         )
     except (KeyError, TypeError, json.JSONDecodeError) as exc:
         raise DocumentSummaryError("La réponse de l’IA n’a pas le format attendu.") from exc
