@@ -74,6 +74,7 @@ tbody tr:last-child td { border-bottom: 0; }
 .metadata div { padding: .6rem 0; border-bottom: 1px solid var(--line); }
 .metadata dt { color: var(--muted); font-size: .74rem; font-weight: 750; text-transform: uppercase; letter-spacing: .05em; }
 .metadata dd { margin: .18rem 0 0; }
+.summary-metadata { column-gap: 2rem; }
 .source-record + .source-record { border-top: 1px solid var(--line); margin-top: 1rem; padding-top: 1rem; }
 .document-analysis + .document-analysis { border-top: 1px solid var(--line); margin-top: 1.5rem; padding-top: 1.5rem; }
 .document-analysis-results { margin-top: 1rem; }
@@ -106,7 +107,7 @@ blockquote { margin: .8rem 0 0; padding: .8rem 1rem; border-left: 4px solid var(
 .editable-field .editable-value { cursor: text; padding: .05rem .2rem; margin: -.05rem -.2rem; border-bottom: 1px dashed #9ca8ad; }
 .editable-field .editable-value:hover, .editable-field .editable-value:focus { background: var(--accent-soft); outline: none; }
 .inline-edit { display: grid; gap: .4rem; padding: .6rem; margin-top: .3rem; background: var(--canvas); border: 1px solid var(--line); border-radius: .2rem; }
-.inline-edit textarea { min-height: 10rem; resize: vertical; }
+.inline-edit textarea { min-height: 10rem; resize: vertical; font: inherit; line-height: inherit; }
 .edit-hint { font-size: .72rem; }
 .keyword-list { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; }
 .keyword-pill { display: inline-flex; align-items: center; gap: .25rem; padding: .2rem .5rem; border-radius: 999px; background: var(--accent-soft); border: 1px solid var(--line); }
