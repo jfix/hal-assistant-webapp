@@ -254,13 +254,14 @@ def test_detail_statuses_separate_hal_data_and_synchronization(client, user) -> 
         reverse("publication-detail", args=[published.id])
     ).content.decode()
 
-    assert "HAL</span><span>Brouillon" in draft_content
-    assert "Données</span><span>Prêt pour HAL" in draft_content
-    assert "Synchronisation</span><span>Jamais synchronisé" in draft_content
+    assert 'class="status-dimension">HAL</span>' in draft_content
+    assert 'class="status-value">Brouillon</span>' in draft_content
+    assert 'class="status-value">Prêt pour HAL</span>' in draft_content
+    assert 'class="status-value">Jamais synchronisé</span>' in draft_content
     assert "Approuvé" not in draft_content
-    assert "HAL</span><span>Publié sur HAL" in published_content
-    assert "Données</span><span>Prêt pour mise à jour HAL" in published_content
-    assert "Synchronisation</span><span>Modifié" in published_content
+    assert 'class="status-value">Publié sur HAL</span>' in published_content
+    assert 'class="status-value">Prêt pour mise à jour HAL</span>' in published_content
+    assert 'class="status-value">Modifié</span>' in published_content
     assert "Approuvé" not in published_content
 
 
@@ -280,9 +281,9 @@ def test_published_unmodified_record_is_shown_as_synchronized(client, user) -> N
         reverse("publication-detail", args=[publication.id])
     ).content.decode()
 
-    assert "HAL</span><span>Publié sur HAL" in content
-    assert "Synchronisation</span><span>À jour" in content
-    assert "Synchronisation</span><span>Modifié" not in content
+    assert 'class="status-value">Publié sur HAL</span>' in content
+    assert 'class="status-value">À jour</span>' in content
+    assert 'class="status-value">Modifié</span>' not in content
 
 
 def test_publication_detail_reads_latest_hal_operation(client, user, publications) -> None:

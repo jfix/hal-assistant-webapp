@@ -13,12 +13,12 @@
     <div>
       <p class="eyebrow">{{ publication.publication_type }} · {{ publication.publication_key }}</p>
       <h1>{{ publication.title }}</h1>
-      <div class="status-dimensions" aria-label="Statuts de la publication">
+      <div class="status-summary status-summary-detail" aria-label="Statuts de la publication">
         {% for status in publication.workflow_statuses %}
-          <span class="status-badge status-{{ status.tone }}"><span class="status-dimension">{{ status.dimension }}</span><span>{{ status.label }}</span></span>
+          <div class="status-item status-{{ status.tone }}"><span class="status-dot" aria-hidden="true"></span><span class="status-dimension">{{ status.dimension }}</span><span class="status-value">{{ status.label }}</span></div>
         {% endfor %}
         {% if publication.attention_status %}
-          <span class="status-badge status-{{ publication.attention_status.tone }}"><span class="status-dimension">{{ publication.attention_status.dimension }}</span><span>{{ publication.attention_status.label }}</span></span>
+          <div class="status-item status-{{ publication.attention_status.tone }}"><span class="status-dot" aria-hidden="true"></span><span class="status-dimension">{{ publication.attention_status.dimension }}</span><span class="status-value">{{ publication.attention_status.label }}</span></div>
         {% endif %}
       </div>
     </div>
