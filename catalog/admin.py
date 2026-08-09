@@ -4,6 +4,7 @@ from django.db.models import Count, Max
 
 from .models import (
     AuditEvent,
+    DocumentPublicationLink,
     DocumentSummaryCache,
     DocumentSummaryGenerationAttempt,
     FieldAssertion,
@@ -43,6 +44,7 @@ admin.site.register(SourceRecord, ReadOnlyAdmin)
 admin.site.register(FieldAssertion, ReadOnlyAdmin)
 admin.site.register(AuditEvent, ReadOnlyAdmin)
 admin.site.register(DocumentSummaryCache, ReadOnlyAdmin)
+admin.site.register(DocumentPublicationLink, ReadOnlyAdmin)
 
 
 @admin.register(DocumentSummaryGenerationAttempt)

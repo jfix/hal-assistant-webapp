@@ -11,7 +11,12 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from .integrations.hal_assistant import build_submission_xml
-from .models import DocumentSummaryCache, FieldAssertion, Publication
+from .models import DocumentPublicationLink, DocumentSummaryCache, FieldAssertion, Publication
+from .services.document_matching import (
+    create_draft_from_summary,
+    find_publication_matches,
+    link_summary,
+)
 from .services.document_summaries import (
     SUMMARY_GENERATOR_VERSION,
     BilingualSummary,
@@ -110,6 +115,7 @@ def document_summary(request: HttpRequest):
     result = None
     filename = ""
     cache_hit = False
+    entry = None
     if request.method == "POST":
         upload = request.FILES.get("document")
         if upload is None:
@@ -140,7 +146,13 @@ def document_summary(request: HttpRequest):
                         abstract_fr=cached.abstract_fr,
                         keywords_en=cached.keywords_en,
                         keywords_fr=cached.keywords_fr,
+                        suggested_title=cached.document_title,
+                        suggested_authors=cached.suggested_authors,
+                        suggested_publication_year=cached.suggested_publication_year,
+                        suggested_publication_type=cached.suggested_publication_type,
+                        suggested_doi=cached.suggested_doi,
                     )
+                    entry = cached
                     cache_hit = True
                 else:
                     with generation_slot(
@@ -149,10 +161,12 @@ def document_summary(request: HttpRequest):
                         model_name=model_name,
                     ):
                         result = generate_bilingual_summary(text)
-                    DocumentSummaryCache.objects.create(
+                    upload.seek(0)
+                    entry = DocumentSummaryCache.objects.create(
                         owner=request.user,
                         source_filename=source_filename,
-                        document_title=document_title,
+                        document_title=result.suggested_title or document_title,
+                        source_file=upload,
                         document_sha256=fingerprint,
                         model_name=model_name,
                         generator_version=SUMMARY_GENERATOR_VERSION,
@@ -160,6 +174,10 @@ def document_summary(request: HttpRequest):
                         abstract_fr=result.abstract_fr,
                         keywords_en=result.keywords_en,
                         keywords_fr=result.keywords_fr,
+                        suggested_authors=result.suggested_authors or [],
+                        suggested_publication_year=result.suggested_publication_year,
+                        suggested_publication_type=result.suggested_publication_type,
+                        suggested_doi=result.suggested_doi,
                     )
             except (DocumentSummaryError, SummaryLimitError) as exc:
                 messages.error(request, str(exc))
@@ -170,6 +188,9 @@ def document_summary(request: HttpRequest):
             "result": result,
             "filename": filename,
             "cache_hit": cache_hit,
+            "entry": entry,
+            "matches": find_publication_matches(entry) if entry else [],
+            "can_review": request.user.has_perm(REVIEW_PERMISSION),
             "cache_entries": DocumentSummaryCache.objects.filter(owner=request.user)[:20],
             "cache_retention_days": cache_retention_days(),
         },
@@ -180,9 +201,58 @@ def document_summary(request: HttpRequest):
 @require_POST
 def delete_document_summary_cache(request: HttpRequest, cache_id):
     entry = get_object_or_404(DocumentSummaryCache, id=cache_id, owner=request.user)
-    delete_summary_cache_entry(entry=entry, actor=request.user, reason="owner_request")
-    messages.success(request, "Le résultat mis en cache a été supprimé.")
+    try:
+        delete_summary_cache_entry(entry=entry, actor=request.user, reason="owner_request")
+    except ValueError as exc:
+        messages.error(request, str(exc))
+    else:
+        messages.success(request, "Le résultat mis en cache a été supprimé.")
     return redirect("document-summary")
+
+
+@login_required
+@require_POST
+def link_document_summary(request: HttpRequest, cache_id):
+    entry = get_object_or_404(DocumentSummaryCache, id=cache_id, owner=request.user)
+    if not request.user.has_perm(REVIEW_PERMISSION):
+        messages.error(request, "Vous n'avez pas le droit d’associer une notice.")
+    elif hasattr(entry, "publication_link"):
+        messages.warning(request, "Ce document est déjà associé à une notice.")
+    else:
+        publication = get_object_or_404(Publication, id=request.POST.get("publication_id"))
+        link_summary(
+            summary=entry,
+            publication=publication,
+            actor=request.user,
+            action=DocumentPublicationLink.Action.LINKED,
+        )
+        messages.success(
+            request,
+            "Le document, les résumés et les mots-clés sont associés à la notice.",
+        )
+    return redirect("document-summary-cache-detail", cache_id=entry.id)
+
+
+@login_required
+@require_POST
+def create_publication_from_document(request: HttpRequest, cache_id):
+    entry = get_object_or_404(DocumentSummaryCache, id=cache_id, owner=request.user)
+    if not request.user.has_perm(REVIEW_PERMISSION):
+        messages.error(request, "Vous n'avez pas le droit de créer un brouillon.")
+    elif hasattr(entry, "publication_link"):
+        messages.warning(request, "Ce document est déjà associé à une notice.")
+    else:
+        try:
+            link = create_draft_from_summary(summary=entry, actor=request.user)
+        except ValueError as exc:
+            messages.error(request, str(exc))
+        else:
+            messages.success(
+                request,
+                "Un brouillon local a été créé. Aucune donnée n’a été envoyée à HAL.",
+            )
+            return redirect("publication-detail", publication_id=link.publication_id)
+    return redirect("document-summary-cache-detail", cache_id=entry.id)
 
 
 @login_required
@@ -197,7 +267,12 @@ def document_summary_cache_detail(request: HttpRequest, cache_id):
     return render(
         request,
         "catalog/document_summary_cache_detail.html",
-        {"entry": entry, "result": result},
+        {
+            "entry": entry,
+            "result": result,
+            "matches": find_publication_matches(entry),
+            "can_review": request.user.has_perm(REVIEW_PERMISSION),
+        },
     )
 
 

@@ -1,0 +1,37 @@
+{% if entry %}
+  <section class="cache-history" aria-labelledby="association-title">
+    <p class="eyebrow">Notice bibliographique</p>
+    <h2 id="association-title">Associer ce document</h2>
+    {% if entry.publication_link %}
+      <p>Ce document, ses résumés et ses mots-clés sont associés à
+        <a href="{% url 'publication-detail' entry.publication_link.publication.id %}">{{ entry.publication_link.publication.title }}</a>.
+      </p>
+    {% elif not can_review %}
+      <p class="subtle">Un compte disposant du droit de révision doit confirmer l’association.</p>
+    {% else %}
+      <p class="subtle">Les rapprochements combinent le titre, les auteurs, l’année et le DOI. La décision reste humaine.</p>
+      {% for match in matches %}
+        <article class="result-card">
+          <h3>{{ match.publication.title }}</h3>
+          <p>{{ match.publication.authors|join:", " }}{% if match.publication.publication_year %} · {{ match.publication.publication_year }}{% endif %}</p>
+          <p class="record-key">{{ match.reasons|join:", " }} · score {{ match.score }}</p>
+          <form method="post" action="{% url 'document-summary-link' entry.id %}">
+            {% csrf_token %}<input type="hidden" name="publication_id" value="{{ match.publication.id }}">
+            <button class="primary-button" type="submit">Associer à cette notice</button>
+          </form>
+        </article>
+      {% empty %}
+        <p>Aucune notice suffisamment proche n’a été trouvée.</p>
+      {% endfor %}
+      <article class="result-card">
+        <h3>Créer un nouveau brouillon local</h3>
+        <p><strong>{{ entry.document_title }}</strong></p>
+        <p>{{ entry.suggested_authors|join:", " }}{% if entry.suggested_publication_year %} · {{ entry.suggested_publication_year }}{% endif %}</p>
+        <p class="subtle">Cette action ne crée ni ne modifie aucune notice dans HAL.</p>
+        <form method="post" action="{% url 'document-summary-create-publication' entry.id %}">
+          {% csrf_token %}<button class="secondary-button" type="submit">Créer le brouillon</button>
+        </form>
+      </article>
+    {% endif %}
+  </section>
+{% endif %}
