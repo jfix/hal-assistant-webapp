@@ -11,7 +11,13 @@ from django.utils import timezone
 from docx import Document
 from openpyxl import load_workbook
 
-from catalog.models import DocumentSummaryCache, Publication, SourceImport, SourceRecord
+from catalog.models import (
+    DocumentPublicationLink,
+    DocumentSummaryCache,
+    Publication,
+    SourceImport,
+    SourceRecord,
+)
 from catalog.services.document_summaries import BilingualSummary
 
 pytestmark = pytest.mark.django_db
@@ -214,6 +220,79 @@ def test_authenticated_user_can_view_publication_detail(
     content = response.content.decode()
     assert "Cloud deployment" in content
     assert "conference_city" in content
+
+
+@pytest.mark.parametrize(
+    "action,label",
+    [
+        (DocumentPublicationLink.Action.LINKED, "Notice existante"),
+        (DocumentPublicationLink.Action.CREATED, "Nouveau brouillon local"),
+    ],
+)
+def test_publication_detail_shows_linked_document_analysis_before_sources(
+    client, user, publications, action, label
+) -> None:
+    summary = DocumentSummaryCache.objects.create(
+        owner=user,
+        source_filename="article.pdf",
+        document_title="Document analysé",
+        document_sha256="c" * 64,
+        model_name="test-model",
+        generator_version="test-version",
+        abstract_en="Associated English abstract.",
+        abstract_fr="Résumé français associé.",
+        keywords_en=["archive", "memory"],
+        keywords_fr=["archives", "mémoire"],
+    )
+    DocumentPublicationLink.objects.create(
+        summary=summary,
+        publication=publications[0],
+        actor=user,
+        action=action,
+    )
+    client.force_login(user)
+
+    response = client.get(reverse("publication-detail", args=[publications[0].id]))
+
+    content = response.content.decode()
+    assert response.status_code == 200
+    assert "Analyses de documents associées" in content
+    assert "article.pdf" in content
+    assert "Résumé français associé." in content
+    assert "Associated English abstract." in content
+    assert "archives, mémoire" in content
+    assert label in content
+    assert "Ouvrir le résultat en cache" in content
+    assert content.index("Analyses de documents associées") < content.index(
+        "Sources d'origine"
+    )
+
+
+def test_publication_detail_does_not_link_to_another_users_private_cache(
+    client, user, publications
+) -> None:
+    owner = get_user_model().objects.create_user(username="owner", password="password")
+    summary = DocumentSummaryCache.objects.create(
+        owner=owner,
+        document_title="Private cache",
+        document_sha256="d" * 64,
+        model_name="test-model",
+        generator_version="test-version",
+        abstract_en="English",
+        abstract_fr="Français",
+    )
+    DocumentPublicationLink.objects.create(
+        summary=summary,
+        publication=publications[0],
+        actor=owner,
+        action=DocumentPublicationLink.Action.LINKED,
+    )
+    client.force_login(user)
+
+    response = client.get(reverse("publication-detail", args=[publications[0].id]))
+
+    assert "Private cache" in response.content.decode()
+    assert "Ouvrir le résultat en cache" not in response.content.decode()
 
 
 def test_detail_page_has_no_unrendered_template_syntax(client, user, publications) -> None:

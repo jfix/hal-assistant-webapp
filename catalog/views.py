@@ -353,6 +353,8 @@ def publication_detail(request: HttpRequest, publication_id):
             "source_records__source_import",
             "source_records__assertions",
             "assertions__source_record",
+            "document_links__summary__owner",
+            "document_links__actor",
         ),
         id=publication_id,
     )
@@ -365,6 +367,14 @@ def publication_detail(request: HttpRequest, publication_id):
         for assertion in pending_proposals(publication)
     ]
     decisions = publication.decisions.select_related("actor", "assertion")
+    document_analyses = [
+        {
+            "link": link,
+            "summary": link.summary,
+            "can_open_cache": link.summary.owner_id == request.user.id,
+        }
+        for link in publication.document_links.all()
+    ]
     return render(
         request,
         "catalog/publication_detail.html",
@@ -372,6 +382,7 @@ def publication_detail(request: HttpRequest, publication_id):
             "publication": publication,
             "proposals": proposals,
             "decisions": decisions,
+            "document_analyses": document_analyses,
             "can_review": request.user.has_perm(REVIEW_PERMISSION),
             "list_fields": LIST_FIELDS,
             "metadata_fields": _field_descriptors(publication, METADATA_FIELDS),
