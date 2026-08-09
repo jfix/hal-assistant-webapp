@@ -25,6 +25,11 @@ urlpatterns = [
         views.create_publication_from_document,
         name="document-summary-create-publication",
     ),
+    path(
+        "summaries/source/<uuid:summary_id>/",
+        views.associated_document,
+        name="associated-document",
+    ),
     path("publications/", views.publication_list, name="publication-list"),
     path("publications/export/", views.publication_export, name="publication-export"),
     path(

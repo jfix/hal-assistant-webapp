@@ -318,6 +318,76 @@ def test_publication_detail_does_not_link_to_another_users_private_cache(
     assert "Ouvrir le résultat en cache" not in response.content.decode()
 
 
+def test_authenticated_user_can_open_another_users_associated_source_document(
+    client, user, publications, settings, tmp_path
+) -> None:
+    settings.MEDIA_ROOT = tmp_path
+    owner = get_user_model().objects.create_user(
+        username="document-owner", password="password"
+    )
+    summary = DocumentSummaryCache.objects.create(
+        owner=owner,
+        source_filename="original-article.pdf",
+        source_file=SimpleUploadedFile(
+            "original-article.pdf",
+            b"%PDF-1.4 safe test document",
+            content_type="application/pdf",
+        ),
+        document_sha256="e" * 64,
+        model_name="test-model",
+        generator_version="test-version",
+        abstract_en="English",
+        abstract_fr="Français",
+    )
+    DocumentPublicationLink.objects.create(
+        summary=summary,
+        publication=publications[0],
+        actor=owner,
+        action=DocumentPublicationLink.Action.LINKED,
+    )
+    client.force_login(user)
+
+    detail = client.get(reverse("publication-detail", args=[publications[0].id]))
+    response = client.get(reverse("associated-document", args=[summary.id]))
+
+    assert "Ouvrir le document original" in detail.content.decode()
+    assert 'target="_blank"' in detail.content.decode()
+    assert response.status_code == 200
+    assert response["Content-Type"] == "application/pdf"
+    assert response["Cache-Control"] == "private, no-store"
+    assert b"".join(response.streaming_content) == b"%PDF-1.4 safe test document"
+
+
+def test_unassociated_source_document_cannot_be_opened(
+    client, user, settings, tmp_path
+) -> None:
+    settings.MEDIA_ROOT = tmp_path
+    summary = DocumentSummaryCache.objects.create(
+        owner=user,
+        source_filename="unlinked.pdf",
+        source_file=SimpleUploadedFile("unlinked.pdf", b"%PDF-1.4 unlinked"),
+        document_sha256="f" * 64,
+        model_name="test-model",
+        generator_version="test-version",
+        abstract_en="English",
+        abstract_fr="Français",
+    )
+    client.force_login(user)
+
+    response = client.get(reverse("associated-document", args=[summary.id]))
+
+    assert response.status_code == 404
+
+
+def test_associated_source_document_requires_authentication(client) -> None:
+    response = client.get(
+        reverse("associated-document", args=["00000000-0000-0000-0000-000000000000"])
+    )
+
+    assert response.status_code == 302
+    assert response.url.startswith(reverse("login"))
+
+
 def test_detail_page_has_no_unrendered_template_syntax(client, user, publications) -> None:
     """Guard against leaked template comments/tags (e.g. multi-line {# #})."""
     client.force_login(user)
