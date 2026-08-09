@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import json
 from datetime import timedelta
 from io import BytesIO
 from unittest.mock import patch
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
 from zipfile import ZIP_DEFLATED, ZipFile
 
 import pytest
@@ -234,13 +235,105 @@ def test_provider_error_is_sanitized(monkeypatch) -> None:
         BytesIO(raw_error),
     )
 
-    with patch("catalog.services.document_summaries.urlopen", side_effect=error):
+    with (
+        patch("catalog.services.document_summaries.urlopen", side_effect=error),
+        patch("catalog.services.document_summaries.time.sleep"),
+    ):
         with pytest.raises(DocumentSummaryError) as caught:
             generate_bilingual_summary("source text")
 
     assert "quota" in str(caught.value)
     assert "internal detail" not in str(caught.value)
     assert "test-secret-key" not in str(caught.value)
+
+
+def _openai_payload() -> BytesIO:
+    result = {
+        "abstract_en": "English abstract.",
+        "abstract_fr": "Résumé français.",
+        "keywords_en": ["memory"],
+        "keywords_fr": ["mémoire"],
+        "suggested_title": "Memory and Archives",
+        "suggested_authors": ["Florence Fix"],
+        "suggested_publication_year": 2024,
+        "suggested_publication_type": "article",
+        "suggested_doi": "",
+    }
+    return BytesIO(json.dumps({"output_text": json.dumps(result)}).encode())
+
+
+def test_transient_provider_failure_is_retried(monkeypatch) -> None:
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    error = HTTPError(
+        "https://api.openai.com/v1/responses", 503, "unavailable", {}, BytesIO()
+    )
+
+    with (
+        patch(
+            "catalog.services.document_summaries.urlopen",
+            side_effect=[error, _openai_payload()],
+        ) as call,
+        patch("catalog.services.document_summaries.time.sleep") as sleep,
+    ):
+        result = generate_bilingual_summary("source text")
+
+    assert result.abstract_en == "English abstract."
+    assert call.call_count == 2
+    sleep.assert_called_once_with(1.0)
+
+
+def test_retry_after_header_controls_transient_delay(monkeypatch) -> None:
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    error = HTTPError(
+        "https://api.openai.com/v1/responses",
+        429,
+        "limited",
+        {"Retry-After": "2"},
+        BytesIO(),
+    )
+
+    with (
+        patch(
+            "catalog.services.document_summaries.urlopen",
+            side_effect=[error, _openai_payload()],
+        ),
+        patch("catalog.services.document_summaries.time.sleep") as sleep,
+    ):
+        generate_bilingual_summary("source text")
+
+    sleep.assert_called_once_with(2.0)
+
+
+def test_network_failure_uses_two_retries_then_fails(monkeypatch) -> None:
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+
+    with (
+        patch(
+            "catalog.services.document_summaries.urlopen",
+            side_effect=URLError("temporary DNS failure"),
+        ) as call,
+        patch("catalog.services.document_summaries.time.sleep") as sleep,
+    ):
+        with pytest.raises(DocumentSummaryError, match="momentanément inaccessible"):
+            generate_bilingual_summary("source text")
+
+    assert call.call_count == 3
+    assert [item.args[0] for item in sleep.call_args_list] == [1.0, 3.0]
+
+
+def test_non_transient_client_error_is_not_retried(monkeypatch) -> None:
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    error = HTTPError("https://api.openai.com/v1/responses", 400, "bad", {}, BytesIO())
+
+    with (
+        patch("catalog.services.document_summaries.urlopen", side_effect=error) as call,
+        patch("catalog.services.document_summaries.time.sleep") as sleep,
+    ):
+        with pytest.raises(DocumentSummaryError, match="n’a pas accepté"):
+            generate_bilingual_summary("source text")
+
+    assert call.call_count == 1
+    sleep.assert_not_called()
 
 
 @pytest.mark.parametrize(
