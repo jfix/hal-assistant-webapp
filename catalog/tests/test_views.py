@@ -225,6 +225,9 @@ def test_authenticated_user_can_view_publication_detail(
     assert "conference_city" in content
     assert "Résumés et mots-clés" in content
     assert 'name="field" value="abstract_fr"' not in content
+    header = content.split('<div class="detail-grid">', 1)[0]
+    assert publications[1].publication_key not in header
+    assert "<span>Notice</span>" in header
 
 
 def test_detail_statuses_separate_hal_data_and_synchronization(client, user) -> None:

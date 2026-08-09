@@ -6,12 +6,12 @@
   <nav class="breadcrumb" aria-label="Fil d'Ariane">
     <a href="{% url 'publication-list' %}">Publications</a>
     <span aria-hidden="true">/</span>
-    <span>{{ publication.publication_key }}</span>
+    <span>Notice</span>
   </nav>
 
   <header class="detail-heading">
     <div>
-      <p class="eyebrow">{{ publication.publication_type }} · {{ publication.publication_key }}</p>
+      <p class="eyebrow">{{ publication.publication_type }}</p>
       <h1>{{ publication.title }}</h1>
       <div class="status-summary status-summary-detail" aria-label="Statuts de la publication">
         {% for status in publication.workflow_statuses %}
