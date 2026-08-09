@@ -6,6 +6,18 @@
   "use strict";
   document.documentElement.classList.add("js");
 
+  var greeting = document.querySelector("[data-local-greeting]");
+  if (greeting) {
+    var localHour = new Date().getHours();
+    if (localHour >= 5 && localHour < 12) {
+      greeting.textContent = "Bonjour";
+    } else if (localHour >= 12 && localHour < 18) {
+      greeting.textContent = "Bon après-midi";
+    } else {
+      greeting.textContent = "Bonsoir";
+    }
+  }
+
   function wire(cell) {
     var form = cell.querySelector(".inline-edit");
     var trigger = cell.querySelector(".editable-value");

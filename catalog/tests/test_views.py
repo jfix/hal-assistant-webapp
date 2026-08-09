@@ -84,6 +84,7 @@ def test_home_is_a_dashboard_with_stats_and_recent_drafts(client, user) -> None:
     assert response.status_code == 200
     assert "Tableau de bord" in content
     assert "Ajouter une publication" in content
+    assert "data-local-greeting" in content
     assert "Notice à terminer" in content
     assert "Notice déjà publiée" not in content
     assert reverse("publication-detail", args=[draft.id]) in content
@@ -111,6 +112,63 @@ def test_publication_list_can_filter_by_deposit_state(client, user) -> None:
     assert "Brouillon visible" in content
     assert "Publication masquée" not in content
     assert '<option value="draft" selected>Brouillons</option>' in content
+
+
+@pytest.mark.parametrize(
+    ("content_missing", "visible_title", "hidden_title"),
+    [
+        ("abstracts", "Résumé français manquant", "Notice bilingue complète"),
+        ("abstract_fr", "Résumé français manquant", "Mots-clés anglais manquants"),
+        ("keywords", "Mots-clés anglais manquants", "Notice bilingue complète"),
+        ("keywords_en", "Mots-clés anglais manquants", "Résumé français manquant"),
+        ("bilingual_content", "Résumé français manquant", "Notice bilingue complète"),
+    ],
+)
+def test_publication_list_can_filter_missing_bilingual_content(
+    client,
+    user,
+    content_missing: str,
+    visible_title: str,
+    hidden_title: str,
+) -> None:
+    client.force_login(user)
+    common = {
+        "publication_type": "journal_article",
+        "abstract_en": "English abstract",
+        "keywords_fr": ["mémoire"],
+    }
+    Publication.objects.create(
+        publication_key="pub-content-complete",
+        title="Notice bilingue complète",
+        abstract_fr="Résumé français",
+        keywords_en=["memory"],
+        **common,
+    )
+    Publication.objects.create(
+        publication_key="pub-missing-abstract-fr",
+        title="Résumé français manquant",
+        abstract_fr="",
+        keywords_en=["memory"],
+        **common,
+    )
+    Publication.objects.create(
+        publication_key="pub-missing-keywords-en",
+        title="Mots-clés anglais manquants",
+        abstract_fr="Résumé français",
+        keywords_en=[],
+        **common,
+    )
+
+    response = client.get(
+        reverse("publication-list"),
+        {"content_missing": content_missing},
+    )
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert visible_title in content
+    assert hidden_title not in content
+    assert f'<option value="{content_missing}" selected>' in content
 
 
 @pytest.mark.parametrize("name", ["publication-list", "home"])
@@ -189,7 +247,7 @@ def test_document_summary_page_accepts_docx(client, user) -> None:
     client.force_login(user)
 
     with patch(
-        "catalog.views.generate_bilingual_summary", return_value=generated
+        "catalog.services.publication_documents.generate_bilingual_summary", return_value=generated
     ) as generate:
         response = client.post(reverse("document-summary"), {"document": upload})
 
@@ -219,7 +277,10 @@ def test_document_summary_reuses_cached_result(client, user) -> None:
     )
     client.force_login(user)
 
-    with patch("catalog.views.generate_bilingual_summary", return_value=generated) as generate:
+    with patch(
+        "catalog.services.publication_documents.generate_bilingual_summary",
+        return_value=generated,
+    ) as generate:
         first = client.post(
             reverse("document-summary"),
             {"document": SimpleUploadedFile("first-name.docx", file_bytes)},
@@ -335,7 +396,9 @@ def test_published_unmodified_record_is_shown_as_synchronized(client, user) -> N
     ).content.decode()
 
     assert 'class="status-value">Publié sur HAL</span>' in content
+    assert 'class="status-value">Minimum HAL atteint</span>' in content
     assert 'class="status-value">À jour</span>' in content
+    assert "Prêt pour mise à jour HAL" not in content
     assert 'class="status-value">Modifié</span>' not in content
 
 
@@ -356,7 +419,112 @@ def test_publication_list_uses_compact_three_column_statuses(client, user) -> No
     assert "status-summary-compact" in content
     assert 'class="status-dimension">Sync.</span>' in content
     assert 'class="status-value">Publié</span>' in content
-    assert 'class="status-value">Prêt à mettre à jour</span>' in content
+    assert 'class="status-value">Minimum HAL atteint</span>' in content
+    assert "Prêt à mettre à jour" not in content
+
+
+def test_publication_list_displays_hal_type_codes_with_french_tooltips(
+    client,
+    user,
+) -> None:
+    client.force_login(user)
+    Publication.objects.create(
+        publication_key="pub-hal-type-explicit",
+        publication_type="edited_book",
+        hal_document_type="DOUV",
+        title="Direction scientifique",
+    )
+    Publication.objects.create(
+        publication_key="pub-hal-type-fallback",
+        publication_type="journal_article",
+        title="Article sans type matérialisé",
+    )
+
+    content = client.get(reverse("publication-list")).content.decode()
+
+    assert '<abbr class="hal-type" title="Direction d’ouvrage">DOUV</abbr>' in content
+    assert '<abbr class="hal-type" title="Article dans une revue">ART</abbr>' in content
+    assert ">edited_book</td>" not in content
+
+
+def test_publication_list_type_filter_uses_hal_taxonomy(client, user) -> None:
+    client.force_login(user)
+    Publication.objects.create(
+        publication_key="pub-type-douv",
+        publication_type="edited_book",
+        hal_document_type="DOUV",
+        title="Direction retenue",
+    )
+    Publication.objects.create(
+        publication_key="pub-type-ouv",
+        publication_type="book",
+        hal_document_type="OUV",
+        title="Ouvrage exclu",
+    )
+    Publication.objects.create(
+        publication_key="pub-type-art-fallback",
+        publication_type="journal_article",
+        title="Article au type inféré",
+    )
+
+    douv_content = client.get(
+        reverse("publication-list"), {"type": "DOUV"}
+    ).content.decode()
+    art_content = client.get(
+        reverse("publication-list"), {"type": "ART"}
+    ).content.decode()
+
+    assert "Direction retenue" in douv_content
+    assert "Ouvrage exclu" not in douv_content
+    assert '<option value="DOUV" selected>DOUV — Direction d’ouvrage</option>' in douv_content
+    assert "Article au type inféré" in art_content
+    assert "Direction retenue" not in art_content
+
+
+def test_publication_list_headers_sort_full_filtered_results_and_toggle_direction(
+    client,
+    user,
+) -> None:
+    client.force_login(user)
+    Publication.objects.create(
+        publication_key="pub-sort-zulu",
+        publication_type="book",
+        title="Zulu notice",
+        publication_year=2020,
+    )
+    Publication.objects.create(
+        publication_key="pub-sort-alpha",
+        publication_type="book",
+        title="Alpha notice",
+        publication_year=2025,
+    )
+
+    ascending = client.get(
+        reverse("publication-list"),
+        {"workflow": "draft", "sort": "title", "direction": "asc"},
+    ).content.decode()
+    descending = client.get(
+        reverse("publication-list"),
+        {"workflow": "draft", "sort": "title", "direction": "desc"},
+    ).content.decode()
+
+    assert ascending.index("Alpha notice") < ascending.index("Zulu notice")
+    assert descending.index("Zulu notice") < descending.index("Alpha notice")
+    assert 'aria-sort="ascending"' in ascending
+    assert "workflow=draft&amp;sort=title&amp;direction=desc" in ascending
+    assert '>Publication <span aria-hidden="true">↑</span>' in ascending
+
+
+def test_publication_list_exposes_sort_controls_for_every_visible_column(
+    client,
+    user,
+) -> None:
+    client.force_login(user)
+
+    content = client.get(reverse("publication-list")).content.decode()
+
+    for field in ("title", "year", "type", "state", "hal"):
+        assert f"sort={field}&amp;direction=asc" in content
 
 
 def test_publication_detail_reads_latest_hal_operation(client, user, publications) -> None:
@@ -589,7 +757,7 @@ def test_export_returns_a_filtered_xlsx_snapshot(client, user, publications) -> 
 def test_export_respects_active_filters(client, user, publications) -> None:
     client.force_login(user)
 
-    response = client.get(reverse("publication-export"), {"type": "conference_paper"})
+    response = client.get(reverse("publication-export"), {"type": "COMM"})
 
     sheet = load_workbook(BytesIO(response.content))["Publications"]
     keys = [row[0] for row in sheet.iter_rows(min_row=2, values_only=True)]

@@ -65,7 +65,7 @@ def test_cache_is_scoped_to_authenticated_user(client) -> None:
     contents = _docx_bytes("shared document")
 
     with patch(
-        "catalog.views.generate_bilingual_summary",
+        "catalog.services.publication_documents.generate_bilingual_summary",
         side_effect=[_summary("first"), _summary("second")],
     ) as generate:
         client.force_login(first_user)
@@ -128,7 +128,8 @@ def test_cache_hit_does_not_consume_generation_quota(client, monkeypatch) -> Non
     client.force_login(user)
 
     with patch(
-        "catalog.views.generate_bilingual_summary", return_value=_summary("cached")
+        "catalog.services.publication_documents.generate_bilingual_summary",
+        return_value=_summary("cached"),
     ) as generate:
         first = client.post(reverse("document-summary"), {"document": _upload(contents)})
         second = client.post(reverse("document-summary"), {"document": _upload(contents)})
@@ -150,7 +151,8 @@ def test_cache_hit_refreshes_inferred_title_without_api_call(client) -> None:
     client.force_login(user)
 
     with patch(
-        "catalog.views.generate_bilingual_summary", return_value=_summary("refresh")
+        "catalog.services.publication_documents.generate_bilingual_summary",
+        return_value=_summary("refresh"),
     ) as generate:
         client.post(reverse("document-summary"), {"document": _upload(contents)})
         entry = DocumentSummaryCache.objects.get(owner=user)
@@ -173,7 +175,8 @@ def test_per_user_minute_limit_blocks_additional_api_call(client, monkeypatch) -
     client.force_login(user)
 
     with patch(
-        "catalog.views.generate_bilingual_summary", return_value=_summary("first")
+        "catalog.services.publication_documents.generate_bilingual_summary",
+        return_value=_summary("first"),
     ) as generate:
         client.post(
             reverse("document-summary"),
@@ -199,7 +202,9 @@ def test_global_daily_limit_blocks_api_call(client, monkeypatch) -> None:
     )
     client.force_login(current_user)
 
-    with patch("catalog.views.generate_bilingual_summary") as generate:
+    with patch(
+        "catalog.services.publication_documents.generate_bilingual_summary"
+    ) as generate:
         response = client.post(
             reverse("document-summary"),
             {"document": _upload(_docx_bytes("global limit"))},
@@ -214,7 +219,9 @@ def test_active_generation_blocks_concurrent_request(client) -> None:
     ActiveDocumentSummaryGeneration.objects.create(owner=user)
     client.force_login(user)
 
-    with patch("catalog.views.generate_bilingual_summary") as generate:
+    with patch(
+        "catalog.services.publication_documents.generate_bilingual_summary"
+    ) as generate:
         response = client.post(
             reverse("document-summary"),
             {"document": _upload(_docx_bytes("concurrent"))},

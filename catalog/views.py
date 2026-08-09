@@ -12,7 +12,11 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from .integrations.hal_assistant import build_submission_xml
+from .integrations.hal_assistant import (
+    build_submission_xml,
+    hal_document_type_display,
+    publication_types_for_hal,
+)
 from .models import (
     DocumentPublicationLink,
     DocumentSummaryCache,
@@ -26,14 +30,8 @@ from .services.document_matching import (
     link_summary,
 )
 from .services.document_summaries import (
-    SUMMARY_GENERATOR_VERSION,
     BilingualSummary,
     DocumentSummaryError,
-    document_sha256,
-    extract_document_text,
-    extract_document_title,
-    generate_bilingual_summary,
-    summary_model,
 )
 from .services.exports import export_publications_xlsx
 from .services.hal_submission import (
@@ -43,6 +41,10 @@ from .services.hal_submission import (
     prepare_preprod_operation,
 )
 from .services.imports import LIST_FIELDS
+from .services.publication_documents import (
+    get_or_generate_summary,
+    propose_generated_fields,
+)
 from .services.review import (
     EDITABLE_FIELDS,
     ReviewConflict,
@@ -56,7 +58,7 @@ from .services.summary_cache import (
     delete_summary_cache_entry,
     purge_expired_summary_cache,
 )
-from .services.summary_limits import SummaryLimitError, generation_slot
+from .services.summary_limits import SummaryLimitError
 
 REVIEW_PERMISSION = "catalog.review_publication"
 PREPROD_PERMISSION = "catalog.submit_hal_preprod"
@@ -169,62 +171,10 @@ def document_summary(request: HttpRequest):
         else:
             filename = upload.name
             try:
-                fingerprint = document_sha256(upload)
-                model_name = summary_model()
-                text = extract_document_text(upload)
-                document_title = extract_document_title(upload, text)
-                source_filename = upload.name.rsplit("/", 1)[-1].rsplit("\\", 1)[-1][:255]
-                cached = DocumentSummaryCache.objects.filter(
-                    owner=request.user,
-                    document_sha256=fingerprint,
-                    model_name=model_name,
-                    generator_version=SUMMARY_GENERATOR_VERSION,
-                ).first()
-                if cached:
-                    DocumentSummaryCache.objects.filter(id=cached.id).update(
-                        source_filename=source_filename,
-                        document_title=document_title,
-                    )
-                    cached.source_filename = source_filename
-                    cached.document_title = document_title
-                    result = BilingualSummary(
-                        abstract_en=cached.abstract_en,
-                        abstract_fr=cached.abstract_fr,
-                        keywords_en=cached.keywords_en,
-                        keywords_fr=cached.keywords_fr,
-                        suggested_title=cached.document_title,
-                        suggested_authors=cached.suggested_authors,
-                        suggested_publication_year=cached.suggested_publication_year,
-                        suggested_publication_type=cached.suggested_publication_type,
-                        suggested_doi=cached.suggested_doi,
-                    )
-                    entry = cached
-                    cache_hit = True
-                else:
-                    with generation_slot(
-                        owner=request.user,
-                        document_sha256=fingerprint,
-                        model_name=model_name,
-                    ):
-                        result = generate_bilingual_summary(text)
-                    upload.seek(0)
-                    entry = DocumentSummaryCache.objects.create(
-                        owner=request.user,
-                        source_filename=source_filename,
-                        document_title=result.suggested_title or document_title,
-                        source_file=upload,
-                        document_sha256=fingerprint,
-                        model_name=model_name,
-                        generator_version=SUMMARY_GENERATOR_VERSION,
-                        abstract_en=result.abstract_en,
-                        abstract_fr=result.abstract_fr,
-                        keywords_en=result.keywords_en,
-                        keywords_fr=result.keywords_fr,
-                        suggested_authors=result.suggested_authors or [],
-                        suggested_publication_year=result.suggested_publication_year,
-                        suggested_publication_type=result.suggested_publication_type,
-                        suggested_doi=result.suggested_doi,
-                    )
+                generation = get_or_generate_summary(upload=upload, owner=request.user)
+                result = generation.result
+                entry = generation.entry
+                cache_hit = generation.cache_hit
             except (DocumentSummaryError, SummaryLimitError) as exc:
                 messages.error(request, str(exc))
     return render(
@@ -356,6 +306,7 @@ def _filtered_publications(request: HttpRequest):
         "readiness": request.GET.get("readiness", "").strip(),
         "hal_status": request.GET.get("hal_status", "").strip(),
         "missing": request.GET.get("missing", "").strip(),
+        "content_missing": request.GET.get("content_missing", "").strip(),
         "workflow": request.GET.get("workflow", "").strip(),
     }
     if filters["q"]:
@@ -366,7 +317,13 @@ def _filtered_publications(request: HttpRequest):
             | Q(authors__icontains=filters["q"])
         )
     if filters["type"]:
-        publications = publications.filter(publication_type=filters["type"])
+        publications = publications.filter(
+            Q(hal_document_type__iexact=filters["type"])
+            | Q(
+                hal_document_type="",
+                publication_type__in=publication_types_for_hal(filters["type"]),
+            )
+        )
     if filters["readiness"]:
         publications = publications.filter(readiness_state=filters["readiness"])
     if filters["hal_status"]:
@@ -374,6 +331,25 @@ def _filtered_publications(request: HttpRequest):
     if filters["missing"]:
         publications = publications.filter(
             missing_required_fields__icontains=filters["missing"]
+        )
+    if filters["content_missing"] == "abstracts":
+        publications = publications.filter(Q(abstract_fr="") | Q(abstract_en=""))
+    elif filters["content_missing"] == "abstract_fr":
+        publications = publications.filter(abstract_fr="")
+    elif filters["content_missing"] == "abstract_en":
+        publications = publications.filter(abstract_en="")
+    elif filters["content_missing"] == "keywords":
+        publications = publications.filter(Q(keywords_fr=[]) | Q(keywords_en=[]))
+    elif filters["content_missing"] == "keywords_fr":
+        publications = publications.filter(keywords_fr=[])
+    elif filters["content_missing"] == "keywords_en":
+        publications = publications.filter(keywords_en=[])
+    elif filters["content_missing"] == "bilingual_content":
+        publications = publications.filter(
+            Q(abstract_fr="")
+            | Q(abstract_en="")
+            | Q(keywords_fr=[])
+            | Q(keywords_en=[])
         )
     if filters["workflow"] == "draft":
         publications = publications.filter(hal_id="")
@@ -385,18 +361,76 @@ def _filtered_publications(request: HttpRequest):
 @login_required
 def publication_list(request: HttpRequest):
     publications, filters = _filtered_publications(request)
+    sort_field = request.GET.get("sort", "").strip()
+    sort_direction = request.GET.get("direction", "asc").strip()
+    sort_definitions = {
+        "title": ("title", "publication_key"),
+        "year": ("publication_year", "title"),
+        "type": ("hal_document_type", "publication_type", "title"),
+        "state": ("hal_id", "readiness_state", "title"),
+        "hal": ("hal_id", "title"),
+    }
+    if sort_field in sort_definitions:
+        descending = sort_direction == "desc"
+        publications = publications.order_by(
+            *(
+                f"-{field}" if descending else field
+                for field in sort_definitions[sort_field]
+            )
+        )
+    else:
+        sort_field = ""
+        sort_direction = "asc"
     paginator = Paginator(publications, 25)
     page = paginator.get_page(request.GET.get("page"))
+    type_codes = {
+        str(code).upper()
+        for code in Publication.objects.exclude(hal_document_type="").values_list(
+            "hal_document_type", flat=True
+        )
+    }
+    for publication_type in Publication.objects.filter(
+        hal_document_type=""
+    ).values_list("publication_type", flat=True):
+        type_codes.add(
+            hal_document_type_display(publication_type=publication_type)[0]
+        )
     filter_options = {
-        "types": Publication.objects.order_by("publication_type")
-        .values_list("publication_type", flat=True)
-        .distinct(),
+        "types": [
+            {
+                "code": code,
+                "label": hal_document_type_display(
+                    publication_type="", explicit_type=code
+                )[1],
+            }
+            for code in sorted(type_codes)
+        ],
         "readiness": Publication.ReadinessState.choices,
         "hal_statuses": Publication.objects.exclude(hal_status="")
         .order_by("hal_status")
         .values_list("hal_status", flat=True)
         .distinct(),
     }
+    sort_headers = {}
+    for field in sort_definitions:
+        active = field == sort_field
+        next_direction = "desc" if active and sort_direction == "asc" else "asc"
+        params = request.GET.copy()
+        params["sort"] = field
+        params["direction"] = next_direction
+        params.pop("page", None)
+        sort_headers[field] = {
+            "url": f"?{params.urlencode()}",
+            "active": active,
+            "indicator": "↑" if active and sort_direction == "asc" else "↓",
+            "aria_sort": (
+                "ascending"
+                if active and sort_direction == "asc"
+                else "descending"
+                if active
+                else "none"
+            ),
+        }
     return render(
         request,
         "catalog/publication_list.html",
@@ -404,6 +438,9 @@ def publication_list(request: HttpRequest):
             "page": page,
             "filters": filters,
             "filter_options": filter_options,
+            "sort_headers": sort_headers,
+            "sort_field": sort_field,
+            "sort_direction": sort_direction,
         },
     )
 
@@ -429,6 +466,7 @@ def publication_detail(request: HttpRequest, publication_id):
             "source_records__source_import",
             "source_records__assertions",
             "assertions__source_record",
+            "assertions__document_summary",
             "document_links__summary__owner",
             "document_links__actor",
         ),
@@ -438,7 +476,16 @@ def publication_detail(request: HttpRequest, publication_id):
         {
             "assertion": assertion,
             "current": getattr(publication, assertion.field_path, None),
+            "current_text": _edit_text(getattr(publication, assertion.field_path, None)),
             "proposed_text": _edit_text(assertion.value),
+            "label": dict((name, label) for label, name, _kind in SUMMARY_FIELDS).get(
+                assertion.field_path, assertion.field_path
+            ),
+            "source_label": (
+                assertion.document_summary.source_filename
+                if assertion.document_summary
+                else assertion.origin
+            ),
         }
         for assertion in pending_proposals(publication)
     ]
@@ -464,10 +511,55 @@ def publication_detail(request: HttpRequest, publication_id):
             "metadata_fields": _field_descriptors(publication, METADATA_FIELDS),
             "conference_fields": _field_descriptors(publication, CONFERENCE_FIELDS),
             "summary_fields": _field_descriptors(publication, SUMMARY_FIELDS),
+            "summary_generation_missing": any(
+                not getattr(publication, name) for _label, name, _kind in SUMMARY_FIELDS
+            ),
             "latest_hal_operation": publication.hal_operations.first(),
             "can_submit_preprod": request.user.has_perm(PREPROD_PERMISSION),
         },
     )
+
+
+@login_required
+@require_POST
+def generate_publication_fields_from_document(request: HttpRequest, publication_id):
+    publication = get_object_or_404(Publication, id=publication_id)
+    if not request.user.has_perm(REVIEW_PERMISSION):
+        messages.error(
+            request,
+            "Vous n’avez pas le droit de proposer des résumés et mots-clés.",
+        )
+        return redirect("publication-detail", publication_id=publication.id)
+
+    upload = request.FILES.get("document")
+    if upload is None:
+        messages.error(request, "Sélectionnez un document PDF ou Word.")
+        return redirect("publication-detail", publication_id=publication.id)
+
+    try:
+        generation = get_or_generate_summary(upload=upload, owner=request.user)
+        _link, assertions, created = propose_generated_fields(
+            publication=publication,
+            summary=generation.entry,
+            actor=request.user,
+        )
+    except (DocumentSummaryError, SummaryLimitError, ValueError) as exc:
+        messages.error(request, str(exc))
+    else:
+        if not created:
+            messages.info(request, "Ce document a déjà été analysé pour cette notice.")
+        elif assertions:
+            cache_note = " Le résultat existant a été réutilisé." if generation.cache_hit else ""
+            messages.success(
+                request,
+                f"{len(assertions)} proposition(s) à vérifier ont été créées.{cache_note}",
+            )
+        else:
+            messages.success(
+                request,
+                "Le document est associé ; les valeurs générées sont identiques à la notice.",
+            )
+    return redirect("publication-detail", publication_id=publication.id)
 
 
 @login_required

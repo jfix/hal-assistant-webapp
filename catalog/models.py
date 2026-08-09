@@ -100,6 +100,24 @@ class Publication(models.Model):
         return self.title
 
     @property
+    def display_hal_document_type(self) -> str:
+        from catalog.integrations.hal_assistant import hal_document_type_display
+
+        return hal_document_type_display(
+            publication_type=self.publication_type,
+            explicit_type=self.hal_document_type,
+        )[0]
+
+    @property
+    def display_hal_document_type_label(self) -> str:
+        from catalog.integrations.hal_assistant import hal_document_type_display
+
+        return hal_document_type_display(
+            publication_type=self.publication_type,
+            explicit_type=self.hal_document_type,
+        )[1]
+
+    @property
     def workflow_statuses(self) -> list[dict[str, str]]:
         """Three orthogonal, user-facing publication workflow dimensions."""
         published = bool(self.hal_id)
@@ -123,16 +141,26 @@ class Publication(models.Model):
             }
         ]
         if published:
+            modified_since_hal = (
+                self.hal_synced_version is not None
+                and self.version > self.hal_synced_version
+            )
+            if modified_since_hal:
+                data_label = (
+                    "Prêt pour mise à jour HAL"
+                    if ready
+                    else "Mise à jour à compléter"
+                )
+                compact_data_label = "Prêt à mettre à jour" if ready else "À compléter"
+            else:
+                data_label = "Minimum HAL atteint" if ready else "Minimum HAL incomplet"
+                compact_data_label = data_label
             statuses.append(
                 {
                     "dimension": "Données",
-                    "label": (
-                        "Prêt pour mise à jour HAL"
-                        if ready
-                        else "Mise à jour à compléter"
-                    ),
+                    "label": data_label,
                     "compact_dimension": "Données",
-                    "compact_label": "Prêt à mettre à jour" if ready else "À compléter",
+                    "compact_label": compact_data_label,
                     "tone": "ready" if ready else "warning",
                 }
             )
@@ -373,6 +401,15 @@ class FieldAssertion(ImmutableModel):
         SourceRecord,
         on_delete=models.PROTECT,
         related_name="assertions",
+        null=True,
+        blank=True,
+    )
+    document_summary = models.ForeignKey(
+        DocumentSummaryCache,
+        on_delete=models.PROTECT,
+        related_name="field_assertions",
+        null=True,
+        blank=True,
     )
     field_path = models.CharField(max_length=200)
     value = models.JSONField()
@@ -386,6 +423,15 @@ class FieldAssertion(ImmutableModel):
         ordering = ["field_path", "-created_at"]
         indexes = [
             models.Index(fields=["publication", "field_path", "state"]),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    models.Q(source_record__isnull=False, document_summary__isnull=True)
+                    | models.Q(source_record__isnull=True, document_summary__isnull=False)
+                ),
+                name="field_assertion_has_exactly_one_source",
+            )
         ]
 
     def __str__(self) -> str:

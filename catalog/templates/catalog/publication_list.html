@@ -29,8 +29,8 @@
       Type
       <select name="type">
         <option value="">Tous</option>
-        {% for value in filter_options.types %}
-          <option value="{{ value }}" {% if filters.type == value %}selected{% endif %}>{{ value }}</option>
+        {% for option in filter_options.types %}
+          <option value="{{ option.code }}" {% if filters.type == option.code %}selected{% endif %}>{{ option.code }} — {{ option.label }}</option>
         {% endfor %}
       </select>
     </label>
@@ -53,7 +53,20 @@
       </select>
     </label>
     <label>
-      Champ manquant
+      Contenu manquant
+      <select name="content_missing">
+        <option value="">Tous</option>
+        <option value="bilingual_content" {% if filters.content_missing == "bilingual_content" %}selected{% endif %}>Résumé ou mots-clés</option>
+        <option value="abstracts" {% if filters.content_missing == "abstracts" %}selected{% endif %}>Au moins un résumé</option>
+        <option value="abstract_fr" {% if filters.content_missing == "abstract_fr" %}selected{% endif %}>Résumé français</option>
+        <option value="abstract_en" {% if filters.content_missing == "abstract_en" %}selected{% endif %}>Résumé anglais</option>
+        <option value="keywords" {% if filters.content_missing == "keywords" %}selected{% endif %}>Au moins une langue de mots-clés</option>
+        <option value="keywords_fr" {% if filters.content_missing == "keywords_fr" %}selected{% endif %}>Mots-clés français</option>
+        <option value="keywords_en" {% if filters.content_missing == "keywords_en" %}selected{% endif %}>Mots-clés anglais</option>
+      </select>
+    </label>
+    <label>
+      Champ HAL manquant
       <input name="missing" value="{{ filters.missing }}" placeholder="ex. conference_city">
     </label>
     <div class="filter-actions">
@@ -66,11 +79,11 @@
     <table>
       <thead>
         <tr>
-          <th scope="col">Publication</th>
-          <th scope="col">Année</th>
-          <th scope="col">Type</th>
-          <th scope="col">Statuts</th>
-          <th scope="col">HAL</th>
+          <th scope="col" aria-sort="{{ sort_headers.title.aria_sort }}"><a class="table-sort{% if sort_headers.title.active %} active{% endif %}" href="{{ sort_headers.title.url }}">Publication{% if sort_headers.title.active %} <span aria-hidden="true">{{ sort_headers.title.indicator }}</span>{% endif %}</a></th>
+          <th scope="col" aria-sort="{{ sort_headers.year.aria_sort }}"><a class="table-sort{% if sort_headers.year.active %} active{% endif %}" href="{{ sort_headers.year.url }}">Année{% if sort_headers.year.active %} <span aria-hidden="true">{{ sort_headers.year.indicator }}</span>{% endif %}</a></th>
+          <th scope="col" aria-sort="{{ sort_headers.type.aria_sort }}"><a class="table-sort{% if sort_headers.type.active %} active{% endif %}" href="{{ sort_headers.type.url }}">Type{% if sort_headers.type.active %} <span aria-hidden="true">{{ sort_headers.type.indicator }}</span>{% endif %}</a></th>
+          <th scope="col" aria-sort="{{ sort_headers.state.aria_sort }}"><a class="table-sort{% if sort_headers.state.active %} active{% endif %}" href="{{ sort_headers.state.url }}" title="Trier par état HAL, puis par état de préparation">État{% if sort_headers.state.active %} <span aria-hidden="true">{{ sort_headers.state.indicator }}</span>{% endif %}</a></th>
+          <th scope="col" aria-sort="{{ sort_headers.hal.aria_sort }}"><a class="table-sort{% if sort_headers.hal.active %} active{% endif %}" href="{{ sort_headers.hal.url }}">HAL{% if sort_headers.hal.active %} <span aria-hidden="true">{{ sort_headers.hal.indicator }}</span>{% endif %}</a></th>
         </tr>
       </thead>
       <tbody>
@@ -81,7 +94,7 @@
               <span class="record-key">{{ publication.publication_key }}</span>
             </td>
             <td>{{ publication.publication_year|default:"—" }}</td>
-            <td>{{ publication.publication_type }}</td>
+            <td><abbr class="hal-type" title="{{ publication.display_hal_document_type_label }}">{{ publication.display_hal_document_type }}</abbr></td>
             <td>
               <div class="status-summary status-summary-compact" aria-label="Statuts de {{ publication.title }}">
                 {% for status in publication.workflow_statuses %}
@@ -113,11 +126,11 @@
   {% if page.paginator.num_pages > 1 %}
     <nav class="pagination" aria-label="Pages de publications">
       {% if page.has_previous %}
-        <a href="?q={{ filters.q|urlencode }}&amp;workflow={{ filters.workflow|urlencode }}&amp;type={{ filters.type|urlencode }}&amp;readiness={{ filters.readiness|urlencode }}&amp;hal_status={{ filters.hal_status|urlencode }}&amp;missing={{ filters.missing|urlencode }}&amp;page={{ page.previous_page_number }}">Précédent</a>
+        <a href="?q={{ filters.q|urlencode }}&amp;workflow={{ filters.workflow|urlencode }}&amp;type={{ filters.type|urlencode }}&amp;readiness={{ filters.readiness|urlencode }}&amp;hal_status={{ filters.hal_status|urlencode }}&amp;content_missing={{ filters.content_missing|urlencode }}&amp;missing={{ filters.missing|urlencode }}&amp;sort={{ sort_field|urlencode }}&amp;direction={{ sort_direction|urlencode }}&amp;page={{ page.previous_page_number }}">Précédent</a>
       {% endif %}
       <span>Page {{ page.number }} sur {{ page.paginator.num_pages }}</span>
       {% if page.has_next %}
-        <a href="?q={{ filters.q|urlencode }}&amp;workflow={{ filters.workflow|urlencode }}&amp;type={{ filters.type|urlencode }}&amp;readiness={{ filters.readiness|urlencode }}&amp;hal_status={{ filters.hal_status|urlencode }}&amp;missing={{ filters.missing|urlencode }}&amp;page={{ page.next_page_number }}">Suivant</a>
+        <a href="?q={{ filters.q|urlencode }}&amp;workflow={{ filters.workflow|urlencode }}&amp;type={{ filters.type|urlencode }}&amp;readiness={{ filters.readiness|urlencode }}&amp;hal_status={{ filters.hal_status|urlencode }}&amp;content_missing={{ filters.content_missing|urlencode }}&amp;missing={{ filters.missing|urlencode }}&amp;sort={{ sort_field|urlencode }}&amp;direction={{ sort_direction|urlencode }}&amp;page={{ page.next_page_number }}">Suivant</a>
       {% endif %}
     </nav>
   {% endif %}

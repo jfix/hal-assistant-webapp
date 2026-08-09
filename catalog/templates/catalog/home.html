@@ -6,7 +6,7 @@
   <header class="dashboard-hero">
     <div>
       <p class="eyebrow">Tableau de bord</p>
-      <h1>Bonjour {{ user.first_name|default:user.get_username }}</h1>
+      <h1><span data-local-greeting>Bonjour</span>, {{ user.first_name|default:user.get_username|capfirst }}</h1>
       <p class="lede">Préparez une nouvelle publication ou reprenez les notices qui demandent encore votre attention.</p>
     </div>
     <a class="primary-button dashboard-primary-action" href="{% url 'document-summary' %}">Ajouter une publication</a>

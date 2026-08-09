@@ -38,6 +38,11 @@ urlpatterns = [
         name="publication-detail",
     ),
     path(
+        "publications/<uuid:publication_id>/generate-from-document/",
+        views.generate_publication_fields_from_document,
+        name="publication-generate-from-document",
+    ),
+    path(
         "publications/<uuid:publication_id>/xml/",
         views.publication_xml,
         name="publication-xml",

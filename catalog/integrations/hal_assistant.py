@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 
 from hal_assistant.hal_requirements import audit_record
 from hal_assistant.hal_xml import HAL_NS, TEI_NS, XSI_NS, build_tei, validate_tei
+from hal_assistant.review_cli import HAL_DOCUMENT_TYPES
 from hal_assistant.review_import import read_publications_sheet
 
 if TYPE_CHECKING:
@@ -14,6 +15,39 @@ if TYPE_CHECKING:
 
 # Fallback domain when a review row does not carry its own ``hal_domain``.
 DEFAULT_HAL_DOMAIN = "shs.litt"
+
+HAL_DOCUMENT_TYPE_LABELS_FR = {
+    "ART": "Article dans une revue",
+    "COMM": "Communication dans un congrès",
+    "COUV": "Chapitre d’ouvrage",
+    "OUV": "Ouvrages scientifiques (y compris édition critique et traduction)",
+    "DOUV": "Direction d’ouvrage",
+}
+
+
+def hal_document_type_display(
+    *, publication_type: str, explicit_type: str = ""
+) -> tuple[str, str]:
+    """Return the HAL code and its French interface label.
+
+    Imported HAL evidence wins. New local drafts fall back to the mapping owned
+    by the pinned reusable package rather than duplicating classification rules.
+    """
+    code = explicit_type.strip().upper() or HAL_DOCUMENT_TYPES.get(
+        publication_type, publication_type.upper()
+    )
+    label = HAL_DOCUMENT_TYPE_LABELS_FR.get(code, f"Type de document HAL : {code}")
+    return code, label
+
+
+def publication_types_for_hal(code: str) -> tuple[str, ...]:
+    """Return package publication types represented by one HAL document code."""
+    wanted = code.strip().upper()
+    return tuple(
+        publication_type
+        for publication_type, hal_code in HAL_DOCUMENT_TYPES.items()
+        if hal_code == wanted
+    )
 
 
 def read_review_snapshot(path: str | Path) -> list[dict[str, Any]]:

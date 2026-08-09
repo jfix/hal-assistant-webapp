@@ -67,8 +67,32 @@
   </div>
 
   <section class="panel" aria-labelledby="publication-summaries-title">
-    <h2 id="publication-summaries-title">Résumés et mots-clés</h2>
-    <p class="subtle">Ces valeurs font partie de la notice et seront utilisées lors de la préparation du dépôt HAL.</p>
+    <div class="section-heading summary-section-heading">
+      <div>
+        <h2 id="publication-summaries-title">Résumés et mots-clés</h2>
+        <p class="subtle">Ces valeurs font partie de la notice et seront utilisées lors de la préparation du dépôt HAL.</p>
+      </div>
+      {% if can_review and not summary_generation_missing %}
+        <details class="document-generation-discreet">
+          <summary>Générer depuis un document</summary>
+          <form method="post" enctype="multipart/form-data" action="{% url 'publication-generate-from-document' publication.id %}" data-upload-form>
+            {% csrf_token %}
+            <input type="file" name="document" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" required>
+            <button class="secondary-button" type="submit" data-submit>Analyser et comparer</button>
+          </form>
+        </details>
+      {% endif %}
+    </div>
+    {% if can_review and summary_generation_missing %}
+      <div class="document-generation-callout">
+        <div><strong>Compléter depuis votre article</strong><span>Importez un PDF ou un document Word pour proposer les résumés et mots-clés manquants.</span></div>
+        <form method="post" enctype="multipart/form-data" action="{% url 'publication-generate-from-document' publication.id %}" data-upload-form>
+          {% csrf_token %}
+          <input type="file" name="document" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" required>
+          <button class="primary-button" type="submit" data-submit>Générer et comparer</button>
+        </form>
+      </div>
+    {% endif %}
     <dl class="metadata summary-metadata">
       {% for field in summary_fields %}{% include "catalog/_field_row.html" %}{% endfor %}
     </dl>
@@ -82,12 +106,12 @@
       {% endif %}
       {% for item in proposals %}
         <article class="proposal">
-          <div class="proposal-field"><code>{{ item.assertion.field_path }}</code>
-            <span class="subtle">issu de {{ item.assertion.origin }}{% if item.assertion.confidence %} · {{ item.assertion.confidence }}{% endif %}</span>
+          <div class="proposal-field"><strong>{{ item.label }}</strong>
+            <span class="subtle">issu de {{ item.source_label }}{% if item.assertion.confidence %} · génération IA{% endif %}</span>
           </div>
           <div class="proposal-diff">
-            <div><dt>Valeur actuelle</dt><dd class="before">{{ item.current|default:"—" }}</dd></div>
-            <div><dt>Valeur proposée</dt><dd class="after">{{ item.assertion.value|default:"—" }}</dd></div>
+            <div><dt>Valeur actuelle</dt><dd class="before">{{ item.current_text|default:"—" }}</dd></div>
+            <div><dt>Valeur proposée</dt><dd class="after">{{ item.proposed_text|default:"—" }}</dd></div>
           </div>
           {% if can_review %}
             <form method="post" action="{% url 'assertion-decide' publication.id item.assertion.id %}" class="decision-form">
@@ -174,7 +198,7 @@
               <td>{{ assertion.value }}</td>
               <td>{{ assertion.get_state_display }}</td>
               <td>{{ assertion.origin }}</td>
-              <td>{{ assertion.source_record.locator }}</td>
+              <td>{% if assertion.source_record %}{{ assertion.source_record.locator }}{% elif assertion.document_summary %}{{ assertion.document_summary.source_filename|default:"Document analysé" }}{% else %}—{% endif %}</td>
             </tr>
           {% empty %}
             <tr><td colspan="5">Aucune assertion enregistrée.</td></tr>

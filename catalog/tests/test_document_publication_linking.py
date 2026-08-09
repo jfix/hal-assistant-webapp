@@ -1,12 +1,27 @@
 from __future__ import annotations
 
+from unittest.mock import patch
+
 import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 
-from catalog.models import AuditEvent, DocumentPublicationLink, DocumentSummaryCache, Publication
+from catalog.models import (
+    AssertionDecision,
+    AuditEvent,
+    DocumentPublicationLink,
+    DocumentSummaryCache,
+    FieldAssertion,
+    Publication,
+)
 from catalog.services.document_matching import find_publication_matches
+from catalog.services.publication_documents import (
+    CachedGeneration,
+    propose_generated_fields,
+)
+from catalog.services.review import decide_assertion
 
 pytestmark = pytest.mark.django_db
 
@@ -153,3 +168,141 @@ def test_probable_duplicate_blocks_new_draft(client) -> None:
 
     assert Publication.objects.count() == 1
     assert not DocumentPublicationLink.objects.filter(summary=summary).exists()
+
+
+def test_document_generation_creates_independent_proposals_without_overwriting() -> None:
+    user = _user("document-proposer", reviewer=True)
+    summary = _summary(user)
+    publication = _publication(
+        abstract_en="Existing English abstract",
+        abstract_fr="Résumé français existant",
+        keywords_en=["existing"],
+        keywords_fr=["existant"],
+    )
+
+    link, assertions, created = propose_generated_fields(
+        publication=publication,
+        summary=summary,
+        actor=user,
+    )
+
+    publication.refresh_from_db()
+    assert created is True
+    assert link.publication == publication
+    assert publication.abstract_en == "Existing English abstract"
+    assert publication.keywords_fr == ["existant"]
+    assert {item.field_path for item in assertions} == {
+        "abstract_en",
+        "abstract_fr",
+        "keywords_en",
+        "keywords_fr",
+    }
+    assert all(item.document_summary == summary for item in assertions)
+    assert all(item.source_record is None for item in assertions)
+    assert AuditEvent.objects.filter(action="document.generation_proposed").exists()
+
+
+def test_accepting_document_proposal_marks_published_notice_modified() -> None:
+    user = _user("published-document-reviewer", reviewer=True)
+    summary = _summary(user)
+    publication = _publication(
+        abstract_en="Old abstract",
+        hal_id="hal-01234567",
+        version=4,
+        hal_synced_version=4,
+    )
+    _link, assertions, _created = propose_generated_fields(
+        publication=publication,
+        summary=summary,
+        actor=user,
+    )
+    abstract_proposal = next(
+        item for item in assertions if item.field_path == "abstract_en"
+    )
+
+    decide_assertion(
+        assertion=abstract_proposal,
+        actor=user,
+        outcome=AssertionDecision.Outcome.ACCEPTED,
+        base_version=4,
+    )
+
+    publication.refresh_from_db()
+    assert publication.abstract_en == "English abstract"
+    assert publication.version == 5
+    assert publication.hal_synced_version == 4
+    assert publication.workflow_statuses[2]["label"] == "Modifié"
+
+
+def test_reviewer_can_generate_proposals_from_publication_page(client) -> None:
+    user = _user("record-uploader", reviewer=True)
+    summary = _summary(user)
+    publication = _publication(abstract_en="Existing abstract")
+    generation = CachedGeneration(
+        entry=summary,
+        result=None,  # The view only needs the immutable cache entry here.
+        cache_hit=False,
+    )
+    client.force_login(user)
+
+    with patch(
+        "catalog.views.get_or_generate_summary",
+        return_value=generation,
+    ):
+        response = client.post(
+            reverse("publication-generate-from-document", args=[publication.id]),
+            {"document": SimpleUploadedFile("article.pdf", b"test", "application/pdf")},
+        )
+
+    assert response.status_code == 302
+    assert response.url == reverse("publication-detail", args=[publication.id])
+    assert DocumentPublicationLink.objects.filter(
+        summary=summary, publication=publication
+    ).exists()
+    assert FieldAssertion.objects.filter(
+        publication=publication,
+        document_summary=summary,
+        state=FieldAssertion.State.PROPOSED,
+    ).count() == 4
+
+
+def test_non_reviewer_cannot_generate_or_associate_document(client) -> None:
+    user = _user("record-reader")
+    publication = _publication()
+    client.force_login(user)
+
+    with patch("catalog.views.get_or_generate_summary") as generate:
+        response = client.post(
+            reverse("publication-generate-from-document", args=[publication.id]),
+            {"document": SimpleUploadedFile("article.pdf", b"test", "application/pdf")},
+        )
+
+    assert response.status_code == 302
+    generate.assert_not_called()
+    assert not DocumentPublicationLink.objects.exists()
+    assert not FieldAssertion.objects.exists()
+
+
+def test_generation_action_is_prominent_only_when_generated_fields_are_missing(client) -> None:
+    user = _user("adaptive-generator", reviewer=True)
+    publication = _publication()
+    client.force_login(user)
+
+    missing_response = client.get(
+        reverse("publication-detail", args=[publication.id])
+    ).content.decode()
+    publication.abstract_en = "English"
+    publication.abstract_fr = "Français"
+    publication.keywords_en = ["keyword"]
+    publication.keywords_fr = ["mot-clé"]
+    publication.save()
+    complete_response = client.get(
+        reverse("publication-detail", args=[publication.id])
+    ).content.decode()
+
+    assert "document-generation-callout" in missing_response
+    assert "Compléter depuis votre article" in missing_response
+    assert "document-generation-discreet" not in missing_response
+    assert "document-generation-callout" not in complete_response
+    assert "document-generation-discreet" in complete_response
+    assert "Générer depuis un document" in complete_response
