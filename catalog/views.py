@@ -75,6 +75,12 @@ CONFERENCE_FIELDS = (
     ("Ville", "conference_city", "text"),
     ("Pays", "conference_country", "text"),
 )
+SUMMARY_FIELDS = (
+    ("Résumé français", "abstract_fr", "multiline"),
+    ("Mots-clés français", "keywords_fr", "list"),
+    ("English abstract", "abstract_en", "multiline"),
+    ("English keywords", "keywords_en", "list"),
+)
 
 
 def _edit_text(value) -> str:
@@ -414,6 +420,7 @@ def publication_detail(request: HttpRequest, publication_id):
             "list_fields": LIST_FIELDS,
             "metadata_fields": _field_descriptors(publication, METADATA_FIELDS),
             "conference_fields": _field_descriptors(publication, CONFERENCE_FIELDS),
+            "summary_fields": _field_descriptors(publication, SUMMARY_FIELDS),
         },
     )
 

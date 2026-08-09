@@ -69,6 +69,23 @@ def find_publication_matches(
 
 @transaction.atomic
 def link_summary(*, summary: DocumentSummaryCache, publication: Publication, actor, action: str):
+    publication = Publication.objects.select_for_update().get(pk=publication.pk)
+    generated_fields = {
+        "abstract_en": summary.abstract_en,
+        "abstract_fr": summary.abstract_fr,
+        "keywords_en": summary.keywords_en,
+        "keywords_fr": summary.keywords_fr,
+    }
+    populated = [
+        field_name
+        for field_name, value in generated_fields.items()
+        if value and not getattr(publication, field_name)
+    ]
+    if populated:
+        for field_name in populated:
+            setattr(publication, field_name, generated_fields[field_name])
+        publication.version += 1
+        publication.save(update_fields=[*populated, "version", "updated_at"])
     link = DocumentPublicationLink.objects.create(
         summary=summary, publication=publication, actor=actor, action=action
     )
@@ -77,7 +94,11 @@ def link_summary(*, summary: DocumentSummaryCache, publication: Publication, act
         action=f"document.{action}",
         object_type="DocumentSummaryCache",
         object_id=str(summary.id),
-        metadata={"publication_key": publication.publication_key},
+        metadata={
+            "publication_key": publication.publication_key,
+            "populated_fields": populated,
+            "resulting_version": publication.version,
+        },
     )
     return link
 
@@ -98,6 +119,10 @@ def create_draft_from_summary(*, summary: DocumentSummaryCache, actor):
             "publication_year": summary.suggested_publication_year,
             "publication_type": summary.suggested_publication_type or "other",
             "doi": summary.suggested_doi,
+            "abstract_en": summary.abstract_en,
+            "abstract_fr": summary.abstract_fr,
+            "keywords_en": summary.keywords_en,
+            "keywords_fr": summary.keywords_fr,
             "review_state": Publication.ReviewState.DRAFT,
             "readiness_state": Publication.ReadinessState.NEEDS_REVIEW,
         },

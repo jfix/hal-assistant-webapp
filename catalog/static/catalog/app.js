@@ -12,7 +12,7 @@
     if (!form || !trigger) {
       return;
     }
-    var input = form.querySelector('input[name="edited_value"]');
+    var input = form.querySelector('[name="edited_value"]');
     if (!input) {
       return;
     }
@@ -57,7 +57,10 @@
     });
     input.addEventListener("blur", save);
     input.addEventListener("keydown", function (event) {
-      if (event.key === "Enter") {
+      if (event.key === "Enter" && input.tagName !== "TEXTAREA") {
+        event.preventDefault();
+        save();
+      } else if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
         event.preventDefault();
         save();
       } else if (event.key === "Escape") {

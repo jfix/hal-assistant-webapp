@@ -18,7 +18,7 @@ from catalog.models import AuditEvent, FieldAssertion, Publication, SourceImport
 
 PARSER_VERSION = f"hal-assistant/{version('hal-assistant')}"
 
-LIST_FIELDS = ("authors", "editors", "isbn", "issn")
+LIST_FIELDS = ("authors", "editors", "isbn", "issn", "keywords_en", "keywords_fr")
 DATE_FIELDS = ("conference_start_date", "conference_end_date")
 
 MATERIALIZED_FIELDS = (
@@ -27,6 +27,10 @@ MATERIALIZED_FIELDS = (
     "title",
     "publication_year",
     "language",
+    "abstract_en",
+    "abstract_fr",
+    "keywords_en",
+    "keywords_fr",
     "pages",
     "authors",
     "editors",
@@ -235,6 +239,10 @@ def normalize_row(row: dict[str, Any]) -> dict[str, Any]:
         "year": year,
         "authors": authors,
         "language": _text(row.get("language")),
+        "abstract_en": _text(row.get("abstract_en")),
+        "abstract_fr": _text(row.get("abstract_fr")),
+        "keywords_en": _list(row.get("keywords_en")),
+        "keywords_fr": _list(row.get("keywords_fr")),
         "journal_title": _text(_first(row, "journal_title", "journal")),
         "book_title": _text(row.get("book_title")),
         "conference_start_date": _date(
@@ -267,6 +275,10 @@ def normalize_row(row: dict[str, Any]) -> dict[str, Any]:
         "title": _text(row.get("title")),
         "publication_year": year,
         "language": _text(row.get("language")),
+        "abstract_en": normalized_for_audit["abstract_en"],
+        "abstract_fr": normalized_for_audit["abstract_fr"],
+        "keywords_en": normalized_for_audit["keywords_en"],
+        "keywords_fr": normalized_for_audit["keywords_fr"],
         "pages": _text(row.get("pages")),
         "authors": authors,
         "editors": _list(row.get("editors")),

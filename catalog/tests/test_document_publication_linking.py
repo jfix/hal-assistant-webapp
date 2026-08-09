@@ -75,9 +75,15 @@ def test_reviewer_can_link_document_and_generated_metadata(client) -> None:
 
     assert response.status_code == 302
     link = DocumentPublicationLink.objects.get(summary=summary)
+    publication.refresh_from_db()
     assert link.publication == publication
     assert link.action == DocumentPublicationLink.Action.LINKED
     assert AuditEvent.objects.filter(action="document.linked").exists()
+    assert publication.abstract_en == "English abstract"
+    assert publication.abstract_fr == "Résumé français"
+    assert publication.keywords_en == ["memory"]
+    assert publication.keywords_fr == ["mémoire"]
+    assert publication.version == 2
 
 
 def test_non_reviewer_cannot_link_document(client) -> None:
@@ -112,6 +118,29 @@ def test_create_draft_is_local_and_uses_only_suggested_fields(client) -> None:
     assert publication.review_state == Publication.ReviewState.DRAFT
     assert publication.hal_id == ""
     assert publication.hal_status == ""
+    assert publication.abstract_en == "English abstract"
+    assert publication.keywords_fr == ["mémoire"]
+
+
+def test_linking_preserves_existing_edited_abstracts_and_keywords(client) -> None:
+    user = _user("preserve-editor", reviewer=True)
+    summary = _summary(user)
+    publication = _publication(
+        abstract_en="Existing edited abstract",
+        keywords_en=["existing"],
+    )
+    client.force_login(user)
+
+    client.post(
+        reverse("document-summary-link", args=[summary.id]),
+        {"publication_id": publication.id},
+    )
+
+    publication.refresh_from_db()
+    assert publication.abstract_en == "Existing edited abstract"
+    assert publication.keywords_en == ["existing"]
+    assert publication.abstract_fr == "Résumé français"
+    assert publication.keywords_fr == ["mémoire"]
 
 
 def test_probable_duplicate_blocks_new_draft(client) -> None:
