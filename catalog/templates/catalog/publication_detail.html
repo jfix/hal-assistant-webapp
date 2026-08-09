@@ -93,6 +93,41 @@
     </section>
   {% endif %}
 
+  {% if document_analyses %}
+    <section class="panel" aria-labelledby="document-analyses-title">
+      <h2 id="document-analyses-title">Analyses de documents associées</h2>
+      <p class="subtle">Informations sur le traitement et l’association des documents ; elles ne modifient pas automatiquement les métadonnées de la notice.</p>
+      {% for item in document_analyses %}
+        <article class="document-analysis">
+          <div class="source-meta">
+            <strong>{{ item.summary.document_title|default:item.summary.source_filename|default:"Document sans titre" }}</strong>
+            <span>{{ item.summary.source_filename|default:"Nom de fichier non disponible" }}</span>
+            <span>{{ item.link.get_action_display }} · {{ item.link.actor.get_username }} · {{ item.link.created_at }}</span>
+            {% if item.can_open_cache %}<a href="{% url 'document-summary-cache-detail' item.summary.id %}">Ouvrir le résultat en cache</a>{% endif %}
+          </div>
+          <div class="result-grid document-analysis-results">
+            <div class="result-card">
+              <div class="card-heading"><h3>Résumé français</h3><button type="button" class="copy-button" data-copy-target="publication-{{ item.link.id }}-abstract-fr">Copier</button></div>
+              <textarea id="publication-{{ item.link.id }}-abstract-fr" readonly>{{ item.summary.abstract_fr }}</textarea>
+            </div>
+            <div class="result-card">
+              <div class="card-heading"><h3>English abstract</h3><button type="button" class="copy-button" data-copy-target="publication-{{ item.link.id }}-abstract-en">Copy</button></div>
+              <textarea id="publication-{{ item.link.id }}-abstract-en" readonly>{{ item.summary.abstract_en }}</textarea>
+            </div>
+            <div class="result-card">
+              <div class="card-heading"><h3>Mots-clés français</h3><button type="button" class="copy-button" data-copy-target="publication-{{ item.link.id }}-keywords-fr">Copier</button></div>
+              <textarea id="publication-{{ item.link.id }}-keywords-fr" class="keyword-output" readonly>{{ item.summary.keywords_fr|join:", " }}</textarea>
+            </div>
+            <div class="result-card">
+              <div class="card-heading"><h3>English keywords</h3><button type="button" class="copy-button" data-copy-target="publication-{{ item.link.id }}-keywords-en">Copy</button></div>
+              <textarea id="publication-{{ item.link.id }}-keywords-en" class="keyword-output" readonly>{{ item.summary.keywords_en|join:", " }}</textarea>
+            </div>
+          </div>
+        </article>
+      {% endfor %}
+    </section>
+  {% endif %}
+
   <section class="panel">
     <h2>Sources d'origine</h2>
     {% for source in publication.source_records.all %}
