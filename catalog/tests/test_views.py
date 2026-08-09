@@ -221,6 +221,8 @@ def test_authenticated_user_can_view_publication_detail(
     content = response.content.decode()
     assert "Cloud deployment" in content
     assert "conference_city" in content
+    assert "Résumés et mots-clés" in content
+    assert 'name="field" value="abstract_fr"' not in content
 
 
 def test_external_links_open_in_safe_new_tabs(client, user) -> None:

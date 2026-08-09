@@ -103,6 +103,7 @@ blockquote { margin: .8rem 0 0; padding: .8rem 1rem; border-left: 4px solid var(
 .editable-field .editable-value { cursor: text; padding: .05rem .2rem; margin: -.05rem -.2rem; border-bottom: 1px dashed #9ca8ad; }
 .editable-field .editable-value:hover, .editable-field .editable-value:focus { background: var(--accent-soft); outline: none; }
 .inline-edit { display: grid; gap: .4rem; padding: .6rem; margin-top: .3rem; background: var(--canvas); border: 1px solid var(--line); border-radius: .2rem; }
+.inline-edit textarea { min-height: 10rem; resize: vertical; }
 .edit-hint { font-size: .72rem; }
 /* With JS, the form is hidden until the value is clicked. */
 .js .editable-field .inline-edit { display: none; }

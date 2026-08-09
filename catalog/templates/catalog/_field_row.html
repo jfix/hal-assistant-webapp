@@ -24,7 +24,7 @@ from the surrounding context.
         {% csrf_token %}
         <input type="hidden" name="base_version" value="{{ publication.version }}">
         <input type="hidden" name="field" value="{{ field.name }}">
-        <input type="text" name="edited_value" value="{{ field.edit_value }}" autocomplete="off" aria-label="{{ field.label }}">
+        {% if field.kind == "multiline" %}<textarea name="edited_value" autocomplete="off" aria-label="{{ field.label }}">{{ field.edit_value }}</textarea>{% else %}<input type="text" name="edited_value" value="{{ field.edit_value }}" autocomplete="off" aria-label="{{ field.label }}">{% endif %}
         {% if field.name in list_fields %}<span class="subtle">Séparez plusieurs valeurs par « ; ».</span>{% endif %}
         <span class="subtle edit-hint">Entrée ou clic à l'extérieur pour enregistrer · Échap pour annuler</span>
         <noscript><button class="primary-button" type="submit">Enregistrer</button></noscript>

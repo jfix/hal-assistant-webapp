@@ -53,6 +53,14 @@
     </section>
   </div>
 
+  <section class="panel" aria-labelledby="publication-summaries-title">
+    <h2 id="publication-summaries-title">Résumés et mots-clés</h2>
+    <p class="subtle">Ces valeurs font partie de la notice et seront utilisées lors de la préparation du dépôt HAL.</p>
+    <dl class="metadata">
+      {% for field in summary_fields %}{% include "catalog/_field_row.html" %}{% endfor %}
+    </dl>
+  </section>
+
   {% if proposals %}
     <section class="panel" aria-labelledby="proposed-changes">
       <h2 id="proposed-changes">Modifications proposées <span class="badge">{{ proposals|length }} en attente</span></h2>
@@ -106,24 +114,15 @@
             {% if item.summary.source_file %}<a class="secondary-button" href="{% url 'associated-document' item.summary.id %}" target="_blank" rel="noopener">Ouvrir le document original</a>{% endif %}
             {% if item.can_open_cache %}<a href="{% url 'document-summary-cache-detail' item.summary.id %}">Ouvrir le résultat en cache</a>{% endif %}
           </div>
-          <div class="result-grid document-analysis-results">
-            <div class="result-card">
-              <div class="card-heading"><h3>Résumé français</h3><button type="button" class="copy-button" data-copy-target="publication-{{ item.link.id }}-abstract-fr">Copier</button></div>
-              <textarea id="publication-{{ item.link.id }}-abstract-fr" readonly>{{ item.summary.abstract_fr }}</textarea>
-            </div>
-            <div class="result-card">
-              <div class="card-heading"><h3>English abstract</h3><button type="button" class="copy-button" data-copy-target="publication-{{ item.link.id }}-abstract-en">Copy</button></div>
-              <textarea id="publication-{{ item.link.id }}-abstract-en" readonly>{{ item.summary.abstract_en }}</textarea>
-            </div>
-            <div class="result-card">
-              <div class="card-heading"><h3>Mots-clés français</h3><button type="button" class="copy-button" data-copy-target="publication-{{ item.link.id }}-keywords-fr">Copier</button></div>
-              <textarea id="publication-{{ item.link.id }}-keywords-fr" class="keyword-output" readonly>{{ item.summary.keywords_fr|join:", " }}</textarea>
-            </div>
-            <div class="result-card">
-              <div class="card-heading"><h3>English keywords</h3><button type="button" class="copy-button" data-copy-target="publication-{{ item.link.id }}-keywords-en">Copy</button></div>
-              <textarea id="publication-{{ item.link.id }}-keywords-en" class="keyword-output" readonly>{{ item.summary.keywords_en|join:", " }}</textarea>
-            </div>
-          </div>
+          <details class="document-analysis-results">
+            <summary>Afficher la génération IA originale conservée</summary>
+            <dl class="metadata">
+              <div><dt>Résumé français</dt><dd>{{ item.summary.abstract_fr }}</dd></div>
+              <div><dt>English abstract</dt><dd>{{ item.summary.abstract_en }}</dd></div>
+              <div><dt>Mots-clés français</dt><dd>{{ item.summary.keywords_fr|join:", " }}</dd></div>
+              <div><dt>English keywords</dt><dd>{{ item.summary.keywords_en|join:", " }}</dd></div>
+            </dl>
+          </details>
         </article>
       {% endfor %}
     </section>

@@ -80,6 +80,33 @@ def test_accept_materializes_value_and_bumps_version(proposal) -> None:
     assert AuditEvent.objects.filter(action="assertion.accepted").count() == 1
 
 
+@pytest.mark.parametrize(
+    ("field_name", "raw_value", "expected"),
+    [
+        ("abstract_fr", "Résumé révisé et développé.", "Résumé révisé et développé."),
+        ("keywords_en", "archive; memory; theatre", ["archive", "memory", "theatre"]),
+    ],
+)
+def test_abstracts_and_keywords_are_audited_editable_fields(
+    proposal, field_name, raw_value, expected
+) -> None:
+    publication = proposal.publication
+
+    decision = edit_field(
+        publication=publication,
+        field_path=field_name,
+        actor=None,
+        edited_value=raw_value,
+        base_version=1,
+    )
+
+    publication.refresh_from_db()
+    assert getattr(publication, field_name) == expected
+    assert publication.version == 2
+    assert decision.field_path == field_name
+    assert decision.applied_value == expected
+
+
 def test_reject_keeps_value_and_records_decision(proposal) -> None:
     decision = decide_assertion(
         assertion=proposal,
