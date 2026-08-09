@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
+import time
 from dataclasses import dataclass
 from hashlib import sha256
 from io import BytesIO
@@ -22,6 +24,9 @@ MAX_DOCX_UNCOMPRESSED_BYTES = 50 * 1024 * 1024
 MAX_DOCX_COMPRESSION_RATIO = 200
 ALLOWED_EXTENSIONS = {".pdf", ".docx"}
 SUMMARY_GENERATOR_VERSION = "humanities-bilingual-v2"
+OPENAI_RETRY_DELAYS_SECONDS = (1.0, 3.0)
+
+logger = logging.getLogger(__name__)
 
 
 class DocumentSummaryError(Exception):
@@ -254,6 +259,57 @@ def _response_text(payload: dict) -> str:
     raise DocumentSummaryError("Le service d’IA a renvoyé une réponse vide.")
 
 
+def _retry_delay(exc: HTTPError | None, fallback: float) -> float:
+    if exc is None:
+        return fallback
+    retry_after = exc.headers.get("Retry-After") if exc.headers else None
+    try:
+        return min(10.0, max(0.0, float(retry_after)))
+    except (TypeError, ValueError):
+        return fallback
+
+
+def _openai_response(request: Request) -> dict:
+    """Call OpenAI, retrying only failures that are expected to be transient."""
+    for attempt in range(len(OPENAI_RETRY_DELAYS_SECONDS) + 1):
+        try:
+            with urlopen(request, timeout=90) as response:  # noqa: S310 - fixed HTTPS default
+                return json.load(response)
+        except HTTPError as exc:
+            retryable = exc.code == 429 or exc.code >= 500
+            if not retryable or attempt == len(OPENAI_RETRY_DELAYS_SECONDS):
+                if exc.code == 401:
+                    message = "La configuration du service d’IA doit être vérifiée."
+                elif exc.code == 429:
+                    message = "Le quota du service d’IA est temporairement indisponible ou épuisé."
+                elif 400 <= exc.code < 500:
+                    message = "Le service d’IA n’a pas accepté cette demande."
+                else:
+                    message = "Le service d’IA est momentanément indisponible."
+                raise DocumentSummaryError(message) from exc
+            delay = _retry_delay(exc, OPENAI_RETRY_DELAYS_SECONDS[attempt])
+            logger.warning(
+                "openai_transient_failure attempt=%s status=%s retry_in=%.1f",
+                attempt + 1,
+                exc.code,
+                delay,
+            )
+            time.sleep(delay)
+        except (URLError, TimeoutError) as exc:
+            if attempt == len(OPENAI_RETRY_DELAYS_SECONDS):
+                raise DocumentSummaryError(
+                    "Le service d’IA est momentanément inaccessible."
+                ) from exc
+            delay = OPENAI_RETRY_DELAYS_SECONDS[attempt]
+            logger.warning(
+                "openai_transient_failure attempt=%s status=network retry_in=%.1f",
+                attempt + 1,
+                delay,
+            )
+            time.sleep(delay)
+    raise AssertionError("unreachable")
+
+
 def generate_bilingual_summary(text: str) -> BilingualSummary:
     api_key = os.getenv("OPENAI_API_KEY", "").strip()
     if not api_key:
@@ -320,21 +376,7 @@ def generate_bilingual_summary(text: str) -> BilingualSummary:
         headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
         method="POST",
     )
-    try:
-        with urlopen(request, timeout=90) as response:  # noqa: S310 - fixed HTTPS default
-            response_payload = json.load(response)
-    except HTTPError as exc:
-        if exc.code == 401:
-            message = "La configuration du service d’IA doit être vérifiée."
-        elif exc.code == 429:
-            message = "Le quota du service d’IA est temporairement indisponible ou épuisé."
-        elif 400 <= exc.code < 500:
-            message = "Le service d’IA n’a pas accepté cette demande."
-        else:
-            message = "Le service d’IA est momentanément indisponible."
-        raise DocumentSummaryError(message) from exc
-    except (URLError, TimeoutError) as exc:
-        raise DocumentSummaryError("Le service d’IA est momentanément inaccessible.") from exc
+    response_payload = _openai_response(request)
 
     try:
         result = json.loads(_response_text(response_payload))
