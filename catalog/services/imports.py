@@ -522,6 +522,11 @@ def apply_snapshot_import(
                 ).first()
                 if publication is None:
                     publication = Publication.objects.create(**values)
+                    if publication.hal_id:
+                        publication.hal_synced_version = publication.version
+                        publication.save(
+                            update_fields=["hal_synced_version", "updated_at"]
+                        )
                     created += 1
                 elif entry.status == "changed":
                     proposed += 1

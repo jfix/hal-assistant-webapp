@@ -74,6 +74,7 @@ class Publication(models.Model):
     hal_status = models.CharField(max_length=40, blank=True)
     hal_id = models.CharField(max_length=80, blank=True)
     version = models.PositiveIntegerField(default=1)
+    hal_synced_version = models.PositiveIntegerField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -97,6 +98,76 @@ class Publication(models.Model):
 
     def __str__(self) -> str:
         return self.title
+
+    @property
+    def workflow_statuses(self) -> list[dict[str, str]]:
+        """Three orthogonal, user-facing publication workflow dimensions."""
+        published = bool(self.hal_id)
+        ready = (
+            not self.missing_required_fields
+            and self.readiness_state
+            in {
+                self.ReadinessState.HAL_READY,
+                self.ReadinessState.PREPROD_VALIDATED,
+                self.ReadinessState.PRODUCTION_SUBMITTED,
+            }
+        )
+
+        statuses = [
+            {
+                "dimension": "HAL",
+                "label": "Publié sur HAL" if published else "Brouillon",
+                "tone": "published" if published else "neutral",
+            }
+        ]
+        if published:
+            statuses.append(
+                {
+                    "dimension": "Données",
+                    "label": (
+                        "Prêt pour mise à jour HAL"
+                        if ready
+                        else "Mise à jour à compléter"
+                    ),
+                    "tone": "ready" if ready else "warning",
+                }
+            )
+            if self.hal_synced_version is None:
+                sync_label, sync_tone = "À vérifier", "warning"
+            elif self.version > self.hal_synced_version:
+                sync_label, sync_tone = "Modifié", "warning"
+            else:
+                sync_label, sync_tone = "À jour", "synced"
+        else:
+            statuses.append(
+                {
+                    "dimension": "Données",
+                    "label": "Prêt pour HAL" if ready else "À compléter",
+                    "tone": "ready" if ready else "warning",
+                }
+            )
+            sync_label, sync_tone = "Jamais synchronisé", "neutral"
+
+        statuses.append(
+            {
+                "dimension": "Synchronisation",
+                "label": sync_label,
+                "tone": sync_tone,
+            }
+        )
+        return statuses
+
+    @property
+    def attention_status(self) -> dict[str, str] | None:
+        if self.review_state == self.ReviewState.BLOCKED:
+            return {"dimension": "Attention", "label": "Bloqué", "tone": "blocked"}
+        if self.review_state == self.ReviewState.NEEDS_REVIEW:
+            return {
+                "dimension": "Attention",
+                "label": "À vérifier",
+                "tone": "warning",
+            }
+        return None
 
 
 class DocumentSummaryCache(ImmutableModel):

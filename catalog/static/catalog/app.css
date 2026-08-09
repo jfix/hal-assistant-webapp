@@ -63,6 +63,16 @@ tbody tr:last-child td { border-bottom: 0; }
 .badge-hal_ready, .badge-preprod_validated, .badge-production_submitted { background: var(--accent-soft); color: var(--accent-dark); }
 .badge-needs_enrichment, .badge-needs_review { background: var(--warning-soft); color: var(--warning); }
 .badges { display: flex; gap: .4rem; flex-wrap: wrap; margin-top: .7rem; }
+.status-dimensions { display: flex; gap: .45rem; flex-wrap: wrap; margin-top: .75rem; }
+.status-dimensions-compact { display: grid; justify-items: start; gap: .3rem; margin-top: 0; }
+.status-badge { display: inline-flex; overflow: hidden; border: 1px solid var(--line); border-radius: 999px; background: white; color: #334047; font-size: .74rem; font-weight: 750; }
+.status-badge > span { padding: .2rem .52rem; }
+.status-badge .status-dimension { border-right: 1px solid currentColor; background: rgb(255 255 255 / 55%); text-transform: uppercase; letter-spacing: .04em; font-size: .65rem; }
+.status-published { border-color: #9bb8d4; background: #e2effa; color: #174f7a; }
+.status-ready, .status-synced { border-color: #9bc9bd; background: var(--accent-soft); color: var(--accent-dark); }
+.status-warning { border-color: #dfbd86; background: var(--warning-soft); color: var(--warning); }
+.status-blocked { border-color: #d7a0a0; background: #ffeded; color: #8b2020; }
+.status-neutral { background: #edf0f1; color: #4f5b61; }
 .pagination { display: flex; justify-content: center; gap: 1.2rem; padding: 1.2rem; }
 .breadcrumb { display: flex; gap: .5rem; margin-bottom: 1rem; color: var(--muted); font-size: .85rem; }
 .detail-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; }

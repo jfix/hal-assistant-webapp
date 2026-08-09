@@ -61,7 +61,7 @@
           <th scope="col">Publication</th>
           <th scope="col">Année</th>
           <th scope="col">Type</th>
-          <th scope="col">Préparation</th>
+          <th scope="col">Statuts</th>
           <th scope="col">HAL</th>
         </tr>
       </thead>
@@ -75,7 +75,14 @@
             <td>{{ publication.publication_year|default:"—" }}</td>
             <td>{{ publication.publication_type }}</td>
             <td>
-              <span class="badge badge-{{ publication.readiness_state }}">{{ publication.get_readiness_state_display }}</span>
+              <div class="status-dimensions status-dimensions-compact">
+                {% for status in publication.workflow_statuses %}
+                  <span class="status-badge status-{{ status.tone }}"><span class="status-dimension">{{ status.dimension }}</span><span>{{ status.label }}</span></span>
+                {% endfor %}
+                {% if publication.attention_status %}
+                  <span class="status-badge status-{{ publication.attention_status.tone }}"><span class="status-dimension">{{ publication.attention_status.dimension }}</span><span>{{ publication.attention_status.label }}</span></span>
+                {% endif %}
+              </div>
               {% if publication.missing_required_fields %}
                 <span class="subtle">{{ publication.missing_required_fields|join:", " }}</span>
               {% endif %}

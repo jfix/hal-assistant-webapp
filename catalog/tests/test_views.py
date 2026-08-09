@@ -227,6 +227,64 @@ def test_authenticated_user_can_view_publication_detail(
     assert 'name="field" value="abstract_fr"' not in content
 
 
+def test_detail_statuses_separate_hal_data_and_synchronization(client, user) -> None:
+    draft = Publication.objects.create(
+        publication_key="status-draft",
+        publication_type="journal_article",
+        title="Ready draft",
+        readiness_state=Publication.ReadinessState.HAL_READY,
+        review_state=Publication.ReviewState.APPROVED,
+    )
+    published = Publication.objects.create(
+        publication_key="status-published",
+        publication_type="journal_article",
+        title="Published and modified",
+        hal_id="hal-123456",
+        readiness_state=Publication.ReadinessState.HAL_READY,
+        version=3,
+        hal_synced_version=2,
+        review_state=Publication.ReviewState.APPROVED,
+    )
+    client.force_login(user)
+
+    draft_content = client.get(
+        reverse("publication-detail", args=[draft.id])
+    ).content.decode()
+    published_content = client.get(
+        reverse("publication-detail", args=[published.id])
+    ).content.decode()
+
+    assert "HAL</span><span>Brouillon" in draft_content
+    assert "Données</span><span>Prêt pour HAL" in draft_content
+    assert "Synchronisation</span><span>Jamais synchronisé" in draft_content
+    assert "Approuvé" not in draft_content
+    assert "HAL</span><span>Publié sur HAL" in published_content
+    assert "Données</span><span>Prêt pour mise à jour HAL" in published_content
+    assert "Synchronisation</span><span>Modifié" in published_content
+    assert "Approuvé" not in published_content
+
+
+def test_published_unmodified_record_is_shown_as_synchronized(client, user) -> None:
+    publication = Publication.objects.create(
+        publication_key="status-synced",
+        publication_type="journal_article",
+        title="Published and synchronized",
+        hal_id="hal-654321",
+        version=4,
+        hal_synced_version=4,
+        readiness_state=Publication.ReadinessState.HAL_READY,
+    )
+    client.force_login(user)
+
+    content = client.get(
+        reverse("publication-detail", args=[publication.id])
+    ).content.decode()
+
+    assert "HAL</span><span>Publié sur HAL" in content
+    assert "Synchronisation</span><span>À jour" in content
+    assert "Synchronisation</span><span>Modifié" not in content
+
+
 def test_publication_detail_reads_latest_hal_operation(client, user, publications) -> None:
     publication = publications[0]
     operation = HALOperation.objects.create(

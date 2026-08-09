@@ -62,6 +62,22 @@ def test_apply_materializes_new_record_and_preserves_evidence(
     assert source_import.stored_file.endswith(f"{plan.source_sha256}.xlsx")
 
 
+def test_imported_hal_record_starts_with_a_synchronization_baseline(
+    workbook_factory,
+    reviewed_row,
+) -> None:
+    hal_row = {**reviewed_row, "hal_id": "hal-01234567"}
+    snapshot = workbook_factory([hal_row])
+    plan, _ = plan_snapshot_import(snapshot)
+
+    apply_snapshot_import(snapshot, expected_report_sha256=plan.report_sha256)
+
+    publication = Publication.objects.get(publication_key="pub-0001")
+    assert publication.hal_id == "hal-01234567"
+    assert publication.hal_synced_version == publication.version
+    assert publication.workflow_statuses[-1]["label"] == "À jour"
+
+
 def test_reapplying_identical_bytes_is_an_idempotent_no_op(
     workbook_factory,
     reviewed_row,
