@@ -402,6 +402,21 @@ def test_detail_page_has_no_unrendered_template_syntax(client, user, publication
         assert leak not in content
 
 
+def test_publication_meta_sections_are_collapsed_by_default(
+    client, user, publications
+) -> None:
+    client.force_login(user)
+
+    response = client.get(reverse("publication-detail", args=[publications[0].id]))
+
+    content = response.content.decode()
+    assert content.count('<details class="panel meta-panel">') == 3
+    assert '<details class="panel meta-panel" open>' not in content
+    assert "Sources d'origine" in content
+    assert "Assertions de champs" in content
+    assert "Historique des décisions" in content
+
+
 def test_export_returns_a_filtered_xlsx_snapshot(client, user, publications) -> None:
     client.force_login(user)
 
