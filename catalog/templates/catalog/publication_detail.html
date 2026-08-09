@@ -102,8 +102,9 @@
   {% endif %}
 
   {% if document_analyses %}
-    <section class="panel" aria-labelledby="document-analyses-title">
-      <h2 id="document-analyses-title">Analyses de documents associées</h2>
+    <details class="panel meta-panel">
+      <summary><span class="meta-panel-title">Analyses de documents associées</span> <span class="badge">{{ document_analyses|length }}</span></summary>
+      <div class="meta-panel-content">
       <p class="subtle">Informations sur le traitement et l’association des documents ; elles ne modifient pas automatiquement les métadonnées de la notice.</p>
       {% for item in document_analyses %}
         <article class="document-analysis">
@@ -125,11 +126,13 @@
           </details>
         </article>
       {% endfor %}
-    </section>
+      </div>
+    </details>
   {% endif %}
 
-  <section class="panel">
-    <h2>Sources d'origine</h2>
+  <details class="panel meta-panel">
+    <summary><span class="meta-panel-title">Sources d'origine</span> <span class="badge">{{ publication.source_records.all|length }}</span></summary>
+    <div class="meta-panel-content">
     {% for source in publication.source_records.all %}
       <article class="source-record">
         <div class="source-meta">
@@ -142,10 +145,12 @@
     {% empty %}
       <p>Aucune source immuable n'est associée.</p>
     {% endfor %}
-  </section>
+    </div>
+  </details>
 
-  <section class="panel">
-    <h2>Assertions de champs</h2>
+  <details class="panel meta-panel">
+    <summary><span class="meta-panel-title">Assertions de champs</span> <span class="badge">{{ publication.assertions.all|length }}</span></summary>
+    <div class="meta-panel-content">
     <div class="table-wrap">
       <table>
         <thead><tr><th>Champ</th><th>Valeur</th><th>État</th><th>Origine</th><th>Source</th></tr></thead>
@@ -164,10 +169,12 @@
         </tbody>
       </table>
     </div>
-  </section>
+    </div>
+  </details>
 
-  <section class="panel">
-    <h2>Historique des décisions</h2>
+  <details class="panel meta-panel">
+    <summary><span class="meta-panel-title">Historique des décisions</span> <span class="badge">{{ decisions|length }}</span></summary>
+    <div class="meta-panel-content">
     <div class="table-wrap">
       <table>
         <thead><tr><th>Date</th><th>Champ</th><th>Décision</th><th>Valeur appliquée</th><th>Réviseur</th><th>Version</th><th>Motif</th></tr></thead>
@@ -188,5 +195,6 @@
         </tbody>
       </table>
     </div>
-  </section>
+    </div>
+  </details>
 {% endblock %}
