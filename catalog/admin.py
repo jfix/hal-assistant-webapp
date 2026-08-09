@@ -8,6 +8,9 @@ from .models import (
     DocumentSummaryCache,
     DocumentSummaryGenerationAttempt,
     FieldAssertion,
+    HALOperation,
+    HALPayload,
+    HALSubmissionAttempt,
     Publication,
     SourceImport,
     SourceRecord,
@@ -45,6 +48,9 @@ admin.site.register(FieldAssertion, ReadOnlyAdmin)
 admin.site.register(AuditEvent, ReadOnlyAdmin)
 admin.site.register(DocumentSummaryCache, ReadOnlyAdmin)
 admin.site.register(DocumentPublicationLink, ReadOnlyAdmin)
+admin.site.register(HALOperation, ReadOnlyAdmin)
+admin.site.register(HALPayload, ReadOnlyAdmin)
+admin.site.register(HALSubmissionAttempt, ReadOnlyAdmin)
 
 
 @admin.register(DocumentSummaryGenerationAttempt)

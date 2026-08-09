@@ -43,6 +43,21 @@ urlpatterns = [
         name="publication-xml",
     ),
     path(
+        "publications/<uuid:publication_id>/hal/preprod/prepare/",
+        views.prepare_hal_preprod,
+        name="hal-preprod-prepare",
+    ),
+    path(
+        "hal/preprod/<uuid:operation_id>/",
+        views.hal_preprod_operation,
+        name="hal-preprod-operation",
+    ),
+    path(
+        "hal/preprod/<uuid:operation_id>/execute/",
+        views.execute_hal_preprod,
+        name="hal-preprod-execute",
+    ),
+    path(
         "publications/<uuid:publication_id>/edit/",
         views.edit_field_view,
         name="publication-edit-field",

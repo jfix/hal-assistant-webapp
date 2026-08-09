@@ -89,6 +89,10 @@ class Publication(models.Model):
                 "review_publication",
                 "Peut accepter ou rejeter les modifications de champs proposées",
             ),
+            (
+                "submit_hal_preprod",
+                "Peut valider une nouvelle notice dans HAL préproduction",
+            ),
         ]
 
     def __str__(self) -> str:
@@ -375,3 +379,99 @@ class AuditEvent(ImmutableModel):
 
     def __str__(self) -> str:
         return f"{self.action}: {self.object_type}/{self.object_id}"
+
+
+class HALOperation(models.Model):
+    """A gated new-deposit workflow. Production is deliberately unsupported."""
+
+    class State(models.TextChoices):
+        PREPARED = "prepared", "Prêt à confirmer"
+        SUBMITTING = "submitting", "Envoi en cours"
+        ACCEPTED = "accepted", "Accepté en préproduction"
+        REJECTED = "rejected", "Refusé en préproduction"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    publication = models.ForeignKey(
+        Publication, on_delete=models.PROTECT, related_name="hal_operations"
+    )
+    requested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="requested_hal_operations",
+    )
+    publication_version = models.PositiveIntegerField()
+    state = models.CharField(max_length=20, choices=State.choices)
+    duplicate_check = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["publication", "-created_at"])]
+
+    def __str__(self) -> str:
+        return f"{self.publication.publication_key} · preprod · {self.state}"
+
+
+class HALPayload(ImmutableModel):
+    """Exact immutable TEI payload prepared for a preproduction operation."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    operation = models.OneToOneField(
+        HALOperation, on_delete=models.PROTECT, related_name="payload"
+    )
+    environment = models.CharField(max_length=20, default="preprod")
+    content = models.TextField()
+    sha256 = models.CharField(max_length=64)
+    validation_errors = models.JSONField(default=list)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(environment="preprod"),
+                name="hal_payload_preprod_only",
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.operation_id} · {self.sha256[:12]}"
+
+
+class HALSubmissionAttempt(ImmutableModel):
+    """Append-only sanitized record of one HAL preproduction request."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    operation = models.ForeignKey(
+        HALOperation, on_delete=models.PROTECT, related_name="attempts"
+    )
+    payload = models.ForeignKey(
+        HALPayload, on_delete=models.PROTECT, related_name="attempts"
+    )
+    requested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="hal_submission_attempts",
+    )
+    environment = models.CharField(max_length=20, default="preprod")
+    test_mode = models.BooleanField(default=True)
+    endpoint = models.URLField(max_length=500)
+    status_code = models.PositiveSmallIntegerField(null=True, blank=True)
+    accepted = models.BooleanField(default=False)
+    returned_hal_id = models.CharField(max_length=80, blank=True)
+    returned_hal_url = models.URLField(max_length=1000, blank=True)
+    response_body = models.TextField(blank=True)
+    error = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(environment="preprod", test_mode=True),
+                name="hal_attempt_preprod_test_only",
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.operation_id} · {self.status_code or 'network error'}"

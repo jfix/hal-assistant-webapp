@@ -5,8 +5,10 @@ metadata while reusing the safety-focused
 [`hal-assistant`](https://github.com/jfix/hal-assistant) package.
 
 The current milestone imports immutable reviewed-workbook snapshots and exposes
-authenticated publication list and detail pages. It deliberately contains no
-HAL submission, update, or live reconciliation route.
+authenticated publication list and detail pages. Authorized users can run an
+explicitly confirmed, immutable-payload HAL preproduction `X-test` for a new
+deposit after a live multi-field duplicate check. It deliberately contains no
+HAL production-write or update route.
 
 ## Local development
 
@@ -107,7 +109,14 @@ npx wrangler secret put R2_ACCESS_KEY_ID
 npx wrangler secret put R2_SECRET_ACCESS_KEY
 npx wrangler secret put R2_ENDPOINT_URL
 npx wrangler secret put OPENAI_API_KEY
+npx wrangler secret put HAL_SWORD_LOGIN
+npx wrangler secret put HAL_SWORD_PASSWORD
 ```
+
+The optional `HAL_SWORD_ON_BEHALF_OF` secret identifies the HAL account on
+whose behalf a preproduction test is sent. HAL credentials are used only by the
+server-side preproduction service and are never returned to the browser or
+stored in the submission ledger.
 
 Production startup fails closed unless `DJANGO_ALLOWED_HOSTS` contains exact
 hostnames, `DJANGO_CSRF_TRUSTED_ORIGINS` contains exact HTTPS origins, the

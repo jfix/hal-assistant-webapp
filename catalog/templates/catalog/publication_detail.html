@@ -23,6 +23,15 @@
         <a class="secondary-button" href="https://hal.science/{{ publication.hal_id }}" target="_blank" rel="noopener noreferrer">Ouvrir {{ publication.hal_id }}</a>
       {% endif %}
       <a class="secondary-button" href="{% url 'publication-xml' publication.id %}">XML de soumission</a>
+      {% if latest_hal_operation %}
+        <a class="secondary-button" href="{% url 'hal-preprod-operation' latest_hal_operation.id %}">Suivi préproduction</a>
+      {% endif %}
+      {% if can_submit_preprod and publication.readiness_state == "hal_ready" and not publication.hal_id %}
+        <form method="post" action="{% url 'hal-preprod-prepare' publication.id %}">
+          {% csrf_token %}
+          <button class="primary-button" type="submit">Préparer le test HAL</button>
+        </form>
+      {% endif %}
     </div>
   </header>
 

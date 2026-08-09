@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Validation HAL préproduction · {{ publication.title }}{% endblock %}
+
+{% block content %}
+  <nav class="breadcrumb" aria-label="Fil d'Ariane">
+    <a href="{% url 'publication-list' %}">Publications</a><span>/</span>
+    <a href="{% url 'publication-detail' publication.id %}">{{ publication.publication_key }}</a><span>/</span>
+    <span>Préproduction</span>
+  </nav>
+
+  <header class="detail-heading">
+    <div>
+      <p class="eyebrow">HAL préproduction · X-test uniquement</p>
+      <h1>Validation avant dépôt</h1>
+      <p class="subtle">{{ publication.title }}</p>
+    </div>
+    <span class="badge">{{ operation.get_state_display }}</span>
+  </header>
+
+  <p class="alert alert-warning" role="note">
+    Cette opération cible exclusivement HAL préproduction avec l’en-tête <code>X-test</code>.
+    Elle ne peut créer aucune notice dans HAL production.
+  </p>
+
+  <section class="panel">
+    <h2>Charge utile immuable</h2>
+    <dl class="metadata">
+      <div><dt>Version de la notice</dt><dd>{{ operation.publication_version }}</dd></div>
+      <div><dt>Environnement</dt><dd>Préproduction</dd></div>
+      <div><dt>Empreinte SHA-256</dt><dd><code>{{ operation.payload.sha256 }}</code></dd></div>
+      <div><dt>Contrôle des doublons</dt><dd>Multi-champs · {{ operation.duplicate_check.candidates|length }} candidat{{ operation.duplicate_check.candidates|length|pluralize }}</dd></div>
+      <div><dt>Demandé par</dt><dd>{{ operation.requested_by.get_username }}</dd></div>
+      <div><dt>Créé le</dt><dd>{{ operation.created_at }}</dd></div>
+    </dl>
+  </section>
+
+  {% if operation.state == "prepared" and can_submit_preprod %}
+    <section class="panel">
+      <h2>Confirmation explicite</h2>
+      <p>Pour lancer le test, saisissez exactement <code>{{ publication.publication_key }}</code>.</p>
+      <form class="stack" method="post" action="{% url 'hal-preprod-execute' operation.id %}">
+        {% csrf_token %}
+        <label>Identifiant de confirmation
+          <input name="confirmation" autocomplete="off" required>
+        </label>
+        <button class="primary-button" type="submit">Envoyer le X-test à HAL préproduction</button>
+      </form>
+    </section>
+  {% endif %}
+
+  <section class="panel">
+    <h2>Tentatives immuables</h2>
+    {% for attempt in operation.attempts.all %}
+      <article class="submission-attempt">
+        <strong>{% if attempt.accepted %}Acceptée{% else %}Refusée{% endif %}</strong>
+        <span>HTTP {{ attempt.status_code|default:"—" }} · {{ attempt.created_at }}</span>
+        {% if attempt.error %}<p class="alert">{{ attempt.error }}</p>{% endif %}
+        {% if attempt.response_body %}<details><summary>Réponse HAL assainie</summary><pre class="xml-block"><code>{{ attempt.response_body }}</code></pre></details>{% endif %}
+      </article>
+    {% empty %}
+      <p>Aucune requête n’a encore été envoyée.</p>
+    {% endfor %}
+  </section>
+{% endblock %}

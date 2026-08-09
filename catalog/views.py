@@ -13,7 +13,13 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from .integrations.hal_assistant import build_submission_xml
-from .models import DocumentPublicationLink, DocumentSummaryCache, FieldAssertion, Publication
+from .models import (
+    DocumentPublicationLink,
+    DocumentSummaryCache,
+    FieldAssertion,
+    HALOperation,
+    Publication,
+)
 from .services.document_matching import (
     create_draft_from_summary,
     find_publication_matches,
@@ -30,6 +36,12 @@ from .services.document_summaries import (
     summary_model,
 )
 from .services.exports import export_publications_xlsx
+from .services.hal_submission import (
+    HALDuplicateError,
+    HALSubmissionError,
+    execute_preprod_operation,
+    prepare_preprod_operation,
+)
 from .services.imports import LIST_FIELDS
 from .services.review import (
     EDITABLE_FIELDS,
@@ -47,6 +59,7 @@ from .services.summary_cache import (
 from .services.summary_limits import SummaryLimitError, generation_slot
 
 REVIEW_PERMISSION = "catalog.review_publication"
+PREPROD_PERMISSION = "catalog.submit_hal_preprod"
 
 # (label, field name, display kind) in detail-page order.
 METADATA_FIELDS = (
@@ -421,8 +434,70 @@ def publication_detail(request: HttpRequest, publication_id):
             "metadata_fields": _field_descriptors(publication, METADATA_FIELDS),
             "conference_fields": _field_descriptors(publication, CONFERENCE_FIELDS),
             "summary_fields": _field_descriptors(publication, SUMMARY_FIELDS),
+            "latest_hal_operation": publication.hal_operations.first(),
+            "can_submit_preprod": request.user.has_perm(PREPROD_PERMISSION),
         },
     )
+
+
+@login_required
+@require_POST
+def prepare_hal_preprod(request: HttpRequest, publication_id):
+    if not request.user.has_perm(PREPROD_PERMISSION):
+        messages.error(request, "Vous n’avez pas le droit de valider dans HAL préproduction.")
+        return redirect("publication-detail", publication_id=publication_id)
+    publication = get_object_or_404(Publication, id=publication_id)
+    try:
+        operation = prepare_preprod_operation(publication=publication, actor=request.user)
+    except HALDuplicateError as exc:
+        messages.error(request, str(exc))
+    except HALSubmissionError as exc:
+        messages.error(request, str(exc))
+    else:
+        return redirect("hal-preprod-operation", operation_id=operation.id)
+    return redirect("publication-detail", publication_id=publication_id)
+
+
+@login_required
+def hal_preprod_operation(request: HttpRequest, operation_id):
+    operation = get_object_or_404(
+        HALOperation.objects.select_related(
+            "publication", "payload", "requested_by"
+        ).prefetch_related("attempts"),
+        id=operation_id,
+    )
+    return render(
+        request,
+        "catalog/hal_preprod_operation.html",
+        {
+            "operation": operation,
+            "publication": operation.publication,
+            "can_submit_preprod": request.user.has_perm(PREPROD_PERMISSION),
+        },
+    )
+
+
+@login_required
+@require_POST
+def execute_hal_preprod(request: HttpRequest, operation_id):
+    operation = get_object_or_404(
+        HALOperation.objects.select_related("publication", "payload"), id=operation_id
+    )
+    if not request.user.has_perm(PREPROD_PERMISSION):
+        messages.error(request, "Vous n’avez pas le droit de valider dans HAL préproduction.")
+    elif request.POST.get("confirmation", "").strip() != operation.publication.publication_key:
+        messages.error(request, "La confirmation ne correspond pas à l’identifiant de la notice.")
+    else:
+        try:
+            attempt = execute_preprod_operation(operation=operation, actor=request.user)
+        except (HALDuplicateError, HALSubmissionError) as exc:
+            messages.error(request, str(exc))
+        else:
+            if attempt.accepted:
+                messages.success(request, "HAL préproduction a accepté la notice de test.")
+            else:
+                messages.error(request, "HAL préproduction a refusé la notice de test.")
+    return redirect("hal-preprod-operation", operation_id=operation.id)
 
 
 @login_required
