@@ -8,11 +8,11 @@ from the surrounding context.
   <dd>
     <span class="field-display">
       {% if field.kind == "doi" %}
-        <span class="editable-value">{{ field.value|default:"—" }}</span>{% if field.value %} <a class="ext" href="https://doi.org/{{ field.value }}" rel="noreferrer" title="Ouvrir">↗</a>{% endif %}
+        <span class="editable-value">{{ field.value|default:"—" }}</span>{% if field.value %} <a class="ext" href="https://doi.org/{{ field.value }}" target="_blank" rel="noopener noreferrer" title="Ouvrir">↗</a>{% endif %}
       {% elif field.kind == "isbn" %}
-        <span class="editable-value">{{ field.value|join:"; "|default:"—" }}</span>{% for isbn in field.value %} <a class="ext" href="https://search.worldcat.org/isbn/{{ isbn|urlencode }}" rel="noreferrer" title="WorldCat">↗</a>{% endfor %}
+        <span class="editable-value">{{ field.value|join:"; "|default:"—" }}</span>{% for isbn in field.value %} <a class="ext" href="https://search.worldcat.org/isbn/{{ isbn|urlencode }}" target="_blank" rel="noopener noreferrer" title="WorldCat">↗</a>{% endfor %}
       {% elif field.kind == "url" %}
-        <span class="editable-value">{{ field.value|default:"—" }}</span>{% if field.value %} <a class="ext" href="{{ field.value }}" rel="noreferrer" title="Ouvrir">↗</a>{% endif %}
+        <span class="editable-value">{{ field.value|default:"—" }}</span>{% if field.value %} <a class="ext" href="{{ field.value }}" target="_blank" rel="noopener noreferrer" title="Ouvrir">↗</a>{% endif %}
       {% elif field.kind == "list" %}
         <span class="editable-value">{{ field.value|join:", "|default:"—" }}</span>
       {% else %}
