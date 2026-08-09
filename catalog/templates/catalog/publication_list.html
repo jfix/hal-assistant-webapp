@@ -18,6 +18,14 @@
       <input name="q" type="search" value="{{ filters.q }}" placeholder="Titre, identifiant de publication, identifiant HAL ou auteur">
     </label>
     <label>
+      État du dépôt
+      <select name="workflow">
+        <option value="">Tous</option>
+        <option value="draft" {% if filters.workflow == "draft" %}selected{% endif %}>Brouillons</option>
+        <option value="published" {% if filters.workflow == "published" %}selected{% endif %}>Publiés sur HAL</option>
+      </select>
+    </label>
+    <label>
       Type
       <select name="type">
         <option value="">Tous</option>
@@ -105,11 +113,11 @@
   {% if page.paginator.num_pages > 1 %}
     <nav class="pagination" aria-label="Pages de publications">
       {% if page.has_previous %}
-        <a href="?q={{ filters.q|urlencode }}&amp;type={{ filters.type|urlencode }}&amp;readiness={{ filters.readiness|urlencode }}&amp;hal_status={{ filters.hal_status|urlencode }}&amp;missing={{ filters.missing|urlencode }}&amp;page={{ page.previous_page_number }}">Précédent</a>
+        <a href="?q={{ filters.q|urlencode }}&amp;workflow={{ filters.workflow|urlencode }}&amp;type={{ filters.type|urlencode }}&amp;readiness={{ filters.readiness|urlencode }}&amp;hal_status={{ filters.hal_status|urlencode }}&amp;missing={{ filters.missing|urlencode }}&amp;page={{ page.previous_page_number }}">Précédent</a>
       {% endif %}
       <span>Page {{ page.number }} sur {{ page.paginator.num_pages }}</span>
       {% if page.has_next %}
-        <a href="?q={{ filters.q|urlencode }}&amp;type={{ filters.type|urlencode }}&amp;readiness={{ filters.readiness|urlencode }}&amp;hal_status={{ filters.hal_status|urlencode }}&amp;missing={{ filters.missing|urlencode }}&amp;page={{ page.next_page_number }}">Suivant</a>
+        <a href="?q={{ filters.q|urlencode }}&amp;workflow={{ filters.workflow|urlencode }}&amp;type={{ filters.type|urlencode }}&amp;readiness={{ filters.readiness|urlencode }}&amp;hal_status={{ filters.hal_status|urlencode }}&amp;missing={{ filters.missing|urlencode }}&amp;page={{ page.next_page_number }}">Suivant</a>
       {% endif %}
     </nav>
   {% endif %}

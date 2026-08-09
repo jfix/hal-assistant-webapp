@@ -12,9 +12,10 @@
     <a class="skip-link" href="#main">Aller au contenu</a>
     <header class="site-header">
       <div>
-        <a class="brand" href="{% url 'document-summary' %}">Assistant de publications</a>
+        <a class="brand" href="{% url 'home' %}">Assistant de publications</a>
         <nav class="site-nav" aria-label="Navigation principale">
-          <a href="{% url 'document-summary' %}">Résumés</a>
+          <a href="{% url 'home' %}">Accueil</a>
+          <a href="{% url 'document-summary' %}">Ajouter une publication</a>
           <a href="{% url 'publication-list' %}">Publications HAL</a>
           {% if user.is_staff %}<a href="{% url 'admin:index' %}">Administration</a>{% endif %}
         </nav>

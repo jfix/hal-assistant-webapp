@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Accueil · Assistant de publications{% endblock %}
+
+{% block content %}
+  <header class="dashboard-hero">
+    <div>
+      <p class="eyebrow">Tableau de bord</p>
+      <h1>Bonjour {{ user.first_name|default:user.get_username }}</h1>
+      <p class="lede">Préparez une nouvelle publication ou reprenez les notices qui demandent encore votre attention.</p>
+    </div>
+    <a class="primary-button dashboard-primary-action" href="{% url 'document-summary' %}">Ajouter une publication</a>
+  </header>
+
+  <section class="dashboard-stats" aria-label="Vue d’ensemble du corpus">
+    <a class="stat-card" href="{% url 'publication-list' %}"><strong>{{ stats.total }}</strong><span>Publications</span></a>
+    <a class="stat-card" href="{% url 'publication-list' %}?workflow=draft"><strong>{{ stats.drafts }}</strong><span>Brouillons</span></a>
+    <a class="stat-card" href="{% url 'publication-list' %}?workflow=draft&amp;readiness=hal_ready"><strong>{{ stats.ready }}</strong><span>Prêts pour HAL</span></a>
+    <a class="stat-card" href="{% url 'publication-list' %}?workflow=published"><strong>{{ stats.published }}</strong><span>Publiés sur HAL</span></a>
+    <div class="stat-card"><strong>{{ stats.modified }}</strong><span>Modifiés depuis HAL</span></div>
+  </section>
+
+  <section class="dashboard-section" aria-labelledby="drafts-title">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">À poursuivre</p>
+        <h2 id="drafts-title">Publications en brouillon</h2>
+      </div>
+      <a href="{% url 'publication-list' %}?workflow=draft">Voir tous les brouillons</a>
+    </div>
+    <div class="table-wrap">
+      <table class="dashboard-table">
+        <thead><tr><th>Publication</th><th>Année</th><th>Données</th><th></th></tr></thead>
+        <tbody>
+          {% for publication in drafts %}
+            <tr>
+              <td><a class="record-title" href="{% url 'publication-detail' publication.id %}">{{ publication.title }}</a></td>
+              <td>{{ publication.publication_year|default:"—" }}</td>
+              <td>{% if publication.missing_required_fields %}{{ publication.missing_required_fields|length }} champ{{ publication.missing_required_fields|length|pluralize }} à compléter{% else %}Prêt pour HAL{% endif %}</td>
+              <td><a href="{% url 'publication-detail' publication.id %}">Continuer</a></td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="4">Aucun brouillon à terminer.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+{% endblock %}

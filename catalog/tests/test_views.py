@@ -63,6 +63,56 @@ def test_health_is_public_and_checks_database(client) -> None:
     assert response.json() == {"status": "ok", "database": "reachable"}
 
 
+def test_home_is_a_dashboard_with_stats_and_recent_drafts(client, user) -> None:
+    client.force_login(user)
+    draft = Publication.objects.create(
+        publication_key="pub-dashboard-draft",
+        publication_type="journal_article",
+        title="Notice à terminer",
+        missing_required_fields=["journal_title"],
+    )
+    Publication.objects.create(
+        publication_key="pub-dashboard-hal",
+        publication_type="journal_article",
+        title="Notice déjà publiée",
+        hal_id="hal-01234567",
+    )
+
+    response = client.get(reverse("home"))
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert "Tableau de bord" in content
+    assert "Ajouter une publication" in content
+    assert "Notice à terminer" in content
+    assert "Notice déjà publiée" not in content
+    assert reverse("publication-detail", args=[draft.id]) in content
+    assert f'{reverse("publication-list")}?workflow=draft' in content
+
+
+def test_publication_list_can_filter_by_deposit_state(client, user) -> None:
+    client.force_login(user)
+    Publication.objects.create(
+        publication_key="pub-filter-draft",
+        publication_type="book",
+        title="Brouillon visible",
+    )
+    Publication.objects.create(
+        publication_key="pub-filter-hal",
+        publication_type="book",
+        title="Publication masquée",
+        hal_id="hal-07654321",
+    )
+
+    response = client.get(reverse("publication-list"), {"workflow": "draft"})
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert "Brouillon visible" in content
+    assert "Publication masquée" not in content
+    assert '<option value="draft" selected>Brouillons</option>' in content
+
+
 @pytest.mark.parametrize("name", ["publication-list", "home"])
 def test_catalog_routes_require_authentication(client, name: str) -> None:
     response = client.get(reverse(name))

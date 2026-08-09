@@ -188,7 +188,7 @@ if r2_bucket := os.getenv("R2_BUCKET_NAME"):
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 LOGIN_URL = "login"
-LOGIN_REDIRECT_URL = "publication-list"
+LOGIN_REDIRECT_URL = "home"
 LOGOUT_REDIRECT_URL = "login"
 SESSION_COOKIE_AGE = 3600
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True

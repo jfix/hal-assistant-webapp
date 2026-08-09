@@ -5,7 +5,7 @@ import mimetypes
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.db import connection
+from django.db import connection, models
 from django.db.models import Q
 from django.http import FileResponse, Http404, HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -127,7 +127,32 @@ def health(request: HttpRequest) -> JsonResponse:
 
 @login_required
 def home(request: HttpRequest):
-    return redirect("document-summary")
+    publications = Publication.objects.all()
+    drafts = publications.filter(hal_id="")
+    ready_states = {
+        Publication.ReadinessState.HAL_READY,
+        Publication.ReadinessState.PREPROD_VALIDATED,
+        Publication.ReadinessState.PRODUCTION_SUBMITTED,
+    }
+    return render(
+        request,
+        "catalog/home.html",
+        {
+            "drafts": drafts.order_by("-updated_at")[:3],
+            "stats": {
+                "total": publications.count(),
+                "drafts": drafts.count(),
+                "ready": drafts.filter(
+                    readiness_state__in=ready_states,
+                    missing_required_fields=[],
+                ).count(),
+                "published": publications.exclude(hal_id="").count(),
+                "modified": publications.exclude(hal_id="")
+                .filter(hal_synced_version__lt=models.F("version"))
+                .count(),
+            },
+        },
+    )
 
 
 @login_required
@@ -331,6 +356,7 @@ def _filtered_publications(request: HttpRequest):
         "readiness": request.GET.get("readiness", "").strip(),
         "hal_status": request.GET.get("hal_status", "").strip(),
         "missing": request.GET.get("missing", "").strip(),
+        "workflow": request.GET.get("workflow", "").strip(),
     }
     if filters["q"]:
         publications = publications.filter(
@@ -349,6 +375,10 @@ def _filtered_publications(request: HttpRequest):
         publications = publications.filter(
             missing_required_fields__icontains=filters["missing"]
         )
+    if filters["workflow"] == "draft":
+        publications = publications.filter(hal_id="")
+    elif filters["workflow"] == "published":
+        publications = publications.exclude(hal_id="")
     return publications, filters
 
 
