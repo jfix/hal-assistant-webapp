@@ -103,6 +103,7 @@
             <strong>{{ item.summary.document_title|default:item.summary.source_filename|default:"Document sans titre" }}</strong>
             <span>{{ item.summary.source_filename|default:"Nom de fichier non disponible" }}</span>
             <span>{{ item.link.get_action_display }} · {{ item.link.actor.get_username }} · {{ item.link.created_at }}</span>
+            {% if item.summary.source_file %}<a class="secondary-button" href="{% url 'associated-document' item.summary.id %}" target="_blank" rel="noopener">Ouvrir le document original</a>{% endif %}
             {% if item.can_open_cache %}<a href="{% url 'document-summary-cache-detail' item.summary.id %}">Ouvrir le résultat en cache</a>{% endif %}
           </div>
           <div class="result-grid document-analysis-results">

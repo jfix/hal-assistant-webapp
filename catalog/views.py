@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import mimetypes
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db import connection
 from django.db.models import Q
-from django.http import HttpRequest, HttpResponse, JsonResponse
+from django.http import FileResponse, Http404, HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
@@ -274,6 +276,31 @@ def document_summary_cache_detail(request: HttpRequest, cache_id):
             "can_review": request.user.has_perm(REVIEW_PERMISSION),
         },
     )
+
+
+@login_required
+def associated_document(request: HttpRequest, summary_id):
+    """Stream a confirmed source document without exposing its storage URL."""
+    entry = get_object_or_404(
+        DocumentSummaryCache.objects.filter(publication_link__isnull=False),
+        id=summary_id,
+    )
+    if not entry.source_file:
+        raise Http404("Aucun document source n’est disponible.")
+    try:
+        handle = entry.source_file.open("rb")
+    except FileNotFoundError as exc:
+        raise Http404("Le document source est introuvable.") from exc
+    content_type, _ = mimetypes.guess_type(entry.source_filename)
+    response = FileResponse(
+        handle,
+        as_attachment=False,
+        filename=entry.source_filename or "document",
+        content_type=content_type or "application/octet-stream",
+    )
+    response["X-Content-Type-Options"] = "nosniff"
+    response["Cache-Control"] = "private, no-store"
+    return response
 
 
 def _filtered_publications(request: HttpRequest):
