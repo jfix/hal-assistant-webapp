@@ -49,6 +49,31 @@ def test_production_validation_accepts_exact_secure_configuration(monkeypatch) -
     project_settings.validate_production_configuration()
 
 
+def test_production_validation_accepts_multiple_exact_hosts(monkeypatch) -> None:
+    monkeypatch.setattr(project_settings, "DEBUG", False)
+    monkeypatch.setattr(project_settings, "SECRET_KEY", "s" * 60)
+    monkeypatch.setattr(
+        project_settings,
+        "ALLOWED_HOSTS",
+        ["hal.jfix.com", "hal-publication-manager.example.workers.dev"],
+    )
+    monkeypatch.setattr(
+        project_settings,
+        "CSRF_TRUSTED_ORIGINS",
+        [
+            "https://hal.jfix.com",
+            "https://hal-publication-manager.example.workers.dev",
+        ],
+    )
+    monkeypatch.setenv(
+        "DJANGO_ALLOWED_HOSTS",
+        "hal.jfix.com,hal-publication-manager.example.workers.dev",
+    )
+    monkeypatch.setenv("OPENAI_API_KEY", "configured")
+
+    project_settings.validate_production_configuration()
+
+
 @pytest.mark.parametrize(
     ("secret", "api_key", "message"),
     [
