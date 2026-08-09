@@ -13,6 +13,10 @@ from the surrounding context.
         <span class="editable-value">{{ field.value|join:"; "|default:"—" }}</span>{% for isbn in field.value %} <a class="ext" href="https://search.worldcat.org/isbn/{{ isbn|urlencode }}" target="_blank" rel="noopener noreferrer" title="WorldCat">↗</a>{% endfor %}
       {% elif field.kind == "url" %}
         <span class="editable-value">{{ field.value|default:"—" }}</span>{% if field.value %} <a class="ext" href="{{ field.value }}" target="_blank" rel="noopener noreferrer" title="Ouvrir">↗</a>{% endif %}
+      {% elif field.kind == "keywords" %}
+        <span class="editable-value keyword-list" aria-label="{{ field.label }}">
+          {% for keyword in field.value %}<span class="keyword-pill">{{ keyword }}</span>{% empty %}—{% endfor %}
+        </span>
       {% elif field.kind == "list" %}
         <span class="editable-value">{{ field.value|join:", "|default:"—" }}</span>
       {% else %}
@@ -24,9 +28,26 @@ from the surrounding context.
         {% csrf_token %}
         <input type="hidden" name="base_version" value="{{ publication.version }}">
         <input type="hidden" name="field" value="{{ field.name }}">
-        {% if field.kind == "multiline" %}<textarea name="edited_value" autocomplete="off" aria-label="{{ field.label }}">{{ field.edit_value }}</textarea>{% else %}<input type="text" name="edited_value" value="{{ field.edit_value }}" autocomplete="off" aria-label="{{ field.label }}">{% endif %}
-        {% if field.name in list_fields %}<span class="subtle">Séparez plusieurs valeurs par « ; ».</span>{% endif %}
-        <span class="subtle edit-hint">Entrée ou clic à l'extérieur pour enregistrer · Échap pour annuler</span>
+        {% if field.kind == "multiline" %}
+          <textarea name="edited_value" autocomplete="off" aria-label="{{ field.label }}">{{ field.edit_value }}</textarea>
+        {% elif field.kind == "keywords" %}
+          <input type="text" name="edited_value" value="{{ field.edit_value }}" autocomplete="off" aria-label="{{ field.label }}" data-keyword-value>
+          <div class="keyword-editor-ui" data-keyword-editor>
+            <div class="keyword-list" data-keyword-list></div>
+            <div class="keyword-add-row">
+              <input type="text" autocomplete="off" aria-label="Nouveau mot-clé pour {{ field.label }}" data-keyword-input>
+              <button class="secondary-button" type="button" data-keyword-add>Ajouter</button>
+            </div>
+            <div class="keyword-editor-actions">
+              <button class="primary-button" type="button" data-keyword-save>Enregistrer</button>
+              <button class="secondary-button" type="button" data-keyword-cancel>Annuler</button>
+            </div>
+          </div>
+        {% else %}
+          <input type="text" name="edited_value" value="{{ field.edit_value }}" autocomplete="off" aria-label="{{ field.label }}">
+        {% endif %}
+        {% if field.name in list_fields %}<span class="subtle">Une valeur par mot-clé. Sans JavaScript, séparez-les par « ; ». Une virgule reste dans le mot-clé.</span>{% endif %}
+        {% if field.kind != "keywords" %}<span class="subtle edit-hint">Entrée ou clic à l'extérieur pour enregistrer · Échap pour annuler</span>{% endif %}
         <noscript><button class="primary-button" type="submit">Enregistrer</button></noscript>
       </form>
     {% endif %}

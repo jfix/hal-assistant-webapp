@@ -77,9 +77,9 @@ CONFERENCE_FIELDS = (
 )
 SUMMARY_FIELDS = (
     ("Résumé français", "abstract_fr", "multiline"),
-    ("Mots-clés français", "keywords_fr", "list"),
+    ("Mots-clés français", "keywords_fr", "keywords"),
     ("English abstract", "abstract_en", "multiline"),
-    ("English keywords", "keywords_en", "list"),
+    ("English keywords", "keywords_en", "keywords"),
 )
 
 
@@ -509,7 +509,8 @@ def decide_assertion_view(request: HttpRequest, publication_id, assertion_id):
 def publication_xml(request: HttpRequest, publication_id):
     """Debug-only preview of the HAL AOfr submission notice for one record.
 
-    Generated locally by the pinned package from the immutable source row. It
+    Generated locally by the pinned package from the current reviewed metadata,
+    with the immutable source row retained as provenance and fallback data. It
     performs no HAL request and is not a submission route.
     """
     publication = get_object_or_404(
@@ -517,10 +518,9 @@ def publication_xml(request: HttpRequest, publication_id):
         id=publication_id,
     )
     source_record = publication.source_records.order_by("-created_at").first()
-    submission = (
-        build_submission_xml(source_record.raw_data)
-        if source_record is not None
-        else None
+    submission = build_submission_xml(
+        source_record.raw_data if source_record is not None else {},
+        publication=publication,
     )
     if request.GET.get("format") == "raw" and submission and submission.xml:
         return HttpResponse(

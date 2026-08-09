@@ -18,6 +18,11 @@
     }
     var done = false;
 
+    if (form.querySelector("[data-keyword-editor]")) {
+      wireKeywords(cell, form, trigger, input);
+      return;
+    }
+
     function enter() {
       done = false;
       cell.classList.add("editing");
@@ -68,6 +73,96 @@
         cancel();
       }
     });
+  }
+
+  function wireKeywords(cell, form, trigger, valueInput) {
+    var list = form.querySelector("[data-keyword-list]");
+    var addInput = form.querySelector("[data-keyword-input]");
+    var addButton = form.querySelector("[data-keyword-add]");
+    var saveButton = form.querySelector("[data-keyword-save]");
+    var cancelButton = form.querySelector("[data-keyword-cancel]");
+    var terms = parseTerms(valueInput.defaultValue);
+
+    function parseTerms(value) {
+      var seen = {};
+      return value.split(";").map(function (term) { return term.trim(); }).filter(function (term) {
+        var key = term.toLocaleLowerCase();
+        if (!term || seen[key]) return false;
+        seen[key] = true;
+        return true;
+      });
+    }
+    function sync() {
+      valueInput.value = terms.join("; ");
+      list.replaceChildren();
+      terms.forEach(function (term, index) {
+        var pill = document.createElement("span");
+        var remove = document.createElement("button");
+        pill.className = "keyword-pill";
+        pill.append(document.createTextNode(term));
+        remove.type = "button";
+        remove.textContent = "×";
+        remove.setAttribute("aria-label", "Supprimer " + term);
+        remove.addEventListener("click", function () {
+          terms.splice(index, 1);
+          sync();
+        });
+        pill.append(remove);
+        list.append(pill);
+      });
+    }
+    function enter() {
+      terms = parseTerms(valueInput.defaultValue);
+      sync();
+      cell.classList.add("editing");
+      addInput.focus();
+    }
+    function add(refocus) {
+      var term = addInput.value.trim();
+      if (term && !terms.some(function (item) { return item.toLocaleLowerCase() === term.toLocaleLowerCase(); })) {
+        terms.push(term);
+        sync();
+      }
+      addInput.value = "";
+      if (refocus !== false) addInput.focus();
+    }
+    function cancel() {
+      terms = parseTerms(valueInput.defaultValue);
+      sync();
+      cell.classList.remove("editing");
+      trigger.focus();
+    }
+
+    trigger.setAttribute("role", "button");
+    trigger.setAttribute("tabindex", "0");
+    trigger.title = "Cliquer pour modifier";
+    trigger.addEventListener("click", enter);
+    trigger.addEventListener("keydown", function (event) {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        enter();
+      }
+    });
+    addButton.addEventListener("click", function () { add(true); });
+    addInput.addEventListener("keydown", function (event) {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        add(true);
+      } else if (event.key === "Escape") {
+        event.preventDefault();
+        cancel();
+      }
+    });
+    saveButton.addEventListener("click", function () {
+      add(false);
+      if (valueInput.value === valueInput.defaultValue) {
+        cell.classList.remove("editing");
+      } else {
+        form.submit();
+      }
+    });
+    cancelButton.addEventListener("click", cancel);
+    sync();
   }
 
   document.querySelectorAll(".editable-field").forEach(wire);

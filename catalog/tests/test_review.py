@@ -84,7 +84,7 @@ def test_accept_materializes_value_and_bumps_version(proposal) -> None:
     ("field_name", "raw_value", "expected"),
     [
         ("abstract_fr", "Résumé révisé et développé.", "Résumé révisé et développé."),
-        ("keywords_en", "archive; memory; theatre", ["archive", "memory", "theatre"]),
+        ("keywords_en", "archive; memory, theatre", ["archive", "memory, theatre"]),
     ],
 )
 def test_abstracts_and_keywords_are_audited_editable_fields(

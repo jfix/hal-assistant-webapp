@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from django.utils import timezone
@@ -457,6 +458,7 @@ def publication_with_source() -> Publication:
     publication = Publication.objects.create(
         publication_key="pub-xml-1",
         publication_type="journal_article",
+        hal_document_type="ART",
         title="A debuggable notice",
         publication_year=2024,
         authors=["Ada Lovelace"],
@@ -524,6 +526,53 @@ def test_submission_xml_raw_format_returns_xml(
     assert response.status_code == 200
     assert response["Content-Type"].startswith("application/xml")
     assert b"<TEI" in response.content
+
+
+def test_submission_xml_uses_current_multilingual_abstracts_and_keyword_terms(
+    client,
+    user,
+    publication_with_source,
+) -> None:
+    publication_with_source.abstract_fr = "Résumé actuel."
+    publication_with_source.abstract_en = "Current abstract."
+    publication_with_source.keywords_fr = ["archives", "mémoire, histoire"]
+    publication_with_source.keywords_en = ["archives", "cultural memory"]
+    publication_with_source.save()
+    client.force_login(user)
+
+    response = client.get(
+        reverse("publication-xml", args=[publication_with_source.id]),
+        {"format": "raw"},
+    )
+
+    xml = response.content.decode()
+    assert '<keywords scheme="author">' in xml
+    assert '<term xml:lang="fr">mémoire, histoire</term>' in xml
+    assert '<term xml:lang="en">cultural memory</term>' in xml
+    assert '<abstract xml:lang="fr">' in xml
+    assert "Résumé actuel." in xml
+
+
+def test_keyword_fields_render_as_manually_editable_pills(
+    client,
+    user,
+    publications,
+) -> None:
+    publication = publications[0]
+    publication.keywords_fr = ["archives", "mémoire, histoire"]
+    publication.save()
+    user.user_permissions.add(Permission.objects.get(codename="review_publication"))
+    client.force_login(user)
+
+    response = client.get(reverse("publication-detail", args=[publication.id]))
+
+    content = response.content.decode()
+    assert '<span class="keyword-pill">archives</span>' in content
+    assert '<span class="keyword-pill">mémoire, histoire</span>' in content
+    assert "data-keyword-input" in content
+    assert "data-keyword-add" in content
+    assert "data-keyword-save" in content
+    assert "data-keyword-cancel" in content
 
 
 def test_submission_xml_requires_authentication(client, publication_with_source) -> None:

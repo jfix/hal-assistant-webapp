@@ -108,6 +108,14 @@ blockquote { margin: .8rem 0 0; padding: .8rem 1rem; border-left: 4px solid var(
 .inline-edit { display: grid; gap: .4rem; padding: .6rem; margin-top: .3rem; background: var(--canvas); border: 1px solid var(--line); border-radius: .2rem; }
 .inline-edit textarea { min-height: 10rem; resize: vertical; }
 .edit-hint { font-size: .72rem; }
+.keyword-list { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; }
+.keyword-pill { display: inline-flex; align-items: center; gap: .25rem; padding: .2rem .5rem; border-radius: 999px; background: var(--accent-soft); border: 1px solid var(--line); }
+.keyword-pill button { border: 0; padding: 0; background: transparent; color: var(--muted); cursor: pointer; font-size: 1rem; line-height: 1; }
+.keyword-editor-ui { display: none; gap: .55rem; }
+.keyword-add-row, .keyword-editor-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.keyword-add-row input { flex: 1 1 14rem; }
+.js .keyword-editor-ui { display: grid; }
+.js [data-keyword-value] { display: none; }
 /* With JS, the form is hidden until the value is clicked. */
 .js .editable-field .inline-edit { display: none; }
 .js .editable-field.editing .inline-edit { display: grid; }
