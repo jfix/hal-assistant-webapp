@@ -1,0 +1,132 @@
+from __future__ import annotations
+
+from datetime import date
+
+from django import forms
+
+from catalog.integrations.hal_assistant import HAL_DOCUMENT_TYPE_LABELS_FR
+
+
+class ManualPublicationForm(forms.Form):
+    hal_document_type = forms.ChoiceField(
+        label="Type de publication HAL",
+        choices=[
+            (code, f"{code} — {label}")
+            for code, label in HAL_DOCUMENT_TYPE_LABELS_FR.items()
+        ],
+    )
+    title = forms.CharField(label="Titre", max_length=1000)
+    authors = forms.CharField(
+        label="Auteurs",
+        help_text="Séparez plusieurs auteurs par un point-virgule.",
+        widget=forms.TextInput(attrs={"placeholder": "Prénom Nom ; Prénom Nom"}),
+    )
+    publication_year = forms.IntegerField(
+        label="Année",
+        min_value=1000,
+        max_value=date.today().year + 1,
+    )
+    language = forms.ChoiceField(
+        label="Langue principale",
+        choices=(
+            ("fr", "Français"),
+            ("en", "Anglais"),
+            ("de", "Allemand"),
+            ("es", "Espagnol"),
+            ("it", "Italien"),
+            ("da", "Danois"),
+            ("no", "Norvégien"),
+            ("sv", "Suédois"),
+        ),
+    )
+    doi = forms.CharField(
+        label="DOI (facultatif)",
+        max_length=255,
+        required=False,
+        widget=forms.TextInput(attrs={"placeholder": "10.…"}),
+    )
+    journal_title = forms.CharField(
+        label="Revue",
+        max_length=1000,
+        required=False,
+        widget=forms.TextInput(attrs={"list": "journal-suggestions"}),
+    )
+    book_title = forms.CharField(
+        label="Titre de l’ouvrage",
+        max_length=1000,
+        required=False,
+        widget=forms.TextInput(attrs={"list": "book-suggestions"}),
+    )
+    conference_title = forms.CharField(
+        label="Nom du congrès",
+        max_length=1000,
+        required=False,
+        widget=forms.TextInput(attrs={"list": "conference-suggestions"}),
+    )
+    conference_start_date = forms.DateField(
+        label="Date de début",
+        required=False,
+        widget=forms.DateInput(attrs={"type": "date"}),
+    )
+    conference_end_date = forms.DateField(
+        label="Date de fin",
+        required=False,
+        widget=forms.DateInput(attrs={"type": "date"}),
+    )
+    conference_city = forms.CharField(
+        label="Ville",
+        max_length=200,
+        required=False,
+        widget=forms.TextInput(attrs={"list": "city-suggestions"}),
+    )
+    conference_country = forms.CharField(
+        label="Pays",
+        max_length=200,
+        required=False,
+        widget=forms.TextInput(attrs={"list": "country-suggestions"}),
+    )
+
+    REQUIRED_BY_TYPE = {
+        "ART": ("journal_title",),
+        "COUV": ("book_title",),
+        "COMM": (
+            "conference_title",
+            "conference_start_date",
+            "conference_end_date",
+            "conference_city",
+            "conference_country",
+        ),
+    }
+
+    def clean_authors(self) -> list[str]:
+        authors = [
+            item.strip()
+            for item in self.cleaned_data["authors"].replace("\n", ";").split(";")
+            if item.strip()
+        ]
+        if not authors:
+            raise forms.ValidationError("Indiquez au moins un auteur.")
+        return authors
+
+    def clean_doi(self) -> str:
+        value = self.cleaned_data["doi"].strip()
+        for prefix in ("https://doi.org/", "http://doi.org/", "doi:"):
+            if value.lower().startswith(prefix):
+                value = value[len(prefix) :].strip()
+                break
+        return value
+
+    def clean(self):
+        cleaned = super().clean()
+        document_type = cleaned.get("hal_document_type")
+        for field_name in self.REQUIRED_BY_TYPE.get(document_type, ()):
+            if not cleaned.get(field_name):
+                self.add_error(field_name, "Ce champ est requis pour ce type HAL.")
+        start = cleaned.get("conference_start_date")
+        end = cleaned.get("conference_end_date")
+        if start and end and end < start:
+            self.add_error(
+                "conference_end_date",
+                "La date de fin doit être postérieure ou égale à la date de début.",
+            )
+        return cleaned

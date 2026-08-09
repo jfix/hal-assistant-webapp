@@ -31,6 +31,16 @@ urlpatterns = [
         name="associated-document",
     ),
     path("publications/", views.publication_list, name="publication-list"),
+    path(
+        "publications/new/",
+        views.create_publication_manually,
+        name="publication-create-manual",
+    ),
+    path(
+        "publications/search/",
+        views.publication_search,
+        name="publication-search",
+    ),
     path("publications/export/", views.publication_export, name="publication-export"),
     path(
         "publications/<uuid:publication_id>/",

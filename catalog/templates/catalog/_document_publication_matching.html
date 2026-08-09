@@ -23,6 +23,21 @@
       {% empty %}
         <p>Aucune notice suffisamment proche n’a été trouvée.</p>
       {% endfor %}
+      <article class="result-card publication-lookup">
+        <h3>Rechercher une autre notice</h3>
+        <p class="subtle">Si vous savez que cette publication existe déjà, recherchez-la par titre, auteur, identifiant HAL ou identifiant interne.</p>
+        <div class="publication-combobox">
+          <label for="publication-search-{{ entry.id }}">Titre, auteur ou identifiant</label>
+          <input id="publication-search-{{ entry.id }}" type="search" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="publication-results-{{ entry.id }}" data-publication-search data-search-url="{% url 'publication-search' %}">
+          <div id="publication-results-{{ entry.id }}" class="publication-search-results" role="listbox" data-publication-results></div>
+        </div>
+        <form method="post" action="{% url 'document-summary-link' entry.id %}" data-publication-link-form>
+          {% csrf_token %}
+          <input type="hidden" name="publication_id" value="" data-publication-id>
+          <p class="selected-publication subtle" data-selected-publication>Aucune notice sélectionnée.</p>
+          <button class="primary-button" type="submit" disabled data-publication-link>Associer la notice sélectionnée</button>
+        </form>
+      </article>
       <article class="result-card">
         <h3>Créer un nouveau brouillon local</h3>
         <p><strong>{{ entry.document_title }}</strong></p>

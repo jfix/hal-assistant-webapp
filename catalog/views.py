@@ -10,8 +10,9 @@ from django.db.models import Q
 from django.http import FileResponse, Http404, HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_GET, require_POST
 
+from .forms import ManualPublicationForm
 from .integrations.hal_assistant import (
     build_submission_xml,
     hal_document_type_display,
@@ -41,6 +42,10 @@ from .services.hal_submission import (
     prepare_preprod_operation,
 )
 from .services.imports import LIST_FIELDS
+from .services.manual_publications import (
+    create_manual_draft,
+    find_manual_publication_matches,
+)
 from .services.publication_documents import (
     get_or_generate_summary,
     propose_generated_fields,
@@ -441,6 +446,101 @@ def publication_list(request: HttpRequest):
             "sort_headers": sort_headers,
             "sort_field": sort_field,
             "sort_direction": sort_direction,
+        },
+    )
+
+
+@login_required
+@require_GET
+def publication_search(request: HttpRequest) -> JsonResponse:
+    """Small permission-gated lookup used by the document association typeahead."""
+    if not request.user.has_perm(REVIEW_PERMISSION):
+        return JsonResponse({"error": "Accès refusé."}, status=403)
+    query = request.GET.get("q", "").strip()
+    if len(query) < 2:
+        return JsonResponse({"results": []})
+    publications = Publication.objects.filter(
+        Q(title__icontains=query)
+        | Q(authors__icontains=query)
+        | Q(publication_key__icontains=query)
+        | Q(hal_id__icontains=query)
+    ).order_by("title")[:8]
+    return JsonResponse(
+        {
+            "results": [
+                {
+                    "id": str(publication.id),
+                    "title": publication.title,
+                    "authors": [str(author) for author in publication.authors],
+                    "year": publication.publication_year,
+                    "hal_type": publication.display_hal_document_type,
+                    "hal_id": publication.hal_id,
+                }
+                for publication in publications
+            ]
+        }
+    )
+
+
+@login_required
+def create_publication_manually(request: HttpRequest):
+    if not request.user.has_perm(REVIEW_PERMISSION):
+        messages.error(request, "Vous n’avez pas le droit de créer un brouillon.")
+        return redirect("home")
+
+    form = ManualPublicationForm(request.POST or None)
+    matches = []
+    duplicate_blocked = False
+    if request.method == "POST" and form.is_valid():
+        matches = find_manual_publication_matches(form.cleaned_data)
+        duplicate_blocked = any(match.score >= 90 for match in matches)
+        duplicate_reviewed = request.POST.get("duplicate_reviewed") == "1"
+        if not matches or (duplicate_reviewed and not duplicate_blocked):
+            try:
+                publication = create_manual_draft(
+                    data=form.cleaned_data,
+                    actor=request.user,
+                    duplicate_reviewed=duplicate_reviewed,
+                )
+            except ValueError as exc:
+                messages.error(request, str(exc))
+            else:
+                messages.success(
+                    request,
+                    "Le brouillon local a été créé. Aucune donnée n’a été envoyée à HAL.",
+                )
+                return redirect("publication-detail", publication_id=publication.id)
+
+    suggestions = {
+        "journals": Publication.objects.exclude(journal_title="")
+        .order_by("journal_title")
+        .values_list("journal_title", flat=True)
+        .distinct(),
+        "books": Publication.objects.exclude(book_title="")
+        .order_by("book_title")
+        .values_list("book_title", flat=True)
+        .distinct(),
+        "conferences": Publication.objects.exclude(conference_title="")
+        .order_by("conference_title")
+        .values_list("conference_title", flat=True)
+        .distinct(),
+        "cities": Publication.objects.exclude(conference_city="")
+        .order_by("conference_city")
+        .values_list("conference_city", flat=True)
+        .distinct(),
+        "countries": Publication.objects.exclude(conference_country="")
+        .order_by("conference_country")
+        .values_list("conference_country", flat=True)
+        .distinct(),
+    }
+    return render(
+        request,
+        "catalog/publication_create_manual.html",
+        {
+            "form": form,
+            "matches": matches,
+            "duplicate_blocked": duplicate_blocked,
+            "suggestions": suggestions,
         },
     )
 

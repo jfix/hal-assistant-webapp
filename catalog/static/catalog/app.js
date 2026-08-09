@@ -206,6 +206,127 @@
     });
   });
 
+  document.querySelectorAll("[data-publication-search]").forEach(function (input) {
+    var results = document.querySelector("#" + input.getAttribute("aria-controls"));
+    var card = input.closest(".publication-lookup");
+    var form = card && card.querySelector("[data-publication-link-form]");
+    var idInput = form && form.querySelector("[data-publication-id]");
+    var submit = form && form.querySelector("[data-publication-link]");
+    var selected = form && form.querySelector("[data-selected-publication]");
+    if (!results || !form || !idInput || !submit || !selected) return;
+
+    var timer;
+    var controller;
+
+    function closeResults() {
+      results.replaceChildren();
+      input.setAttribute("aria-expanded", "false");
+    }
+
+    function clearSelection() {
+      idInput.value = "";
+      submit.disabled = true;
+      selected.textContent = "Aucune notice sélectionnée.";
+    }
+
+    function choose(item) {
+      idInput.value = item.id;
+      submit.disabled = false;
+      input.value = item.title;
+      selected.textContent = "Notice sélectionnée : " + item.title;
+      closeResults();
+      submit.focus();
+    }
+
+    function resultButton(item) {
+      var button = document.createElement("button");
+      var title = document.createElement("strong");
+      var meta = document.createElement("span");
+      var details = [];
+      button.type = "button";
+      button.className = "publication-search-result";
+      button.setAttribute("role", "option");
+      title.textContent = item.title;
+      if (item.authors.length) details.push(item.authors.join(", "));
+      if (item.year) details.push(String(item.year));
+      if (item.hal_type) details.push(item.hal_type);
+      if (item.hal_id) details.push(item.hal_id);
+      meta.textContent = details.join(" · ");
+      button.append(title, meta);
+      button.addEventListener("click", function () { choose(item); });
+      return button;
+    }
+
+    async function search(query) {
+      if (controller) controller.abort();
+      controller = new AbortController();
+      try {
+        var response = await fetch(
+          input.dataset.searchUrl + "?q=" + encodeURIComponent(query),
+          { credentials: "same-origin", signal: controller.signal }
+        );
+        if (!response.ok) throw new Error("publication search failed");
+        var payload = await response.json();
+        results.replaceChildren();
+        payload.results.forEach(function (item) { results.append(resultButton(item)); });
+        if (!payload.results.length) {
+          var empty = document.createElement("p");
+          empty.className = "subtle";
+          empty.textContent = "Aucune notice trouvée.";
+          results.append(empty);
+        }
+        input.setAttribute("aria-expanded", "true");
+      } catch (error) {
+        if (error.name !== "AbortError") closeResults();
+      }
+    }
+
+    input.addEventListener("input", function () {
+      clearTimeout(timer);
+      clearSelection();
+      var query = input.value.trim();
+      if (query.length < 2) {
+        if (controller) controller.abort();
+        closeResults();
+        return;
+      }
+      timer = setTimeout(function () { search(query); }, 180);
+    });
+    input.addEventListener("keydown", function (event) {
+      if (event.key === "ArrowDown") {
+        var first = results.querySelector("button");
+        if (first) {
+          event.preventDefault();
+          first.focus();
+        }
+      } else if (event.key === "Escape") {
+        closeResults();
+      }
+    });
+    document.addEventListener("click", function (event) {
+      if (!card.contains(event.target)) closeResults();
+    });
+  });
+
+  document.querySelectorAll("[data-manual-publication-form]").forEach(function (form) {
+    var typeSelect = form.querySelector("#id_hal_document_type");
+    if (!typeSelect) return;
+
+    function showRelevantFields() {
+      form.querySelectorAll("[data-hal-fields]").forEach(function (fieldset) {
+        var active = fieldset.dataset.halFields === typeSelect.value;
+        fieldset.hidden = !active;
+        fieldset.querySelectorAll("input, select, textarea").forEach(function (control) {
+          control.disabled = !active;
+          control.required = active;
+        });
+      });
+    }
+
+    typeSelect.addEventListener("change", showRelevantFields);
+    showRelevantFields();
+  });
+
   var uploadForm = document.querySelector("[data-upload-form]");
   if (uploadForm) {
     uploadForm.addEventListener("submit", function () {

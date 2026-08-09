@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Créer une publication · Assistant de publications{% endblock %}
+
+{% block content %}
+  <nav class="breadcrumb" aria-label="Fil d’Ariane">
+    <a href="{% url 'home' %}">Accueil</a><span aria-hidden="true">/</span><span>Nouvelle publication</span>
+  </nav>
+  <header class="page-heading manual-heading">
+    <div>
+      <p class="eyebrow">Création manuelle</p>
+      <h1>Créer une publication</h1>
+      <p>Commencez par les informations nécessaires à une notice HAL. Vous pourrez enrichir et corriger le brouillon ensuite.</p>
+    </div>
+    <a href="{% url 'document-summary' %}">J’ai un document à importer</a>
+  </header>
+
+  <form method="post" class="panel manual-publication-form" data-manual-publication-form>
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="alert alert-error">{{ form.non_field_errors }}</div>{% endif %}
+    <fieldset>
+      <legend>Informations essentielles</legend>
+      <div class="manual-form-grid">
+        <label class="wide">{{ form.hal_document_type.label }}{{ form.hal_document_type }}{{ form.hal_document_type.errors }}</label>
+        <label class="full">{{ form.title.label }}{{ form.title }}{{ form.title.errors }}</label>
+        <label class="full">{{ form.authors.label }}{{ form.authors }}<span class="subtle">{{ form.authors.help_text }}</span>{{ form.authors.errors }}</label>
+        <label>{{ form.publication_year.label }}{{ form.publication_year }}{{ form.publication_year.errors }}</label>
+        <label>{{ form.language.label }}{{ form.language }}{{ form.language.errors }}</label>
+        <label class="full">{{ form.doi.label }}{{ form.doi }}{{ form.doi.errors }}</label>
+      </div>
+    </fieldset>
+
+    <fieldset data-hal-fields="ART">
+      <legend>Revue</legend>
+      <label>{{ form.journal_title.label }}{{ form.journal_title }}{{ form.journal_title.errors }}</label>
+    </fieldset>
+    <fieldset data-hal-fields="COUV">
+      <legend>Ouvrage contenant le chapitre</legend>
+      <label>{{ form.book_title.label }}{{ form.book_title }}{{ form.book_title.errors }}</label>
+    </fieldset>
+    <fieldset data-hal-fields="COMM">
+      <legend>Congrès</legend>
+      <div class="manual-form-grid">
+        <label class="full">{{ form.conference_title.label }}{{ form.conference_title }}{{ form.conference_title.errors }}</label>
+        <label>{{ form.conference_start_date.label }}{{ form.conference_start_date }}{{ form.conference_start_date.errors }}</label>
+        <label>{{ form.conference_end_date.label }}{{ form.conference_end_date }}{{ form.conference_end_date.errors }}</label>
+        <label>{{ form.conference_city.label }}{{ form.conference_city }}{{ form.conference_city.errors }}</label>
+        <label>{{ form.conference_country.label }}{{ form.conference_country }}{{ form.conference_country.errors }}</label>
+      </div>
+    </fieldset>
+
+    {% if matches %}
+      <section class="duplicate-review" aria-labelledby="duplicate-review-title">
+        <h2 id="duplicate-review-title">Vérifiez les notices proches</h2>
+        <p>Ces rapprochements combinent titre, auteurs, année et DOI. Ouvrez la bonne notice si elle existe déjà.</p>
+        {% for match in matches %}
+          <article>
+            <a class="record-title" href="{% url 'publication-detail' match.publication.id %}" target="_blank" rel="noopener">{{ match.publication.title }}</a>
+            <span>{{ match.publication.authors|join:", " }}{% if match.publication.publication_year %} · {{ match.publication.publication_year }}{% endif %}</span>
+            <span class="record-key">{{ match.reasons|join:", " }} · score {{ match.score }}</span>
+          </article>
+        {% endfor %}
+        {% if duplicate_blocked %}
+          <p class="alert alert-warning">Une correspondance est trop probable pour créer une nouvelle notice. Ouvrez la notice existante ou corrigez les informations saisies.</p>
+        {% else %}
+          <button class="primary-button" type="submit" name="duplicate_reviewed" value="1">Aucune ne correspond : créer le brouillon</button>
+        {% endif %}
+      </section>
+    {% else %}
+      <div class="manual-form-actions">
+        <button class="primary-button" type="submit">Vérifier et créer le brouillon</button>
+        <span class="subtle">Aucune donnée ne sera envoyée à HAL.</span>
+      </div>
+    {% endif %}
+  </form>
+
+  <datalist id="journal-suggestions">{% for value in suggestions.journals %}<option value="{{ value }}">{% endfor %}</datalist>
+  <datalist id="book-suggestions">{% for value in suggestions.books %}<option value="{{ value }}">{% endfor %}</datalist>
+  <datalist id="conference-suggestions">{% for value in suggestions.conferences %}<option value="{{ value }}">{% endfor %}</datalist>
+  <datalist id="city-suggestions">{% for value in suggestions.cities %}<option value="{{ value }}">{% endfor %}</datalist>
+  <datalist id="country-suggestions">{% for value in suggestions.countries %}<option value="{{ value }}">{% endfor %}</datalist>
+{% endblock %}

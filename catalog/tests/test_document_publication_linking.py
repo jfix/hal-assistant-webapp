@@ -306,3 +306,69 @@ def test_generation_action_is_prominent_only_when_generated_fields_are_missing(c
     assert "document-generation-callout" not in complete_response
     assert "document-generation-discreet" in complete_response
     assert "Générer depuis un document" in complete_response
+
+
+def test_reviewer_can_search_for_an_unsuggested_existing_publication(client) -> None:
+    user = _user("manual-matcher", reviewer=True)
+    wanted = _publication(
+        publication_key="manual-match",
+        title="A Distant but Known Publication",
+        authors=["Known Scholar"],
+        publication_year=2019,
+        hal_document_type="ART",
+        hal_id="hal-09876543",
+    )
+    _publication(
+        publication_key="manual-other",
+        title="An Unrelated Record",
+    )
+    client.force_login(user)
+
+    response = client.get(
+        reverse("publication-search"),
+        {"q": "Distant"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "results": [
+            {
+                "id": str(wanted.id),
+                "title": "A Distant but Known Publication",
+                "authors": ["Known Scholar"],
+                "year": 2019,
+                "hal_type": "ART",
+                "hal_id": "hal-09876543",
+            }
+        ]
+    }
+
+
+def test_publication_search_is_permission_gated_and_requires_two_characters(client) -> None:
+    user = _user("manual-search-reader")
+    client.force_login(user)
+
+    forbidden = client.get(reverse("publication-search"), {"q": "Known"})
+    user.user_permissions.add(Permission.objects.get(codename="review_publication"))
+    short_query = client.get(reverse("publication-search"), {"q": "K"})
+
+    assert forbidden.status_code == 403
+    assert short_query.status_code == 200
+    assert short_query.json() == {"results": []}
+
+
+def test_document_matching_page_offers_manual_typeahead_before_new_draft(client) -> None:
+    user = _user("manual-typeahead", reviewer=True)
+    summary = _summary(user)
+    client.force_login(user)
+
+    content = client.get(
+        reverse("document-summary-cache-detail", args=[summary.id])
+    ).content.decode()
+
+    assert "Rechercher une autre notice" in content
+    assert 'data-publication-search data-search-url="/publications/search/"' in content
+    assert "data-publication-link-form" in content
+    assert content.index("Rechercher une autre notice") < content.index(
+        "Créer un nouveau brouillon local"
+    )

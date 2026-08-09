@@ -7,6 +7,7 @@
     <p class="eyebrow">Résumé académique bilingue</p>
     <h1>Du document aux mots justes.</h1>
     <p class="lede">Déposez un article PDF ou Word. L’assistant produit un résumé en français, un abstract en anglais et jusqu’à dix mots-clés dans chaque langue.</p>
+    {% if perms.catalog.review_publication %}<p class="subtle">Vous n’avez pas de document ? <a href="{% url 'publication-create-manual' %}">Créez une publication manuellement.</a></p>{% endif %}
   </header>
 
   <form class="upload-panel" method="post" enctype="multipart/form-data" data-upload-form>
