@@ -117,6 +117,8 @@ class Publication(models.Model):
             {
                 "dimension": "HAL",
                 "label": "Publié sur HAL" if published else "Brouillon",
+                "compact_dimension": "HAL",
+                "compact_label": "Publié" if published else "Brouillon",
                 "tone": "published" if published else "neutral",
             }
         ]
@@ -129,6 +131,8 @@ class Publication(models.Model):
                         if ready
                         else "Mise à jour à compléter"
                     ),
+                    "compact_dimension": "Données",
+                    "compact_label": "Prêt à mettre à jour" if ready else "À compléter",
                     "tone": "ready" if ready else "warning",
                 }
             )
@@ -143,6 +147,8 @@ class Publication(models.Model):
                 {
                     "dimension": "Données",
                     "label": "Prêt pour HAL" if ready else "À compléter",
+                    "compact_dimension": "Données",
+                    "compact_label": "Prêt" if ready else "À compléter",
                     "tone": "ready" if ready else "warning",
                 }
             )
@@ -152,6 +158,8 @@ class Publication(models.Model):
             {
                 "dimension": "Synchronisation",
                 "label": sync_label,
+                "compact_dimension": "Sync.",
+                "compact_label": "Jamais" if sync_label == "Jamais synchronisé" else sync_label,
                 "tone": sync_tone,
             }
         )
@@ -160,11 +168,19 @@ class Publication(models.Model):
     @property
     def attention_status(self) -> dict[str, str] | None:
         if self.review_state == self.ReviewState.BLOCKED:
-            return {"dimension": "Attention", "label": "Bloqué", "tone": "blocked"}
+            return {
+                "dimension": "Attention",
+                "label": "Bloqué",
+                "compact_dimension": "Attention",
+                "compact_label": "Bloqué",
+                "tone": "blocked",
+            }
         if self.review_state == self.ReviewState.NEEDS_REVIEW:
             return {
                 "dimension": "Attention",
                 "label": "À vérifier",
+                "compact_dimension": "Attention",
+                "compact_label": "À vérifier",
                 "tone": "warning",
             }
         return None

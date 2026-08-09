@@ -289,6 +289,26 @@ def test_published_unmodified_record_is_shown_as_synchronized(client, user) -> N
     assert 'class="status-value">Modifié</span>' not in content
 
 
+def test_publication_list_uses_compact_three_column_statuses(client, user) -> None:
+    Publication.objects.create(
+        publication_key="status-list",
+        publication_type="journal_article",
+        title="Compact list statuses",
+        hal_id="hal-765432",
+        readiness_state=Publication.ReadinessState.HAL_READY,
+        version=2,
+        hal_synced_version=2,
+    )
+    client.force_login(user)
+
+    content = client.get(reverse("publication-list")).content.decode()
+
+    assert "status-summary-compact" in content
+    assert 'class="status-dimension">Sync.</span>' in content
+    assert 'class="status-value">Publié</span>' in content
+    assert 'class="status-value">Prêt à mettre à jour</span>' in content
+
+
 def test_publication_detail_reads_latest_hal_operation(client, user, publications) -> None:
     publication = publications[0]
     operation = HALOperation.objects.create(

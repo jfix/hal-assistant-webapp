@@ -77,10 +77,10 @@
             <td>
               <div class="status-summary status-summary-compact" aria-label="Statuts de {{ publication.title }}">
                 {% for status in publication.workflow_statuses %}
-                  <div class="status-item status-{{ status.tone }}"><span class="status-dot" aria-hidden="true"></span><span class="status-dimension">{{ status.dimension }}</span><span class="status-value">{{ status.label }}</span></div>
+                  <div class="status-item status-{{ status.tone }}"><span class="status-dot" aria-hidden="true"></span><span class="status-dimension">{{ status.compact_dimension }}</span><span class="status-value">{{ status.compact_label }}</span></div>
                 {% endfor %}
                 {% if publication.attention_status %}
-                  <div class="status-item status-{{ publication.attention_status.tone }}"><span class="status-dot" aria-hidden="true"></span><span class="status-dimension">{{ publication.attention_status.dimension }}</span><span class="status-value">{{ publication.attention_status.label }}</span></div>
+                  <div class="status-item status-{{ publication.attention_status.tone }}"><span class="status-dot" aria-hidden="true"></span><span class="status-dimension">{{ publication.attention_status.compact_dimension }}</span><span class="status-value">{{ publication.attention_status.compact_label }}</span></div>
                 {% endif %}
               </div>
               {% if publication.missing_required_fields %}
