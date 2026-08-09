@@ -3,11 +3,14 @@ from __future__ import annotations
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from hal_assistant.hal_requirements import audit_record
 from hal_assistant.hal_xml import HAL_NS, TEI_NS, XSI_NS, build_tei, validate_tei
 from hal_assistant.review_import import read_publications_sheet
+
+if TYPE_CHECKING:
+    from catalog.models import Publication
 
 # Fallback domain when a review row does not carry its own ``hal_domain``.
 DEFAULT_HAL_DOMAIN = "shs.litt"
@@ -35,7 +38,43 @@ class SubmissionXML:
     structure_id: str = ""
 
 
-def build_submission_xml(record: dict[str, Any]) -> SubmissionXML:
+def _current_record(record: dict[str, Any], publication: Publication) -> dict[str, Any]:
+    """Overlay reviewed materialized fields without modifying source evidence."""
+    current = dict(record)
+    values = {
+        "title": publication.title,
+        "document_type": publication.hal_document_type,
+        "year": publication.publication_year,
+        "language": publication.language,
+        "abstract_en": publication.abstract_en,
+        "abstract_fr": publication.abstract_fr,
+        "keywords_en": publication.keywords_en,
+        "keywords_fr": publication.keywords_fr,
+        "authors": publication.authors,
+        "editors": publication.editors,
+        "container_title": publication.journal_title or publication.book_title,
+        "publisher": publication.publisher,
+        "publisher_city": publication.publisher_city,
+        "volume": publication.volume,
+        "issue": publication.issue,
+        "pages": publication.pages,
+        "doi": publication.doi,
+        "isbn": publication.isbn,
+        "issn": publication.issn,
+        "conference_title": publication.conference_title,
+        "conference_start_date": publication.conference_start_date,
+        "conference_end_date": publication.conference_end_date,
+        "conference_city": publication.conference_city,
+        "conference_country": publication.conference_country,
+        "source_url": publication.source_url,
+    }
+    current.update(values)
+    return current
+
+
+def build_submission_xml(
+    record: dict[str, Any], *, publication: Publication | None = None
+) -> SubmissionXML:
     """Generate the HAL AOfr TEI submission notice for one review record.
 
     This is a read-only debugging preview built entirely by the pinned package.
@@ -43,6 +82,8 @@ def build_submission_xml(record: dict[str, Any]) -> SubmissionXML:
     findings are returned as ``errors`` rather than raised, so the debug view can
     display exactly why a record would be rejected.
     """
+    if publication is not None:
+        record = _current_record(record, publication)
     domain = str(record.get("hal_domain") or record.get("domain") or DEFAULT_HAL_DOMAIN)
     idhal = record.get("idhal") or None
     structure_id = str(
