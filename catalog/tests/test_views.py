@@ -16,6 +16,7 @@ from openpyxl import load_workbook
 from catalog.models import (
     DocumentPublicationLink,
     DocumentSummaryCache,
+    HALOperation,
     Publication,
     SourceImport,
     SourceRecord,
@@ -224,6 +225,23 @@ def test_authenticated_user_can_view_publication_detail(
     assert "conference_city" in content
     assert "Résumés et mots-clés" in content
     assert 'name="field" value="abstract_fr"' not in content
+
+
+def test_publication_detail_reads_latest_hal_operation(client, user, publications) -> None:
+    publication = publications[0]
+    operation = HALOperation.objects.create(
+        publication=publication,
+        requested_by=user,
+        publication_version=publication.version,
+        state=HALOperation.State.PREPARED,
+        duplicate_check={},
+    )
+    client.force_login(user)
+
+    response = client.get(reverse("publication-detail", args=[publication.id]))
+
+    assert response.status_code == 200
+    assert reverse("hal-preprod-operation", args=[operation.id]) in response.content.decode()
 
 
 def test_external_links_open_in_safe_new_tabs(client, user) -> None:

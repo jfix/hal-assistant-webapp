@@ -1,6 +1,8 @@
 import { Container, getContainer } from "@cloudflare/containers";
 import { env } from "cloudflare:workers";
 
+import { migrateDatabase } from "./container-startup.js";
+
 function definedEnvironment(values) {
   return Object.fromEntries(
     Object.entries(values).filter(([, value]) => typeof value === "string" && value.length > 0),
@@ -32,6 +34,10 @@ export class DjangoContainer extends Container {
     SUMMARY_GLOBAL_DAILY_LIMIT: env.SUMMARY_GLOBAL_DAILY_LIMIT,
     SUMMARY_CACHE_RETENTION_DAYS: env.SUMMARY_CACHE_RETENTION_DAYS,
   });
+
+  async onStart() {
+    console.log(await migrateDatabase(this.ctx.container, this.envVars));
+  }
 }
 
 export default {
