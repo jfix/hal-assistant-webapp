@@ -20,7 +20,7 @@
     </div>
     <div class="detail-actions">
       {% if publication.hal_id %}
-        <a class="secondary-button" href="https://hal.science/{{ publication.hal_id }}" rel="noreferrer">Ouvrir {{ publication.hal_id }}</a>
+        <a class="secondary-button" href="https://hal.science/{{ publication.hal_id }}" target="_blank" rel="noopener noreferrer">Ouvrir {{ publication.hal_id }}</a>
       {% endif %}
       <a class="secondary-button" href="{% url 'publication-xml' publication.id %}">XML de soumission</a>
     </div>

@@ -82,7 +82,7 @@
             </td>
             <td>
               {% if publication.hal_id %}
-                <a href="https://hal.science/{{ publication.hal_id }}" rel="noreferrer">{{ publication.hal_id }}</a>
+                <a href="https://hal.science/{{ publication.hal_id }}" target="_blank" rel="noopener noreferrer">{{ publication.hal_id }}</a>
               {% else %}
                 {{ publication.hal_status|default:"—" }}
               {% endif %}

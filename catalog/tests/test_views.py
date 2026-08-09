@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from io import BytesIO
 from unittest.mock import patch
 
@@ -220,6 +221,28 @@ def test_authenticated_user_can_view_publication_detail(
     content = response.content.decode()
     assert "Cloud deployment" in content
     assert "conference_city" in content
+
+
+def test_external_links_open_in_safe_new_tabs(client, user) -> None:
+    publication = Publication.objects.create(
+        publication_key="external-links",
+        publication_type="journal_article",
+        title="External link policy",
+        doi="10.1234/example",
+        isbn=["978-1-2345-6789-0"],
+        source_url="https://journal.example/article",
+        hal_id="hal-123456",
+    )
+    client.force_login(user)
+
+    detail = client.get(reverse("publication-detail", args=[publication.id])).content.decode()
+    listing = client.get(reverse("publication-list")).content.decode()
+
+    external_anchors = re.findall(r'<a\s+[^>]*href="https?://[^>]+>', detail + listing)
+    assert len(external_anchors) == 5
+    for anchor in external_anchors:
+        assert 'target="_blank"' in anchor
+        assert 'rel="noopener noreferrer"' in anchor
 
 
 @pytest.mark.parametrize(
