@@ -360,6 +360,10 @@ def _filtered_publications(request: HttpRequest):
         publications = publications.filter(hal_id="")
     elif filters["workflow"] == "published":
         publications = publications.exclude(hal_id="")
+    elif filters["workflow"] == "modified":
+        publications = publications.exclude(hal_id="").filter(
+            hal_synced_version__lt=models.F("version")
+        )
     return publications, filters
 
 

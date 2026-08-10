@@ -89,6 +89,7 @@ def test_home_is_a_dashboard_with_stats_and_recent_drafts(client, user) -> None:
     assert "Notice déjà publiée" not in content
     assert reverse("publication-detail", args=[draft.id]) in content
     assert f'{reverse("publication-list")}?workflow=draft' in content
+    assert f'{reverse("publication-list")}?workflow=modified' in content
 
 
 def test_publication_list_can_filter_by_deposit_state(client, user) -> None:
@@ -112,6 +113,44 @@ def test_publication_list_can_filter_by_deposit_state(client, user) -> None:
     assert "Brouillon visible" in content
     assert "Publication masquée" not in content
     assert '<option value="draft" selected>Brouillons</option>' in content
+
+
+def test_publication_list_can_filter_records_modified_after_hal(client, user) -> None:
+    client.force_login(user)
+    Publication.objects.create(
+        publication_key="pub-modified-after-hal",
+        publication_type="book",
+        title="Modification locale visible",
+        hal_id="hal-01111111",
+        version=3,
+        hal_synced_version=2,
+    )
+    Publication.objects.create(
+        publication_key="pub-synced-with-hal",
+        publication_type="book",
+        title="Notice HAL à jour masquée",
+        hal_id="hal-02222222",
+        version=2,
+        hal_synced_version=2,
+    )
+    Publication.objects.create(
+        publication_key="pub-draft-not-hal",
+        publication_type="book",
+        title="Brouillon local masqué",
+        version=2,
+    )
+
+    response = client.get(reverse("publication-list"), {"workflow": "modified"})
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert "Modification locale visible" in content
+    assert "Notice HAL à jour masquée" not in content
+    assert "Brouillon local masqué" not in content
+    assert (
+        '<option value="modified" selected>Modifiés localement après HAL</option>'
+        in content
+    )
 
 
 @pytest.mark.parametrize(

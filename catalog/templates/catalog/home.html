@@ -20,7 +20,7 @@
     <a class="stat-card" href="{% url 'publication-list' %}?workflow=draft"><strong>{{ stats.drafts }}</strong><span>Brouillons</span></a>
     <a class="stat-card" href="{% url 'publication-list' %}?workflow=draft&amp;readiness=hal_ready"><strong>{{ stats.ready }}</strong><span>Prêts pour HAL</span></a>
     <a class="stat-card" href="{% url 'publication-list' %}?workflow=published"><strong>{{ stats.published }}</strong><span>Publiés sur HAL</span></a>
-    <div class="stat-card"><strong>{{ stats.modified }}</strong><span>Modifiés depuis HAL</span></div>
+    <a class="stat-card" href="{% url 'publication-list' %}?workflow=modified"><strong>{{ stats.modified }}</strong><span>Modifiés localement après HAL</span></a>
   </section>
 
   <section class="dashboard-section" aria-labelledby="drafts-title">

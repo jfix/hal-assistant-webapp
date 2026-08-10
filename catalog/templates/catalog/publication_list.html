@@ -23,6 +23,7 @@
         <option value="">Tous</option>
         <option value="draft" {% if filters.workflow == "draft" %}selected{% endif %}>Brouillons</option>
         <option value="published" {% if filters.workflow == "published" %}selected{% endif %}>Publiés sur HAL</option>
+        <option value="modified" {% if filters.workflow == "modified" %}selected{% endif %}>Modifiés localement après HAL</option>
       </select>
     </label>
     <label>
