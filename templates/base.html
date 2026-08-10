@@ -22,7 +22,7 @@
       </div>
       {% if user.is_authenticated %}
         <div class="account">
-          <span>{{ user.get_username }}</span>
+          <a href="{% url 'account-settings' %}">{{ user.get_full_name|default:user.get_username }}</a>
           <form action="{% url 'logout' %}" method="post">
             {% csrf_token %}
             <button class="link-button" type="submit">Se déconnecter</button>

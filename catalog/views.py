@@ -12,7 +12,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
-from .forms import ManualPublicationForm
+from .forms import HALCredentialForm, ManualPublicationForm
 from .integrations.hal_assistant import (
     build_submission_xml,
     hal_document_type_display,
@@ -35,6 +35,12 @@ from .services.document_summaries import (
     DocumentSummaryError,
 )
 from .services.exports import export_publications_xlsx
+from .services.hal_credentials import (
+    HALCredentialError,
+    delete_credentials,
+    save_credentials,
+    saved_login_for,
+)
 from .services.hal_submission import (
     HALDuplicateError,
     HALSubmissionError,
@@ -125,6 +131,37 @@ def _field_descriptors(publication, specs):
             }
         )
     return descriptors
+
+
+@login_required
+def account_settings(request: HttpRequest):
+    saved_login = saved_login_for(request.user)
+    if request.method == "POST":
+        action = request.POST.get("action")
+        if action == "delete_hal_credentials":
+            delete_credentials(user=request.user)
+            messages.success(request, "Vos identifiants HAL ont été supprimés.")
+            return redirect("account-settings")
+        form = HALCredentialForm(request.POST)
+        if form.is_valid():
+            try:
+                save_credentials(
+                    user=request.user,
+                    login=form.cleaned_data["login"],
+                    password=form.cleaned_data["password"],
+                )
+            except (HALCredentialError, ValueError) as exc:
+                messages.error(request, str(exc))
+            else:
+                messages.success(request, "Vos identifiants HAL ont été enregistrés.")
+                return redirect("account-settings")
+    else:
+        form = HALCredentialForm(initial={"login": saved_login})
+    return render(
+        request,
+        "catalog/account_settings.html",
+        {"form": form, "has_hal_credentials": bool(saved_login)},
+    )
 
 
 def health(request: HttpRequest) -> JsonResponse:

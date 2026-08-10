@@ -28,6 +28,7 @@ button, input, select { font: inherit; }
 .brand { color: white; font-size: 1.05rem; font-weight: 750; text-decoration: none; }
 .environment { display: block; color: #b8d7d2; font-size: .78rem; letter-spacing: .04em; text-transform: uppercase; }
 .account { display: flex; align-items: center; gap: .8rem; }
+.account > a { color: #d5efeb; }
 .account form { margin: 0; }
 .site-nav { display: flex; gap: 1rem; margin-top: .2rem; }
 .site-nav a { color: #b8d7d2; font-size: .82rem; }
@@ -66,6 +67,16 @@ input:focus, select:focus, button:focus, a:focus { outline: 3px solid #77cabb; o
 .primary-button { border: 1px solid var(--accent); background: var(--accent); color: white; cursor: pointer; }
 .primary-button:hover { background: var(--accent-dark); color: white; }
 .secondary-button { border: 1px solid var(--accent); color: var(--accent); background: white; }
+.account-settings-grid { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 1rem; align-items: start; }
+.panel { padding: 1.25rem; border: 1px solid var(--line); background: var(--paper); }
+.narrow-panel { max-width: 42rem; }
+.stacked-form { display: grid; gap: 1rem; }
+.stacked-form .primary-button { justify-self: start; }
+.stacked-form small { color: var(--muted); font-weight: 400; }
+.errorlist { margin: .2rem 0 0; padding-left: 1.2rem; color: #9b2c2c; }
+.credential-state { padding: .7rem; background: var(--accent-soft); color: var(--accent-dark); }
+.credential-delete-form { margin-top: 1.2rem; }
+.danger-link { color: #9b2c2c; }
 .table-wrap { overflow-x: auto; border: 1px solid var(--line); background: var(--paper); }
 table { width: 100%; border-collapse: collapse; font-size: .9rem; }
 th { text-align: left; background: #e8eeeb; font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; }

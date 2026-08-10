@@ -22,6 +22,7 @@ from catalog.models import (
     SourceImport,
     SourceRecord,
 )
+from catalog.services.hal_credentials import save_credentials
 from catalog.services.hal_submission import (
     HALDuplicateError,
     HALSubmissionError,
@@ -37,6 +38,7 @@ pytestmark = pytest.mark.django_db
 def submitter_user():
     user = get_user_model().objects.create_user(username="hal-submitter", password="pw")
     user.user_permissions.add(Permission.objects.get(codename="submit_hal_preprod"))
+    save_credentials(user=user, login="hal-user", password="hal-secret")
     return user
 
 
@@ -247,6 +249,8 @@ def test_execute_is_preprod_test_only_and_records_immutable_attempt(
     assert attempt.payload_id == operation.payload.id
     assert submitter.call_args.kwargs["environment"] == "preprod"
     assert submitter.call_args.kwargs["test"] is True
+    assert submitter.call_args.kwargs["login"] == "hal-user"
+    assert submitter.call_args.kwargs["password"] == "hal-secret"
     operation.refresh_from_db()
     ready_publication.refresh_from_db()
     assert operation.state == HALOperation.State.ACCEPTED
@@ -277,6 +281,86 @@ def test_execute_refuses_stale_or_repeated_operation(
         )
 
     submitter.assert_not_called()
+
+
+def test_execute_without_actor_credentials_fails_before_state_change(
+    ready_publication, submitter_user
+) -> None:
+    operation = prepare_preprod_operation(
+        publication=ready_publication,
+        actor=submitter_user,
+        duplicate_checker=clear_duplicate_check,
+    )
+    submitter_user.hal_credential.delete()
+    submitter = Mock()
+
+    with pytest.raises(HALSubmissionError, match="Mon compte"):
+        execute_preprod_operation(
+            operation=operation,
+            actor=submitter_user,
+            duplicate_checker=clear_duplicate_check,
+            submitter=submitter,
+        )
+
+    operation.refresh_from_db()
+    assert operation.state == HALOperation.State.PREPARED
+    assert not HALSubmissionAttempt.objects.exists()
+    submitter.assert_not_called()
+
+
+def test_execute_uses_requesting_users_credentials_only(
+    ready_publication, submitter_user
+) -> None:
+    other = get_user_model().objects.create_user(username="other", password="pw")
+    save_credentials(user=other, login="other-login", password="other-secret")
+    operation = prepare_preprod_operation(
+        publication=ready_publication,
+        actor=submitter_user,
+        duplicate_checker=clear_duplicate_check,
+    )
+    submitter = Mock(
+        return_value=SWORDResult(
+            xml_file="payload.xml",
+            status_code=400,
+            accepted=False,
+            sha256=operation.payload.sha256,
+        )
+    )
+
+    execute_preprod_operation(
+        operation=operation,
+        actor=submitter_user,
+        duplicate_checker=clear_duplicate_check,
+        submitter=submitter,
+    )
+
+    assert submitter.call_args.kwargs["login"] == "hal-user"
+    assert submitter.call_args.kwargs["password"] == "hal-secret"
+    assert "other" not in repr(submitter.call_args)
+
+
+def test_submission_error_cannot_persist_actor_credentials(
+    ready_publication, submitter_user
+) -> None:
+    operation = prepare_preprod_operation(
+        publication=ready_publication,
+        actor=submitter_user,
+        duplicate_checker=clear_duplicate_check,
+    )
+
+    def leaking_submitter(*args, **kwargs):
+        raise RuntimeError("failed for hal-user using hal-secret")
+
+    attempt = execute_preprod_operation(
+        operation=operation,
+        actor=submitter_user,
+        duplicate_checker=clear_duplicate_check,
+        submitter=leaking_submitter,
+    )
+
+    assert "hal-user" not in attempt.error
+    assert "hal-secret" not in attempt.error
+    assert attempt.error == "failed for [redacted] using [redacted]"
 
 
 def test_preprod_button_requires_permission(client, ready_publication, submitter_user) -> None:

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 import re
 import tempfile
 import unicodedata
@@ -23,6 +22,7 @@ from catalog.models import (
     HALSubmissionAttempt,
     Publication,
 )
+from catalog.services.hal_credentials import HALCredentialError, credentials_for
 
 HAL_SEARCH_URL = "https://api.archives-ouvertes.fr/search/hal/"
 SEARCH_FIELDS = (
@@ -214,9 +214,12 @@ def prepare_preprod_operation(
     return operation
 
 
-def _sanitized(value: str | None) -> str:
+def _sanitized(value: str | None, *, secrets: tuple[str, ...] = ()) -> str:
     text = value or ""
     text = re.sub(r"(?i)authorization\s*:\s*[^\r\n]+", "Authorization: [redacted]", text)
+    for secret in secrets:
+        if secret:
+            text = text.replace(secret, "[redacted]")
     return text[:20000]
 
 
@@ -229,6 +232,10 @@ def execute_preprod_operation(
 ) -> HALSubmissionAttempt:
     publication = Publication.objects.get(pk=operation.publication_id)
     _require_new_deposit_ready(publication)
+    try:
+        credential = credentials_for(actor)
+    except HALCredentialError as exc:
+        raise HALSubmissionError(str(exc)) from exc
     if operation.publication_version != publication.version:
         raise HALSubmissionError(
             "La notice a changé depuis la préparation ; préparez un nouveau contrôle."
@@ -251,7 +258,8 @@ def execute_preprod_operation(
             path,
             environment="preprod",
             test=True,
-            on_behalf_of=os.getenv("HAL_SWORD_ON_BEHALF_OF") or None,
+            login=credential.login,
+            password=credential.password,
         )
     except Exception as exc:
         result = SWORDResult(
@@ -275,8 +283,10 @@ def execute_preprod_operation(
             accepted=result.accepted,
             returned_hal_id=result.hal_id or "",
             returned_hal_url=result.hal_url or "",
-            response_body=_sanitized(result.response_body),
-            error=_sanitized(result.error),
+            response_body=_sanitized(
+                result.response_body, secrets=(credential.login, credential.password)
+            ),
+            error=_sanitized(result.error, secrets=(credential.login, credential.password)),
         )
         locked = HALOperation.objects.select_for_update().get(pk=operation.pk)
         locked.state = (

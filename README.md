@@ -109,14 +109,15 @@ npx wrangler secret put R2_ACCESS_KEY_ID
 npx wrangler secret put R2_SECRET_ACCESS_KEY
 npx wrangler secret put R2_ENDPOINT_URL
 npx wrangler secret put OPENAI_API_KEY
-npx wrangler secret put HAL_SWORD_LOGIN
-npx wrangler secret put HAL_SWORD_PASSWORD
+npx wrangler secret put HAL_CREDENTIAL_ENCRYPTION_KEY
 ```
 
-The optional `HAL_SWORD_ON_BEHALF_OF` secret identifies the HAL account on
-whose behalf a preproduction test is sent. HAL credentials are used only by the
-server-side preproduction service and are never returned to the browser or
-stored in the submission ledger.
+Each user manages their own HAL login and password from the authenticated
+“Mon compte” page. Those values are encrypted at rest with
+`HAL_CREDENTIAL_ENCRYPTION_KEY`, used only in memory by the server-side
+preproduction service, and never returned to the browser or stored in the
+submission ledger. The encryption key must be a Fernet-compatible URL-safe
+base64 encoding of 32 random bytes and must never be committed.
 
 Production startup fails closed unless `DJANGO_ALLOWED_HOSTS` contains exact
 hostnames, `DJANGO_CSRF_TRUSTED_ORIGINS` contains exact HTTPS origins, the

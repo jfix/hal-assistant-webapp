@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Mon compte · Gestionnaire de publications HAL{% endblock %}
+
+{% block content %}
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">Paramètres personnels</p>
+      <h1>Mon compte</h1>
+    </div>
+  </div>
+
+  <div class="account-settings-grid">
+    <section class="panel">
+      <h2>Compte de l’application</h2>
+      <p><strong>{{ user.get_full_name|default:user.get_username }}</strong></p>
+      <p class="subtle">{{ user.email }}</p>
+      <a class="secondary-button" href="{% url 'password-change' %}">Modifier mon mot de passe</a>
+    </section>
+
+    <section class="panel">
+      <h2>Identifiants HAL</h2>
+      <p>Ils sont chiffrés et servent uniquement lors de vos propres envois vers HAL.</p>
+      {% if has_hal_credentials %}
+        <p class="credential-state">Identifiants enregistrés. Saisissez de nouveau le mot de passe pour les remplacer.</p>
+      {% endif %}
+      <form method="post" class="stacked-form">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        {% for field in form %}
+          <label>{{ field.label }}{{ field }}{{ field.errors }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}</label>
+        {% endfor %}
+        <button class="primary-button" type="submit" name="action" value="save_hal_credentials">Enregistrer</button>
+      </form>
+      {% if has_hal_credentials %}
+        <form method="post" class="credential-delete-form">
+          {% csrf_token %}
+          <button class="link-button danger-link" type="submit" name="action" value="delete_hal_credentials">Supprimer mes identifiants HAL</button>
+        </form>
+      {% endif %}
+    </section>
+  </div>
+{% endblock %}

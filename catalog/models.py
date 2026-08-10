@@ -514,6 +514,23 @@ class AuditEvent(ImmutableModel):
         return f"{self.action}: {self.object_type}/{self.object_id}"
 
 
+class HALCredential(models.Model):
+    """Encrypted, replaceable HAL credentials owned by exactly one user."""
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="hal_credential",
+    )
+    encrypted_login = models.TextField()
+    encrypted_password = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return f"HAL credentials for user {self.user_id}"
+
+
 class HALOperation(models.Model):
     """A gated new-deposit workflow. Production is deliberately unsupported."""
 

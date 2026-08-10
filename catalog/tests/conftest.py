@@ -5,14 +5,16 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from cryptography.fernet import Fernet
 from django.core.files.storage import storages
 from openpyxl import Workbook
 
 
 @pytest.fixture(autouse=True)
-def isolated_media(settings, tmp_path: Path) -> None:
+def isolated_media(settings, tmp_path: Path, monkeypatch) -> None:
     settings.MEDIA_ROOT = tmp_path / "media"
     storages._storages.clear()
+    monkeypatch.setenv("HAL_CREDENTIAL_ENCRYPTION_KEY", Fernet.generate_key().decode())
 
 
 @pytest.fixture

@@ -7,6 +7,22 @@ from django import forms
 from catalog.integrations.hal_assistant import HAL_DOCUMENT_TYPE_LABELS_FR
 
 
+class HALCredentialForm(forms.Form):
+    login = forms.CharField(
+        label="Identifiant HAL",
+        max_length=255,
+        widget=forms.TextInput(attrs={"autocomplete": "username"}),
+    )
+    password = forms.CharField(
+        label="Mot de passe HAL",
+        strip=False,
+        widget=forms.PasswordInput(
+            attrs={"autocomplete": "new-password"}, render_value=False
+        ),
+        help_text="Le mot de passe enregistré n’est jamais affiché.",
+    )
+
+
 class ManualPublicationForm(forms.Form):
     hal_document_type = forms.ChoiceField(
         label="Type de publication HAL",
