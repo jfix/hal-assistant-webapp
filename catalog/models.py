@@ -94,6 +94,10 @@ class Publication(models.Model):
                 "submit_hal_preprod",
                 "Peut valider une nouvelle notice dans HAL préproduction",
             ),
+            (
+                "submit_hal_production",
+                "Peut déposer une nouvelle notice dans HAL production",
+            ),
         ]
 
     def __str__(self) -> str:
@@ -120,7 +124,10 @@ class Publication(models.Model):
     @property
     def workflow_statuses(self) -> list[dict[str, str]]:
         """Three orthogonal, user-facing publication workflow dimensions."""
-        published = bool(self.hal_id)
+        on_hal = bool(self.hal_id)
+        # Existing imports predate an explicit accepted status. Only a newly
+        # submitted workspace deposit is known not to be published yet.
+        published = on_hal and self.hal_status != "submitted"
         ready = (
             not self.missing_required_fields
             and self.readiness_state
@@ -134,13 +141,19 @@ class Publication(models.Model):
         statuses = [
             {
                 "dimension": "HAL",
-                "label": "Publié sur HAL" if published else "Brouillon",
+                "label": (
+                    "Publié sur HAL"
+                    if published
+                    else "Déposé sur HAL"
+                    if on_hal
+                    else "Brouillon"
+                ),
                 "compact_dimension": "HAL",
-                "compact_label": "Publié" if published else "Brouillon",
-                "tone": "published" if published else "neutral",
+                "compact_label": "Publié" if published else "Déposé" if on_hal else "Brouillon",
+                "tone": "published" if on_hal else "neutral",
             }
         ]
-        if published:
+        if on_hal:
             modified_since_hal = (
                 self.hal_synced_version is not None
                 and self.version > self.hal_synced_version
@@ -625,3 +638,67 @@ class HALSubmissionAttempt(ImmutableModel):
 
     def __str__(self) -> str:
         return f"{self.operation_id} · {self.status_code or 'network error'}"
+
+
+class HALProductionDeposit(models.Model):
+    """One explicitly confirmed production attempt from an accepted test payload."""
+
+    class State(models.TextChoices):
+        PREPARED = "prepared", "Prêt à confirmer"
+        SUBMITTING = "submitting", "Dépôt en cours"
+        ACCEPTED = "accepted", "Accepté par HAL"
+        REJECTED = "rejected", "Refusé par HAL"
+        UNCERTAIN = "uncertain", "Résultat à vérifier"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    publication = models.ForeignKey(
+        Publication, on_delete=models.PROTECT, related_name="hal_production_deposits"
+    )
+    preprod_operation = models.OneToOneField(
+        HALOperation, on_delete=models.PROTECT, related_name="production_deposit"
+    )
+    requested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="requested_hal_production_deposits",
+    )
+    publication_version = models.PositiveIntegerField()
+    payload_sha256 = models.CharField(max_length=64)
+    duplicate_check = models.JSONField(default=dict)
+    state = models.CharField(max_length=20, choices=State.choices)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return f"{self.publication_id} · {self.get_state_display()}"
+
+
+class HALProductionAttempt(ImmutableModel):
+    """Append-only sanitized receipt for a real HAL production POST."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    deposit = models.OneToOneField(
+        HALProductionDeposit, on_delete=models.PROTECT, related_name="attempt"
+    )
+    payload = models.ForeignKey(
+        HALPayload, on_delete=models.PROTECT, related_name="production_attempts"
+    )
+    requested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="hal_production_attempts",
+    )
+    endpoint = models.URLField(max_length=500)
+    status_code = models.PositiveSmallIntegerField(null=True, blank=True)
+    accepted = models.BooleanField(default=False)
+    returned_hal_id = models.CharField(max_length=80, blank=True)
+    returned_hal_url = models.URLField(max_length=1000, blank=True)
+    response_body = models.TextField(blank=True)
+    error = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self) -> str:
+        return f"{self.deposit_id} · {self.status_code or 'résultat inconnu'}"

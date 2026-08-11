@@ -23,24 +23,67 @@
       </div>
     </div>
     <div class="detail-actions">
-      {% if publication.hal_id %}
-        <a class="secondary-button" href="https://hal.science/{{ publication.hal_id }}" target="_blank" rel="noopener noreferrer">Ouvrir {{ publication.hal_id }}</a>
-      {% endif %}
       <a class="secondary-button" href="{% url 'publication-xml' publication.id %}">XML de soumission</a>
-      {% if latest_hal_operation %}
-        <a class="secondary-button" href="{% url 'hal-preprod-operation' latest_hal_operation.id %}">Suivi préproduction</a>
-      {% endif %}
-      {% if can_submit_preprod and publication.readiness_state == "hal_ready" and not publication.hal_id %}
-        <form method="post" action="{% url 'hal-preprod-prepare' publication.id %}">
-          {% csrf_token %}
-          <button class="primary-button" type="submit">Préparer le test HAL</button>
-        </form>
-      {% endif %}
     </div>
   </header>
 
+  <section class="panel hal-journey" aria-labelledby="hal-journey-title">
+    <div class="hal-journey-heading">
+      <div>
+        <p class="eyebrow">Du brouillon au dépôt</p>
+        <h2 id="hal-journey-title">Parcours vers HAL</h2>
+      </div>
+      <div class="hal-journey-progress">
+        {% if hal_journey.published %}
+          <strong>Objectif atteint</strong>
+        {% else %}
+          <strong>{{ hal_journey.completed }} étape{{ hal_journey.completed|pluralize }} sur {{ hal_journey.total }}</strong>
+        {% endif %}
+        <progress value="{{ hal_journey.completed }}" max="{{ hal_journey.total }}">{{ hal_journey.completed }}/{{ hal_journey.total }}</progress>
+      </div>
+    </div>
+    <ol class="journey-timeline">
+      {% for step in hal_journey.steps %}
+        <li class="journey-step journey-step-{{ step.state }}">
+          <div class="journey-marker" aria-hidden="true">
+            {% if step.state == "complete" %}✓{% elif step.state == "blocked" %}!{% elif step.state == "external" %}–{% else %}{{ forloop.counter }}{% endif %}
+          </div>
+          <article class="journey-card">
+            <p class="journey-state">
+              {% if step.state == "complete" %}Étape accomplie{% elif step.state == "current" %}À vous de jouer{% elif step.state == "blocked" %}Action nécessaire{% elif step.state == "external" %}Hors application{% else %}À venir{% endif %}
+            </p>
+            <h3>{{ step.title }}</h3>
+            {% if step.date %}<time datetime="{{ step.date|date:'c' }}">{{ step.date|date:"j F Y à H:i" }}</time>{% endif %}
+            <p>{{ step.description }}</p>
+            {% if step.action == "complete_metadata" %}
+              <a class="primary-button" href="#publication-metadata">Compléter les métadonnées</a>
+            {% elif step.action == "prepare_test" %}
+              <form method="post" action="{% url 'hal-preprod-prepare' publication.id %}">
+                {% csrf_token %}
+                <button class="primary-button" type="submit">Préparer le test HAL</button>
+              </form>
+            {% elif step.action == "resume_test" %}
+              <a class="primary-button" href="{% url 'hal-preprod-operation' latest_hal_operation.id %}">Envoyer le test</a>
+            {% elif step.action == "configure_credentials" %}
+              <a class="primary-button" href="{% url 'account-settings' %}">Configurer mes identifiants HAL</a>
+            {% elif step.action == "view_history" %}
+              <a class="secondary-button" href="{% url 'hal-preprod-operation' latest_hal_operation.id %}">Voir l’historique du test</a>
+            {% elif step.action == "open_hal" %}
+              <a class="secondary-button" href="https://hal.science/{{ publication.hal_id }}" target="_blank" rel="noopener noreferrer">Ouvrir la notice HAL</a>
+            {% elif step.action == "prepare_production" %}
+              <form method="post" action="{% url 'hal-production-prepare' publication.id %}">
+                {% csrf_token %}
+                <button class="primary-button" type="submit">Préparer le dépôt réel</button>
+              </form>
+            {% endif %}
+          </article>
+        </li>
+      {% endfor %}
+    </ol>
+  </section>
+
   <div class="detail-grid">
-    <section class="panel">
+    <section class="panel" id="publication-metadata">
       <h2>Métadonnées structurées</h2>
       <dl class="metadata">
         {% for field in metadata_fields %}{% include "catalog/_field_row.html" %}{% endfor %}
@@ -163,6 +206,16 @@
           </details>
         </article>
       {% endfor %}
+      </div>
+    </details>
+  {% endif %}
+
+  {% if latest_hal_operation %}
+    <details class="panel meta-panel">
+      <summary><span class="meta-panel-title">Historique des tests HAL</span></summary>
+      <div class="meta-panel-content">
+        <p>La charge utile figée, les tentatives et les réponses techniques sont conservées pour l’audit.</p>
+        <a class="secondary-button" href="{% url 'hal-preprod-operation' latest_hal_operation.id %}">Consulter le dernier test</a>
       </div>
     </details>
   {% endif %}

@@ -5,6 +5,14 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}Gestionnaire de publications HAL{% endblock %}</title>
+    <meta name="theme-color" content="#102b2a">
+    <meta name="application-name" content="Assistant de publications HAL">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Publications HAL">
+    <link rel="manifest" href="{% static 'catalog/manifest.webmanifest' %}">
+    <link rel="icon" href="{% static 'catalog/app-icon.svg' %}" type="image/svg+xml">
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'catalog/icons/apple-touch-icon.png' %}">
     <link rel="stylesheet" href="{% static 'catalog/app.css' %}?v={{ asset_version }}">
     <script src="{% static 'catalog/app.js' %}?v={{ asset_version }}" defer></script>
   </head>

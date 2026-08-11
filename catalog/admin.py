@@ -10,6 +10,8 @@ from .models import (
     FieldAssertion,
     HALOperation,
     HALPayload,
+    HALProductionAttempt,
+    HALProductionDeposit,
     HALSubmissionAttempt,
     Publication,
     SourceImport,
@@ -51,6 +53,8 @@ admin.site.register(DocumentPublicationLink, ReadOnlyAdmin)
 admin.site.register(HALOperation, ReadOnlyAdmin)
 admin.site.register(HALPayload, ReadOnlyAdmin)
 admin.site.register(HALSubmissionAttempt, ReadOnlyAdmin)
+admin.site.register(HALProductionDeposit, ReadOnlyAdmin)
+admin.site.register(HALProductionAttempt, ReadOnlyAdmin)
 
 
 @admin.register(DocumentSummaryGenerationAttempt)

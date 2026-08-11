@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+import json
 import re
 from io import BytesIO
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
+from django.contrib.staticfiles import finders
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from django.utils import timezone
@@ -22,6 +25,7 @@ from catalog.models import (
     SourceRecord,
 )
 from catalog.services.document_summaries import BilingualSummary
+from catalog.services.hal_credentials import save_credentials
 
 pytestmark = pytest.mark.django_db
 
@@ -61,6 +65,47 @@ def test_health_is_public_and_checks_database(client) -> None:
 
     assert response.status_code == 200
     assert response.json() == {"status": "ok", "database": "reachable"}
+
+
+def test_pwa_metadata_and_icons_are_available(client, user) -> None:
+    client.force_login(user)
+
+    content = client.get(reverse("home")).content.decode()
+    manifest_path = finders.find("catalog/manifest.webmanifest")
+    manifest = json.loads(Path(manifest_path).read_text(encoding="utf-8"))
+
+    assert 'rel="manifest"' in content
+    assert 'rel="apple-touch-icon"' in content
+    assert manifest["display"] == "standalone"
+    assert manifest["scope"] == "/"
+    assert {icon["purpose"] for icon in manifest["icons"]} == {"any", "maskable"}
+    for icon in manifest["icons"]:
+        assert finders.find(icon["src"].removeprefix("/static/"))
+
+
+def test_service_worker_caches_only_static_assets(client) -> None:
+    response = client.get(reverse("service-worker"))
+    script = response.content.decode()
+
+    assert response.status_code == 200
+    assert response["Content-Type"] == "application/javascript; charset=utf-8"
+    assert "no-store" in response["Cache-Control"]
+    assert 'url.pathname.startsWith("/static/")' in script
+    assert "responseUrl.origin === self.location.origin" in script
+    assert "private|no-store" in script
+    assert "await cache.put(request, response.clone())" in script
+    assert "Les notices et documents ne sont pas conservés hors ligne" in script
+
+
+def test_account_page_explains_ios_and_android_installation(client, user) -> None:
+    client.force_login(user)
+
+    content = client.get(reverse("account-settings")).content.decode()
+
+    assert "Installer l’application" in content
+    assert "iPhone ou iPad" in content
+    assert "Android" in content
+    assert "ne sont pas enregistrés pour une consultation hors connexion" in content
 
 
 def test_home_is_a_dashboard_with_stats_and_recent_drafts(client, user) -> None:
@@ -581,6 +626,63 @@ def test_publication_detail_reads_latest_hal_operation(client, user, publication
 
     assert response.status_code == 200
     assert reverse("hal-preprod-operation", args=[operation.id]) in response.content.decode()
+
+
+def test_hal_journey_guides_ready_notice_to_prepare_test(client, user, publications) -> None:
+    user.user_permissions.add(Permission.objects.get(codename="submit_hal_preprod"))
+    client.force_login(user)
+
+    content = client.get(
+        reverse("publication-detail", args=[publications[0].id])
+    ).content.decode()
+
+    assert "Parcours vers HAL" in content
+    assert "2 étapes sur 5" in content
+    assert "Contrôle des doublons" in content
+    assert "Préparer le test HAL" in content
+    assert "Suivi préproduction" not in content
+
+
+def test_hal_journey_directs_prepared_test_to_personal_credentials(
+    client, user, publications
+) -> None:
+    user.user_permissions.add(Permission.objects.get(codename="submit_hal_preprod"))
+    operation = HALOperation.objects.create(
+        publication=publications[0],
+        requested_by=user,
+        publication_version=publications[0].version,
+        state=HALOperation.State.PREPARED,
+        duplicate_check={},
+    )
+    client.force_login(user)
+
+    missing = client.get(
+        reverse("publication-detail", args=[publications[0].id])
+    ).content.decode()
+    save_credentials(user=user, login="hal-user", password="hal-password")
+    configured = client.get(
+        reverse("publication-detail", args=[publications[0].id])
+    ).content.decode()
+
+    assert "Configurer mes identifiants HAL" in missing
+    assert reverse("account-settings") in missing
+    assert "Envoyer le test" in configured
+    assert reverse("hal-preprod-operation", args=[operation.id]) in configured
+
+
+def test_hal_journey_marks_existing_hal_notice_as_goal_reached(
+    client, user, publications
+) -> None:
+    publication = publications[0]
+    publication.hal_id = "hal-01234567"
+    publication.save(update_fields=["hal_id", "updated_at"])
+    client.force_login(user)
+
+    content = client.get(reverse("publication-detail", args=[publication.id])).content.decode()
+
+    assert "Objectif atteint" in content
+    assert "Étape réalisée hors de cette application" in content
+    assert "Ouvrir la notice HAL" in content
 
 
 def test_external_links_open_in_safe_new_tabs(client, user) -> None:

@@ -18,6 +18,18 @@
       <a class="secondary-button" href="{% url 'password-change' %}">Modifier mon mot de passe</a>
     </section>
 
+    <section class="panel pwa-install-panel">
+      <h2>Installer l’application</h2>
+      <p>Ajoutez l’assistant à votre écran d’accueil pour l’ouvrir comme une application.</p>
+      <button class="primary-button" type="button" data-install-app hidden>Installer l’application</button>
+      <details>
+        <summary>Installation manuelle</summary>
+        <p><strong>iPhone ou iPad :</strong> dans Safari, touchez Partager, puis « Sur l’écran d’accueil ».</p>
+        <p><strong>Android :</strong> ouvrez le menu du navigateur, puis choisissez « Installer l’application » ou « Ajouter à l’écran d’accueil ».</p>
+      </details>
+      <p class="subtle">Pour protéger vos données, les notices et documents ne sont pas enregistrés pour une consultation hors connexion.</p>
+    </section>
+
     <section class="panel">
       <h2>Identifiants HAL</h2>
       <p>Ils sont chiffrés et servent uniquement lors de vos propres envois vers HAL.</p>

@@ -13,7 +13,7 @@ dependencies = [
   "django>=5.2,<5.3",
   "django-storages[s3]>=1.14.6,<2",
   "gunicorn>=23,<24",
-  "hal-assistant @ git+https://github.com/jfix/hal-assistant.git@8028c085bd46aac479013d86cfe1720818f475b9",
+  "hal-assistant @ git+https://github.com/jfix/hal-assistant.git@adc09f6a2cc90ba28c20e9880549bbefa34554bc",
   "openpyxl>=3.1,<4",
   "pypdf>=6,<7",
   "psycopg[binary]>=3.2,<4",

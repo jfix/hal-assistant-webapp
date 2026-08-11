@@ -235,7 +235,7 @@ wheels = [
 [[package]]
 name = "hal-assistant"
 version = "0.12.0"
-source = { git = "https://github.com/jfix/hal-assistant.git?rev=8028c085bd46aac479013d86cfe1720818f475b9#8028c085bd46aac479013d86cfe1720818f475b9" }
+source = { git = "https://github.com/jfix/hal-assistant.git?rev=adc09f6a2cc90ba28c20e9880549bbefa34554bc#adc09f6a2cc90ba28c20e9880549bbefa34554bc" }
 dependencies = [
     { name = "openpyxl" },
     { name = "pydantic" },
@@ -273,7 +273,7 @@ requires-dist = [
     { name = "django", specifier = ">=5.2,<5.3" },
     { name = "django-storages", extras = ["s3"], specifier = ">=1.14.6,<2" },
     { name = "gunicorn", specifier = ">=23,<24" },
-    { name = "hal-assistant", git = "https://github.com/jfix/hal-assistant.git?rev=8028c085bd46aac479013d86cfe1720818f475b9" },
+    { name = "hal-assistant", git = "https://github.com/jfix/hal-assistant.git?rev=adc09f6a2cc90ba28c20e9880549bbefa34554bc" },
     { name = "openpyxl", specifier = ">=3.1,<4" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2,<4" },
     { name = "pypdf", specifier = ">=6,<7" },

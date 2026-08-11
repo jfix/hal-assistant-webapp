@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Assistant de publications HAL">
+  <rect width="512" height="512" fill="#102b2a"/>
+  <path d="M136 108h182l58 58v238H136z" fill="#fffefb"/>
+  <path d="M318 108v68h58" fill="#dcefeb"/>
+  <path d="M318 108v68h58" fill="none" stroke="#005c53" stroke-width="16" stroke-linejoin="round"/>
+  <path d="M184 230h144M184 282h144M184 334h92" fill="none" stroke="#005c53" stroke-width="22" stroke-linecap="round"/>
+  <circle cx="352" cy="358" r="72" fill="#007c70"/>
+  <path d="m320 358 22 22 45-50" fill="none" stroke="#fff" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

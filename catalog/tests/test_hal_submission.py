@@ -17,6 +17,8 @@ from catalog.models import (
     AuditEvent,
     HALOperation,
     HALPayload,
+    HALProductionAttempt,
+    HALProductionDeposit,
     HALSubmissionAttempt,
     Publication,
     SourceImport,
@@ -28,7 +30,9 @@ from catalog.services.hal_submission import (
     HALSubmissionError,
     check_live_duplicates,
     execute_preprod_operation,
+    execute_production_deposit,
     prepare_preprod_operation,
+    prepare_production_deposit,
 )
 
 pytestmark = pytest.mark.django_db
@@ -395,4 +399,184 @@ def test_execute_view_requires_exact_publication_key_confirmation(
         )
 
     assert response.status_code == 302
+    execute.assert_not_called()
+
+
+def _accepted_preprod(publication, user):
+    operation = prepare_preprod_operation(
+        publication=publication,
+        actor=user,
+        duplicate_checker=clear_duplicate_check,
+    )
+    execute_preprod_operation(
+        operation=operation,
+        actor=user,
+        duplicate_checker=clear_duplicate_check,
+        submitter=Mock(
+            return_value=SWORDResult(
+                xml_file="payload.xml",
+                status_code=202,
+                accepted=True,
+                sha256=operation.payload.sha256,
+            )
+        ),
+    )
+    operation.refresh_from_db()
+    return operation
+
+
+def test_production_deposit_reuses_exact_accepted_payload_and_records_receipt(
+    ready_publication, submitter_user
+) -> None:
+    operation = _accepted_preprod(ready_publication, submitter_user)
+    deposit = prepare_production_deposit(
+        preprod_operation=operation,
+        actor=submitter_user,
+        duplicate_checker=clear_duplicate_check,
+    )
+    submitter = Mock(
+        return_value=SWORDResult(
+            xml_file="payload.xml",
+            status_code=202,
+            accepted=True,
+            hal_id="hal-01234567",
+            hal_url="https://hal.science/hal-01234567",
+            sha256=operation.payload.sha256,
+        )
+    )
+
+    attempt = execute_production_deposit(
+        deposit=deposit,
+        actor=submitter_user,
+        duplicate_checker=clear_duplicate_check,
+        submitter=submitter,
+    )
+
+    assert attempt.accepted is True
+    assert attempt.payload_id == operation.payload.id
+    assert submitter.call_args.kwargs["expected_sha256"] == operation.payload.sha256
+    assert submitter.call_args.kwargs["confirmation"] == "SUBMIT_TO_HAL"
+    assert submitter.call_args.kwargs["login"] == "hal-user"
+    ready_publication.refresh_from_db()
+    deposit.refresh_from_db()
+    assert ready_publication.hal_id == "hal-01234567"
+    assert ready_publication.hal_status == "submitted"
+    assert ready_publication.hal_synced_version == ready_publication.version
+    assert deposit.state == HALProductionDeposit.State.ACCEPTED
+    assert HALProductionAttempt.objects.count() == 1
+
+
+def test_production_refuses_changed_notice_before_network(
+    ready_publication, submitter_user
+) -> None:
+    operation = _accepted_preprod(ready_publication, submitter_user)
+    deposit = prepare_production_deposit(
+        preprod_operation=operation,
+        actor=submitter_user,
+        duplicate_checker=clear_duplicate_check,
+    )
+    ready_publication.version += 1
+    ready_publication.save()
+    submitter = Mock()
+
+    with pytest.raises(HALSubmissionError, match="changé"):
+        execute_production_deposit(
+            deposit=deposit,
+            actor=submitter_user,
+            duplicate_checker=clear_duplicate_check,
+            submitter=submitter,
+        )
+    submitter.assert_not_called()
+    deposit.refresh_from_db()
+    assert deposit.state == HALProductionDeposit.State.PREPARED
+
+
+def test_network_uncertainty_blocks_automatic_production_retry(
+    ready_publication, submitter_user
+) -> None:
+    operation = _accepted_preprod(ready_publication, submitter_user)
+    deposit = prepare_production_deposit(
+        preprod_operation=operation,
+        actor=submitter_user,
+        duplicate_checker=clear_duplicate_check,
+    )
+    submitter = Mock(side_effect=TimeoutError("unknown outcome"))
+
+    attempt = execute_production_deposit(
+        deposit=deposit,
+        actor=submitter_user,
+        duplicate_checker=clear_duplicate_check,
+        submitter=submitter,
+    )
+    deposit.refresh_from_db()
+    assert attempt.accepted is False
+    assert deposit.state == HALProductionDeposit.State.UNCERTAIN
+    with pytest.raises(HALSubmissionError, match="déjà"):
+        execute_production_deposit(
+            deposit=deposit,
+            actor=submitter_user,
+            duplicate_checker=clear_duplicate_check,
+            submitter=submitter,
+        )
+
+
+def test_accepted_response_without_hal_id_is_not_treated_as_confirmed(
+    ready_publication, submitter_user
+) -> None:
+    operation = _accepted_preprod(ready_publication, submitter_user)
+    deposit = prepare_production_deposit(
+        preprod_operation=operation,
+        actor=submitter_user,
+        duplicate_checker=clear_duplicate_check,
+    )
+
+    attempt = execute_production_deposit(
+        deposit=deposit,
+        actor=submitter_user,
+        duplicate_checker=clear_duplicate_check,
+        submitter=Mock(
+            return_value=SWORDResult(
+                xml_file="payload.xml",
+                status_code=202,
+                accepted=True,
+                sha256=operation.payload.sha256,
+            )
+        ),
+    )
+
+    deposit.refresh_from_db()
+    ready_publication.refresh_from_db()
+    assert attempt.accepted is False
+    assert deposit.state == HALProductionDeposit.State.UNCERTAIN
+    assert ready_publication.hal_id == ""
+
+
+def test_production_view_requires_phrase_checkbox_and_permission(
+    client, ready_publication, submitter_user
+) -> None:
+    operation = _accepted_preprod(ready_publication, submitter_user)
+    deposit = prepare_production_deposit(
+        preprod_operation=operation,
+        actor=submitter_user,
+        duplicate_checker=clear_duplicate_check,
+    )
+    submitter_user.user_permissions.add(
+        Permission.objects.get(codename="submit_hal_production")
+    )
+    client.force_login(submitter_user)
+
+    with patch("catalog.views.execute_production_deposit") as execute:
+        client.post(
+            reverse("hal-production-execute", args=[deposit.id]),
+            {"confirmation": "DÉPOSER SUR HAL"},
+        )
+    execute.assert_not_called()
+
+    ordinary = get_user_model().objects.create_user(username="no-production", password="pw")
+    client.force_login(ordinary)
+    with patch("catalog.views.execute_production_deposit") as execute:
+        client.post(
+            reverse("hal-production-execute", args=[deposit.id]),
+            {"confirmation": "DÉPOSER SUR HAL", "understood": "yes"},
+        )
     execute.assert_not_called()

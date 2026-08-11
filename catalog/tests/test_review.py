@@ -107,6 +107,69 @@ def test_abstracts_and_keywords_are_audited_editable_fields(
     assert decision.applied_value == expected
 
 
+def test_metadata_edit_recomputes_hal_readiness_and_invalidates_preprod() -> None:
+    publication = Publication.objects.create(
+        publication_key="readiness-after-edit",
+        publication_type="journal_article",
+        hal_document_type="ART",
+        title="A complete article",
+        publication_year=2024,
+        language="en",
+        authors=["Ada Lovelace"],
+        journal_title="Journal of Complete Metadata",
+        readiness_state=Publication.ReadinessState.PREPROD_VALIDATED,
+    )
+    source_import = SourceImport.objects.create(
+        source_type=SourceImport.SourceType.XLSX,
+        source_name="readiness.xlsx",
+        stored_file="snapshots/readiness.xlsx",
+        file_sha256="d" * 64,
+        parser_version="hal-assistant/test",
+        report_sha256="e" * 64,
+        record_count=1,
+        report={},
+        retrieved_at=timezone.now(),
+    )
+    SourceRecord.objects.create(
+        source_import=source_import,
+        publication=publication,
+        locator="Publications!2",
+        raw_data={
+            "title": publication.title,
+            "document_type": "ART",
+            "year": 2024,
+            "language": "en",
+            "authors": "Ada Lovelace",
+            "container_title": "Journal of Complete Metadata",
+            "hal_domain": "shs.litt",
+            "idhal": "florence-fix",
+        },
+        record_sha256="f" * 64,
+    )
+
+    edit_field(
+        publication=publication,
+        field_path="title",
+        actor=None,
+        edited_value="A still complete article",
+        base_version=1,
+    )
+    publication.refresh_from_db()
+    assert publication.readiness_state == Publication.ReadinessState.HAL_READY
+    assert publication.missing_required_fields == []
+
+    edit_field(
+        publication=publication,
+        field_path="authors",
+        actor=None,
+        edited_value="",
+        base_version=2,
+    )
+    publication.refresh_from_db()
+    assert publication.readiness_state == Publication.ReadinessState.NEEDS_ENRICHMENT
+    assert publication.missing_required_fields
+
+
 def test_reject_keeps_value_and_records_decision(proposal) -> None:
     decision = decide_assertion(
         assertion=proposal,

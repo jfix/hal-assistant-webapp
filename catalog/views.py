@@ -10,6 +10,7 @@ from django.db.models import Q
 from django.http import FileResponse, Http404, HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_GET, require_POST
 
 from .forms import HALCredentialForm, ManualPublicationForm
@@ -22,7 +23,9 @@ from .models import (
     DocumentPublicationLink,
     DocumentSummaryCache,
     FieldAssertion,
+    HALCredential,
     HALOperation,
+    HALProductionDeposit,
     Publication,
 )
 from .services.document_matching import (
@@ -45,7 +48,9 @@ from .services.hal_submission import (
     HALDuplicateError,
     HALSubmissionError,
     execute_preprod_operation,
+    execute_production_deposit,
     prepare_preprod_operation,
+    prepare_production_deposit,
 )
 from .services.imports import LIST_FIELDS
 from .services.manual_publications import (
@@ -73,6 +78,7 @@ from .services.summary_limits import SummaryLimitError
 
 REVIEW_PERMISSION = "catalog.review_publication"
 PREPROD_PERMISSION = "catalog.submit_hal_preprod"
+PRODUCTION_PERMISSION = "catalog.submit_hal_production"
 
 # (label, field name, display kind) in detail-page order.
 METADATA_FIELDS = (
@@ -133,6 +139,178 @@ def _field_descriptors(publication, specs):
     return descriptors
 
 
+def _hal_journey(
+    publication,
+    operation,
+    *,
+    can_submit: bool,
+    can_submit_production: bool,
+    has_credentials: bool,
+):
+    """Build user-facing milestones from existing workflow records."""
+    on_hal = bool(publication.hal_id)
+    published = on_hal and publication.hal_status != "submitted"
+    metadata_ready = (
+        not publication.missing_required_fields
+        and publication.readiness_state
+        in {
+            Publication.ReadinessState.HAL_READY,
+            Publication.ReadinessState.PREPROD_VALIDATED,
+            Publication.ReadinessState.PRODUCTION_SUBMITTED,
+        }
+    )
+    latest_attempt = operation.attempts.first() if operation else None
+    preprod_accepted = bool(operation and operation.state == HALOperation.State.ACCEPTED)
+
+    steps = [
+        {
+            "title": "Notice créée",
+            "state": "complete",
+            "date": publication.created_at,
+            "description": "La notice est enregistrée dans l’application.",
+        },
+        {
+            "title": "Minimum HAL",
+            "state": "complete" if metadata_ready or on_hal else "current",
+            "date": publication.updated_at if metadata_ready else None,
+            "description": (
+                "Les métadonnées minimales demandées par HAL sont présentes."
+                if metadata_ready or on_hal
+                else (
+                    f"{len(publication.missing_required_fields)} champ(s) "
+                    "obligatoire(s) à compléter."
+                    if publication.missing_required_fields
+                    else "La notice doit encore être vérifiée avant le test HAL."
+                )
+            ),
+            "action": "complete_metadata" if not metadata_ready and not on_hal else "",
+        },
+    ]
+
+    if on_hal and operation is None:
+        steps.extend(
+            [
+                {
+                    "title": "Contrôle des doublons",
+                    "state": "external",
+                    "description": "Étape réalisée hors de cette application.",
+                },
+                {
+                    "title": "Test en préproduction",
+                    "state": "external",
+                    "description": "Aucun test historique n’est enregistré ici.",
+                },
+            ]
+        )
+    else:
+        steps.append(
+            {
+                "title": "Contrôle des doublons",
+                "state": "complete" if operation else ("current" if metadata_ready else "future"),
+                "date": operation.created_at if operation else None,
+                "description": (
+                    "Le contrôle multi-champs a été effectué lors de la préparation du test."
+                    if operation
+                    else "HAL sera interrogé avant de préparer le test."
+                ),
+                "action": (
+                    "prepare_test" if metadata_ready and not operation and can_submit else ""
+                ),
+            }
+        )
+        if not operation:
+            preprod_state = "future"
+            preprod_description = "Cette étape sera débloquée après le contrôle des doublons."
+            preprod_action = ""
+        elif preprod_accepted:
+            preprod_state = "complete"
+            preprod_description = "HAL préproduction a accepté la notice de test."
+            preprod_action = "view_history"
+        elif operation.state == HALOperation.State.PREPARED:
+            if not can_submit:
+                preprod_state = "blocked"
+                preprod_description = "Votre compte n’a pas l’autorisation d’envoyer ce test."
+                preprod_action = ""
+            else:
+                preprod_state = "current" if has_credentials else "blocked"
+                preprod_description = (
+                    "Le test est prêt à être envoyé avec vos identifiants HAL."
+                    if has_credentials
+                    else "Ajoutez vos identifiants HAL personnels pour envoyer le test."
+                )
+                preprod_action = "resume_test" if has_credentials else "configure_credentials"
+        elif operation.state == HALOperation.State.SUBMITTING:
+            preprod_state = "current"
+            preprod_description = "L’envoi du test est en cours."
+            preprod_action = "view_history"
+        else:
+            preprod_state = "blocked"
+            preprod_description = (
+                "Le dernier test a échoué. Préparez un nouveau contrôle après correction."
+            )
+            preprod_action = "prepare_test" if can_submit else "view_history"
+        steps.append(
+            {
+                "title": "Test en préproduction",
+                "state": preprod_state,
+                "date": (
+                    latest_attempt.created_at
+                    if latest_attempt
+                    else operation.created_at
+                    if operation
+                    else None
+                ),
+                "description": preprod_description,
+                "action": preprod_action,
+            }
+        )
+
+    steps.append(
+        {
+            "title": "Publication sur HAL",
+            "state": (
+                "complete"
+                if on_hal
+                else "current"
+                if preprod_accepted and can_submit_production
+                else "blocked"
+                if preprod_accepted
+                else "future"
+            ),
+            "date": None,
+            "description": (
+                (
+                    f"La notice est publiée sous l’identifiant {publication.hal_id}."
+                    if published
+                    else f"Le dépôt {publication.hal_id} a été transmis et attend son statut HAL."
+                )
+                if on_hal
+                else (
+                    "Le XML testé peut maintenant être préparé pour le dépôt réel."
+                    if can_submit_production
+                    else "Une autorisation de dépôt HAL production est requise."
+                    if preprod_accepted
+                    else "Le dépôt réel sera débloqué après validation en préproduction."
+                )
+            ),
+            "action": (
+                "open_hal"
+                if on_hal
+                else "prepare_production"
+                if preprod_accepted and can_submit_production
+                else ""
+            ),
+        }
+    )
+    completed = sum(step["state"] == "complete" for step in steps)
+    return {
+        "steps": steps,
+        "completed": completed,
+        "total": len(steps),
+        "published": on_hal,
+    }
+
+
 @login_required
 def account_settings(request: HttpRequest):
     saved_login = saved_login_for(request.user)
@@ -167,6 +345,16 @@ def account_settings(request: HttpRequest):
 def health(request: HttpRequest) -> JsonResponse:
     connection.ensure_connection()
     return JsonResponse({"status": "ok", "database": "reachable"})
+
+
+@never_cache
+@require_GET
+def service_worker(request: HttpRequest) -> HttpResponse:
+    return render(
+        request,
+        "catalog/service-worker.js",
+        content_type="application/javascript; charset=utf-8",
+    )
 
 
 @login_required
@@ -610,6 +798,7 @@ def publication_detail(request: HttpRequest, publication_id):
             "assertions__document_summary",
             "document_links__summary__owner",
             "document_links__actor",
+            "hal_operations__attempts",
         ),
         id=publication_id,
     )
@@ -639,6 +828,16 @@ def publication_detail(request: HttpRequest, publication_id):
         }
         for link in publication.document_links.all()
     ]
+    latest_hal_operation = publication.hal_operations.first()
+    can_submit_preprod = request.user.has_perm(PREPROD_PERMISSION)
+    can_submit_production = request.user.has_perm(PRODUCTION_PERMISSION)
+    hal_journey = _hal_journey(
+        publication,
+        latest_hal_operation,
+        can_submit=can_submit_preprod,
+        can_submit_production=can_submit_production,
+        has_credentials=HALCredential.objects.filter(user=request.user).exists(),
+    )
     return render(
         request,
         "catalog/publication_detail.html",
@@ -655,8 +854,10 @@ def publication_detail(request: HttpRequest, publication_id):
             "summary_generation_missing": any(
                 not getattr(publication, name) for _label, name, _kind in SUMMARY_FIELDS
             ),
-            "latest_hal_operation": publication.hal_operations.first(),
-            "can_submit_preprod": request.user.has_perm(PREPROD_PERMISSION),
+            "latest_hal_operation": latest_hal_operation,
+            "can_submit_preprod": can_submit_preprod,
+            "can_submit_production": can_submit_production,
+            "hal_journey": hal_journey,
         },
     )
 
@@ -761,6 +962,75 @@ def execute_hal_preprod(request: HttpRequest, operation_id):
             else:
                 messages.error(request, "HAL préproduction a refusé la notice de test.")
     return redirect("hal-preprod-operation", operation_id=operation.id)
+
+
+@login_required
+@require_POST
+def prepare_hal_production(request: HttpRequest, publication_id):
+    publication = get_object_or_404(Publication, id=publication_id)
+    if not request.user.has_perm(PRODUCTION_PERMISSION):
+        messages.error(request, "Vous n’avez pas le droit de déposer dans HAL production.")
+        return redirect("publication-detail", publication_id=publication.id)
+    operation = publication.hal_operations.filter(state=HALOperation.State.ACCEPTED).first()
+    if operation is None:
+        messages.error(request, "Un test de préproduction accepté est requis.")
+        return redirect("publication-detail", publication_id=publication.id)
+    try:
+        deposit = prepare_production_deposit(preprod_operation=operation, actor=request.user)
+    except (HALDuplicateError, HALSubmissionError) as exc:
+        messages.error(request, str(exc))
+        return redirect("publication-detail", publication_id=publication.id)
+    return redirect("hal-production-deposit", deposit_id=deposit.id)
+
+
+@login_required
+def hal_production_deposit(request: HttpRequest, deposit_id):
+    deposit = get_object_or_404(
+        HALProductionDeposit.objects.select_related(
+            "publication", "preprod_operation__payload", "requested_by"
+        ),
+        id=deposit_id,
+    )
+    return render(
+        request,
+        "catalog/hal_production_deposit.html",
+        {
+            "deposit": deposit,
+            "publication": deposit.publication,
+            "can_submit_production": request.user.has_perm(PRODUCTION_PERMISSION),
+        },
+    )
+
+
+@login_required
+@require_POST
+def execute_hal_production(request: HttpRequest, deposit_id):
+    deposit = get_object_or_404(
+        HALProductionDeposit.objects.select_related(
+            "publication", "preprod_operation__payload"
+        ),
+        id=deposit_id,
+    )
+    if not request.user.has_perm(PRODUCTION_PERMISSION):
+        messages.error(request, "Vous n’avez pas le droit de déposer dans HAL production.")
+    elif request.POST.get("confirmation", "").strip() != "DÉPOSER SUR HAL":
+        messages.error(request, "La phrase de confirmation ne correspond pas.")
+    elif request.POST.get("understood") != "yes":
+        messages.error(request, "Confirmez que ce dépôt créera une notice réelle dans HAL.")
+    else:
+        try:
+            attempt = execute_production_deposit(deposit=deposit, actor=request.user)
+        except (HALDuplicateError, HALSubmissionError) as exc:
+            messages.error(request, str(exc))
+        else:
+            deposit.refresh_from_db()
+            if attempt.accepted:
+                messages.success(request, "HAL a accepté le dépôt réel.")
+            elif deposit.state == HALProductionDeposit.State.UNCERTAIN:
+                messages.error(request, "Résultat incertain : vérification manuelle requise.")
+            else:
+                messages.error(request, "HAL a refusé le dépôt réel.")
+    return redirect("hal-production-deposit", deposit_id=deposit.id)
 
 
 @login_required

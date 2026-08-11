@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test worker/*.test.js && node --check worker/index.js && wrangler types --check",
+    "test": "node --test worker/*.test.js && node --check worker/index.js && node --check catalog/static/catalog/app.js && node --check catalog/templates/catalog/service-worker.js && wrangler types --check",
     "cf:dev": "wrangler dev",
     "cf:dry-run": "wrangler deploy --dry-run",
     "cf:deploy": "wrangler deploy"

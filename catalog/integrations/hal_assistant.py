@@ -61,6 +61,13 @@ def readiness_for(record: dict[str, Any]) -> tuple[bool, list[str], str]:
     return result.ready, result.missing_required_fields, result.document_type
 
 
+def readiness_for_publication(publication: Publication) -> tuple[bool, list[str], str]:
+    """Re-audit the current materialized metadata against HAL requirements."""
+    source = publication.source_records.order_by("-created_at").first()
+    original = source.raw_data if source is not None else {}
+    return readiness_for(_current_record(original, publication))
+
+
 @dataclass(frozen=True)
 class SubmissionXML:
     """A notice-only AOfr TEI preview for one review record."""

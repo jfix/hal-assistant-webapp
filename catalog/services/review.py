@@ -6,6 +6,7 @@ from typing import Any
 from django.contrib.auth.models import AbstractBaseUser
 from django.db import IntegrityError, transaction
 
+from catalog.integrations.hal_assistant import readiness_for_publication
 from catalog.models import AssertionDecision, AuditEvent, FieldAssertion, Publication
 from catalog.services.imports import MATERIALIZED_FIELDS, coerce_field_value
 
@@ -57,6 +58,17 @@ class ReviewError(Exception):
 
 class ReviewConflict(Exception):
     """The publication changed since the reviewer loaded it (optimistic lock)."""
+
+
+def _recalculate_hal_readiness(publication: Publication) -> None:
+    """Invalidate downstream validation and recompute the current HAL minimum."""
+    ready, missing, _document_type = readiness_for_publication(publication)
+    publication.missing_required_fields = missing
+    publication.readiness_state = (
+        Publication.ReadinessState.HAL_READY
+        if ready
+        else Publication.ReadinessState.NEEDS_ENRICHMENT
+    )
 
 
 def pending_proposals(publication: Publication) -> list[FieldAssertion]:
@@ -116,7 +128,16 @@ def decide_assertion(
         setattr(publication, assertion.field_path, applied_value)
         resulting_version = publication.version + 1
         publication.version = resulting_version
-        publication.save(update_fields=[assertion.field_path, "version", "updated_at"])
+        _recalculate_hal_readiness(publication)
+        publication.save(
+            update_fields=[
+                assertion.field_path,
+                "version",
+                "missing_required_fields",
+                "readiness_state",
+                "updated_at",
+            ]
+        )
 
     try:
         decision = AssertionDecision.objects.create(
@@ -181,7 +202,16 @@ def edit_field(
     resulting_version = locked.version + 1
     setattr(locked, field_path, applied_value)
     locked.version = resulting_version
-    locked.save(update_fields=[field_path, "version", "updated_at"])
+    _recalculate_hal_readiness(locked)
+    locked.save(
+        update_fields=[
+            field_path,
+            "version",
+            "missing_required_fields",
+            "readiness_state",
+            "updated_at",
+        ]
+    )
 
     decision = AssertionDecision.objects.create(
         publication=locked,

@@ -55,14 +55,18 @@ def test_users_cannot_view_each_others_credentials(client, account_user) -> None
     client.force_login(account_user)
     client.post(
         reverse("account-settings"),
-        {"action": "save_hal_credentials", "login": "florence-hal", "password": "one"},
+        {
+            "action": "save_hal_credentials",
+            "login": "florence-hal",
+            "password": "cross-user-secret-9841",
+        },
     )
     client.force_login(other)
 
     page = client.get(reverse("account-settings")).content.decode()
 
     assert "florence-hal" not in page
-    assert "one" not in page
+    assert "cross-user-secret-9841" not in page
 
 
 def test_user_can_delete_credentials_without_secret_in_audit(client, account_user) -> None:

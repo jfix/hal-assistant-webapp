@@ -4,6 +4,7 @@ from . import views
 
 urlpatterns = [
     path("", views.home, name="home"),
+    path("service-worker.js", views.service_worker, name="service-worker"),
     path("account/", views.account_settings, name="account-settings"),
     path("summaries/", views.document_summary, name="document-summary"),
     path(
@@ -72,6 +73,21 @@ urlpatterns = [
         "hal/preprod/<uuid:operation_id>/execute/",
         views.execute_hal_preprod,
         name="hal-preprod-execute",
+    ),
+    path(
+        "publications/<uuid:publication_id>/hal/production/prepare/",
+        views.prepare_hal_production,
+        name="hal-production-prepare",
+    ),
+    path(
+        "hal/production/<uuid:deposit_id>/",
+        views.hal_production_deposit,
+        name="hal-production-deposit",
+    ),
+    path(
+        "hal/production/<uuid:deposit_id>/execute/",
+        views.execute_hal_production,
+        name="hal-production-execute",
     ),
     path(
         "publications/<uuid:publication_id>/edit/",

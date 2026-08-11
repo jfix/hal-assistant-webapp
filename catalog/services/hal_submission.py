@@ -12,13 +12,21 @@ from urllib.parse import urlencode
 from urllib.request import urlopen
 
 from django.db import transaction
-from hal_assistant.sword import PREPROD_URL, SWORDResult, submit_notice
+from hal_assistant.sword import (
+    PREPROD_URL,
+    PRODUCTION_URL,
+    SWORDResult,
+    submit_notice,
+    submit_production_notice,
+)
 
 from catalog.integrations.hal_assistant import build_submission_xml
 from catalog.models import (
     AuditEvent,
     HALOperation,
     HALPayload,
+    HALProductionAttempt,
+    HALProductionDeposit,
     HALSubmissionAttempt,
     Publication,
 )
@@ -309,6 +317,153 @@ def execute_preprod_operation(
                 "publication_id": str(publication.id),
                 "status_code": result.status_code,
                 "environment": "preprod",
+            },
+        )
+    return attempt
+
+
+def prepare_production_deposit(
+    *,
+    preprod_operation: HALOperation,
+    actor,
+    duplicate_checker: Callable[[Publication], dict[str, object]] = check_live_duplicates,
+) -> HALProductionDeposit:
+    publication = Publication.objects.get(pk=preprod_operation.publication_id)
+    if publication.hal_id:
+        raise HALSubmissionError("Cette notice possède déjà un identifiant HAL.")
+    if preprod_operation.state != HALOperation.State.ACCEPTED:
+        raise HALSubmissionError("Le test en préproduction doit d’abord être accepté.")
+    if preprod_operation.publication_version != publication.version:
+        raise HALSubmissionError("La notice a changé depuis le test ; relancez la préproduction.")
+    payload = preprod_operation.payload
+    accepted_attempt = preprod_operation.attempts.filter(accepted=True).first()
+    if accepted_attempt is None or accepted_attempt.payload_id != payload.id:
+        raise HALSubmissionError("Aucun reçu de préproduction accepté ne correspond au XML.")
+    duplicate_check = duplicate_checker(publication)
+    existing = HALProductionDeposit.objects.filter(
+        preprod_operation=preprod_operation
+    ).first()
+    if existing:
+        return existing
+    with transaction.atomic():
+        deposit = HALProductionDeposit.objects.create(
+            publication=publication,
+            preprod_operation=preprod_operation,
+            requested_by=actor,
+            publication_version=publication.version,
+            payload_sha256=payload.sha256,
+            duplicate_check=duplicate_check,
+            state=HALProductionDeposit.State.PREPARED,
+        )
+        AuditEvent.objects.create(
+            actor=actor,
+            action="hal.production.prepared",
+            object_type="hal_production_deposit",
+            object_id=str(deposit.id),
+            before_checksum=payload.sha256,
+            after_checksum=payload.sha256,
+            metadata={"publication_id": str(publication.id), "environment": "production"},
+        )
+    return deposit
+
+
+def execute_production_deposit(
+    *,
+    deposit: HALProductionDeposit,
+    actor,
+    duplicate_checker: Callable[[Publication], dict[str, object]] = check_live_duplicates,
+    submitter: Callable[..., SWORDResult] = submit_production_notice,
+) -> HALProductionAttempt:
+    publication = Publication.objects.get(pk=deposit.publication_id)
+    if publication.hal_id:
+        raise HALSubmissionError("Cette notice possède déjà un identifiant HAL.")
+    if deposit.publication_version != publication.version:
+        raise HALSubmissionError("La notice a changé ; le dépôt préparé est obsolète.")
+    if deposit.preprod_operation.state != HALOperation.State.ACCEPTED:
+        raise HALSubmissionError("Le test en préproduction n’est plus valide.")
+    if deposit.payload_sha256 != deposit.preprod_operation.payload.sha256:
+        raise HALSubmissionError("Le XML ne correspond plus au test accepté.")
+    try:
+        credential = credentials_for(actor)
+    except HALCredentialError as exc:
+        raise HALSubmissionError(str(exc)) from exc
+    duplicate_checker(publication)
+    with transaction.atomic():
+        locked = HALProductionDeposit.objects.select_for_update().get(pk=deposit.pk)
+        if locked.state != HALProductionDeposit.State.PREPARED:
+            raise HALSubmissionError("Ce dépôt de production a déjà été exécuté.")
+        locked.state = HALProductionDeposit.State.SUBMITTING
+        locked.save(update_fields=["state", "updated_at"])
+
+    payload = deposit.preprod_operation.payload
+    path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(suffix=".xml", delete=False) as handle:
+            handle.write(payload.content.encode("utf-8"))
+            path = Path(handle.name)
+        result = submitter(
+            path,
+            login=credential.login,
+            password=credential.password,
+            expected_sha256=payload.sha256,
+            confirmation="SUBMIT_TO_HAL",
+        )
+    except Exception as exc:
+        result = SWORDResult(
+            xml_file=path.name if path else "payload.xml",
+            status_code=None,
+            accepted=False,
+            error=str(exc),
+            sha256=payload.sha256,
+        )
+    finally:
+        if path is not None:
+            path.unlink(missing_ok=True)
+
+    confirmed = bool(result.accepted and result.hal_id)
+    if confirmed:
+        state = HALProductionDeposit.State.ACCEPTED
+    elif result.status_code is None or result.accepted:
+        state = HALProductionDeposit.State.UNCERTAIN
+    else:
+        state = HALProductionDeposit.State.REJECTED
+    with transaction.atomic():
+        attempt = HALProductionAttempt.objects.create(
+            deposit=deposit,
+            payload=payload,
+            requested_by=actor,
+            endpoint=PRODUCTION_URL,
+            status_code=result.status_code,
+            accepted=confirmed,
+            returned_hal_id=result.hal_id or "",
+            returned_hal_url=result.hal_url or "",
+            response_body=_sanitized(
+                result.response_body, secrets=(credential.login, credential.password)
+            ),
+            error=_sanitized(result.error, secrets=(credential.login, credential.password)),
+        )
+        locked = HALProductionDeposit.objects.select_for_update().get(pk=deposit.pk)
+        locked.state = state
+        locked.save(update_fields=["state", "updated_at"])
+        if confirmed:
+            Publication.objects.filter(pk=publication.pk, hal_id="").update(
+                hal_id=result.hal_id,
+                hal_status="submitted",
+                readiness_state=Publication.ReadinessState.PRODUCTION_SUBMITTED,
+                hal_synced_version=publication.version,
+            )
+        AuditEvent.objects.create(
+            actor=actor,
+            action=f"hal.production.{state}",
+            object_type="hal_production_attempt",
+            object_id=str(attempt.id),
+            before_checksum=payload.sha256,
+            after_checksum=payload.sha256,
+            metadata={
+                "publication_id": str(publication.id),
+                "status_code": result.status_code,
+                "environment": "production",
+                "hal_id": result.hal_id or "",
             },
         )
     return attempt
