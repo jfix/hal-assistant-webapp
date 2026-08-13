@@ -83,10 +83,11 @@
   </section>
 
   {% if latest_hal_removal %}
-    <aside class="hal-history-note" role="note">
-      <strong>Ancienne présence sur HAL</strong>
-      <span>Cette notice était associée à <code>{{ latest_hal_removal.former_hal_id }}</code>, puis a été déclarée supprimée de HAL le {{ latest_hal_removal.created_at|date:"j F Y" }}.</span>
-    </aside>
+    <p class="former-hal-indicator">
+      <span>Ancien dépôt HAL</span>
+      <code>{{ latest_hal_removal.former_hal_id }}</code>
+      <a href="#audit-trail">Voir dans l’historique</a>
+    </p>
   {% endif %}
 
   <div class="detail-grid">
@@ -217,81 +218,62 @@
     </details>
   {% endif %}
 
-  {% if latest_hal_operation %}
-    <details class="panel meta-panel">
-      <summary><span class="meta-panel-title">Historique des tests HAL</span></summary>
-      <div class="meta-panel-content">
-        <p>La charge utile figée, les tentatives et les réponses techniques sont conservées pour l’audit.</p>
-        <a class="secondary-button" href="{% url 'hal-preprod-operation' latest_hal_operation.id %}">Consulter le dernier test</a>
-      </div>
-    </details>
-  {% endif %}
-
-  <details class="panel meta-panel">
-    <summary><span class="meta-panel-title">Sources d'origine</span> <span class="badge">{{ publication.source_records.all|length }}</span></summary>
+  <details class="panel meta-panel audit-trail" id="audit-trail">
+    <summary><span class="meta-panel-title">Historique et traçabilité</span> <span class="badge">{{ traceability_events|length }}</span></summary>
     <div class="meta-panel-content">
-    {% for source in publication.source_records.all %}
-      <article class="source-record">
-        <div class="source-meta">
-          <strong>{{ source.source_import.source_name }}</strong>
-          <span>{{ source.locator }}</span>
-          <code>{{ source.source_import.file_sha256|slice:":12" }}</code>
-        </div>
-        <blockquote>{{ source.original_citation|default:"Aucune citation d'origine fournie." }}</blockquote>
-      </article>
-    {% empty %}
-      <p>Aucune source immuable n'est associée.</p>
-    {% endfor %}
-    </div>
-  </details>
+      <ol class="audit-event-list">
+        {% for event in traceability_events %}
+          <li class="audit-event audit-event-{{ event.kind }}">
+            <div class="audit-event-heading">
+              <strong>{{ event.title }}</strong>
+              <time datetime="{{ event.created_at|date:'c' }}">{{ event.created_at|date:"j F Y à H:i" }}</time>
+            </div>
+            <p>{{ event.description }}</p>
+            {% if event.reason %}<p class="audit-event-reason"><span>Motif</span> {{ event.reason }}</p>{% endif %}
+            <span class="subtle">{% if event.actor %}Par {{ event.actor.get_username }}{% else %}Import automatique{% endif %}</span>
+          </li>
+        {% empty %}
+          <li>Aucun événement enregistré pour cette notice.</li>
+        {% endfor %}
+      </ol>
 
-  <details class="panel meta-panel">
-    <summary><span class="meta-panel-title">Assertions de champs</span> <span class="badge">{{ publication.assertions.all|length }}</span></summary>
-    <div class="meta-panel-content">
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>Champ</th><th>Valeur</th><th>État</th><th>Origine</th><th>Source</th></tr></thead>
-        <tbody>
-          {% for assertion in publication.assertions.all %}
-            <tr>
-              <td><code>{{ assertion.field_path }}</code></td>
-              <td>{{ assertion.value }}</td>
-              <td>{{ assertion.get_state_display }}</td>
-              <td>{{ assertion.origin }}</td>
-              <td>{% if assertion.source_record %}{{ assertion.source_record.locator }}{% elif assertion.document_summary %}{{ assertion.document_summary.source_filename|default:"Document analysé" }}{% else %}—{% endif %}</td>
-            </tr>
-          {% empty %}
-            <tr><td colspan="5">Aucune assertion enregistrée.</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    </div>
-  </details>
+      {% if latest_hal_operation %}
+        <p>Les charges utiles figées, tentatives et réponses techniques sont conservées séparément.</p>
+        <a class="secondary-button" href="{% url 'hal-preprod-operation' latest_hal_operation.id %}">Consulter le dernier test HAL</a>
+      {% endif %}
 
-  <details class="panel meta-panel">
-    <summary><span class="meta-panel-title">Historique des décisions</span> <span class="badge">{{ decisions|length }}</span></summary>
-    <div class="meta-panel-content">
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>Date</th><th>Champ</th><th>Décision</th><th>Valeur appliquée</th><th>Réviseur</th><th>Version</th><th>Motif</th></tr></thead>
-        <tbody>
-          {% for decision in decisions %}
-            <tr>
-              <td>{{ decision.created_at }}</td>
-              <td><code>{{ decision.field_path }}</code></td>
-              <td>{{ decision.get_outcome_display }}</td>
-              <td>{% if decision.outcome == "rejected" %}<span class="subtle">— (valeur actuelle conservée)</span>{% else %}{{ decision.applied_value|default:"—" }}{% endif %}</td>
-              <td>{{ decision.actor.get_username|default:"—" }}</td>
-              <td>{{ decision.base_version }} → {{ decision.resulting_version }}</td>
-              <td>{{ decision.reason|default:"—" }}</td>
-            </tr>
-          {% empty %}
-            <tr><td colspan="7">Aucune décision de révision enregistrée pour l'instant.</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
+      <details class="audit-technical">
+        <summary>Sources d’origine <span class="badge">{{ publication.source_records.all|length }}</span></summary>
+        {% for source in publication.source_records.all %}
+          <article class="source-record">
+            <div class="source-meta"><strong>{{ source.source_import.source_name }}</strong><span>{{ source.locator }}</span><code>{{ source.source_import.file_sha256|slice:":12" }}</code></div>
+            <blockquote>{{ source.original_citation|default:"Aucune citation d'origine fournie." }}</blockquote>
+          </article>
+        {% empty %}<p>Aucune source immuable n'est associée.</p>{% endfor %}
+      </details>
+
+      <details class="audit-technical">
+        <summary>Assertions de champs <span class="badge">{{ publication.assertions.all|length }}</span></summary>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Champ</th><th>Valeur</th><th>État</th><th>Origine</th><th>Source</th></tr></thead>
+          <tbody>{% for assertion in publication.assertions.all %}<tr>
+            <td><code>{{ assertion.field_path }}</code></td><td>{{ assertion.value }}</td><td>{{ assertion.get_state_display }}</td><td>{{ assertion.origin }}</td>
+            <td>{% if assertion.source_record %}{{ assertion.source_record.locator }}{% elif assertion.document_summary %}{{ assertion.document_summary.source_filename|default:"Document analysé" }}{% else %}—{% endif %}</td>
+          </tr>{% empty %}<tr><td colspan="5">Aucune assertion enregistrée.</td></tr>{% endfor %}</tbody>
+        </table></div>
+      </details>
+
+      <details class="audit-technical">
+        <summary>Détails des décisions éditoriales <span class="badge">{{ decisions|length }}</span></summary>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Date</th><th>Champ</th><th>Décision</th><th>Valeur appliquée</th><th>Réviseur</th><th>Version</th><th>Motif</th></tr></thead>
+          <tbody>{% for decision in decisions %}<tr>
+            <td>{{ decision.created_at }}</td><td><code>{{ decision.field_path }}</code></td><td>{{ decision.get_outcome_display }}</td>
+            <td>{% if decision.outcome == "rejected" %}<span class="subtle">— (valeur actuelle conservée)</span>{% else %}{{ decision.applied_value|default:"—" }}{% endif %}</td>
+            <td>{{ decision.actor.get_username|default:"—" }}</td><td>{{ decision.base_version }} → {{ decision.resulting_version }}</td><td>{{ decision.reason|default:"—" }}</td>
+          </tr>{% empty %}<tr><td colspan="7">Aucune décision de révision enregistrée pour l'instant.</td></tr>{% endfor %}</tbody>
+        </table></div>
+      </details>
     </div>
   </details>
 

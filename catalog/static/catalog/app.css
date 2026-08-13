@@ -69,7 +69,21 @@ input:focus, select:focus, button:focus, a:focus { outline: 3px solid #77cabb; o
 .secondary-button { border: 1px solid var(--accent); color: var(--accent); background: white; }
 .danger-button { justify-self: start; border: 1px solid #9b2c2c; border-radius: .2rem; padding: .62rem .9rem; background: white; color: #9b2c2c; cursor: pointer; font-weight: 750; }
 .danger-button:hover { background: #9b2c2c; color: white; }
-.hal-history-note { display: grid; gap: .2rem; margin: 0 0 1rem; padding: .9rem 1rem; border-left: .25rem solid var(--warning); background: var(--warning-soft); font-size: .85rem; }
+.former-hal-indicator { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem .7rem; margin: -.25rem 0 1rem; color: var(--muted); font-size: .78rem; }
+.former-hal-indicator > span { border: 1px solid #c8d0d3; border-radius: 999px; padding: .18rem .55rem; background: #edf0f1; font-weight: 750; }
+.former-hal-indicator a { margin-left: .15rem; }
+.audit-event-list { display: grid; gap: 0; margin: 0 0 1.25rem; padding: 0; list-style: none; border-left: 2px solid var(--line); }
+.audit-event { position: relative; margin-left: 1rem; padding: 0 0 1.25rem 1rem; }
+.audit-event::before { content: ""; position: absolute; top: .35rem; left: calc(-1rem - 6px); width: 10px; height: 10px; border: 2px solid var(--paper); border-radius: 50%; background: #839198; }
+.audit-event-hal::before { background: #2f80b9; }
+.audit-event-decision::before { background: var(--accent); }
+.audit-event-heading { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .4rem 1rem; }
+.audit-event-heading time { color: var(--muted); font-size: .75rem; }
+.audit-event p { margin: .25rem 0; }
+.audit-event-reason span { color: var(--muted); font-size: .7rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.audit-technical { margin-top: 1rem; border-top: 1px solid var(--line); padding-top: .8rem; }
+.audit-technical > summary { cursor: pointer; font-weight: 750; }
+.audit-technical > :not(summary) { margin-top: 1rem; }
 .hal-removal-reconciliation { margin-bottom: 1rem; border-color: #d9a25c; }
 .hal-removal-reconciliation summary { cursor: pointer; color: #8b4b15; font-weight: 750; }
 .production-confirmation { border-color: #d9a25c; background: #fffaf1; }

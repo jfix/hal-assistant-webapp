@@ -115,6 +115,45 @@ def test_reconciliation_fails_closed_without_all_confirmations(
     assert not HALRemovalRecord.objects.exists()
 
 
+def test_reconciliation_refuses_notice_without_active_hal_id(
+    published_publication,
+) -> None:
+    actor = get_user_model().objects.create_user(username="reconciler", password="pw")
+    published_publication.hal_id = ""
+    published_publication.save(update_fields=["hal_id", "updated_at"])
+
+    with pytest.raises(HALReconciliationError, match="pas d’identifiant HAL actif"):
+        mark_removed_from_hal(
+            publication=published_publication,
+            actor=actor,
+            confirmed_hal_id="hal-01234567",
+            reason="Erreur",
+            remote_removal_confirmed=True,
+        )
+
+    assert not HALRemovalRecord.objects.exists()
+
+
+def test_reconciliation_recomputes_incomplete_metadata(
+    published_publication,
+) -> None:
+    actor = get_user_model().objects.create_user(username="reconciler", password="pw")
+    published_publication.authors = []
+    published_publication.save(update_fields=["authors", "updated_at"])
+
+    mark_removed_from_hal(
+        publication=published_publication,
+        actor=actor,
+        confirmed_hal_id="hal-01234567",
+        reason="Dépôt réalisé par erreur.",
+        remote_removal_confirmed=True,
+    )
+
+    published_publication.refresh_from_db()
+    assert published_publication.readiness_state == Publication.ReadinessState.NEEDS_ENRICHMENT
+    assert published_publication.missing_required_fields
+
+
 def test_reconciliation_view_requires_review_permission(
     client, published_publication
 ) -> None:
@@ -157,6 +196,12 @@ def test_detail_exposes_local_only_action_and_then_history(
         follow=True,
     )
     content = response.content.decode()
-    assert "Ancienne présence sur HAL" in content
+    assert "Ancien dépôt HAL" in content
     assert "hal-01234567" in content
+    assert 'href="#audit-trail"' in content
+    assert "Historique et traçabilité" in content
+    assert "Dissociation de HAL" in content
+    assert "Dépôt réalisé par erreur." in content
+    assert "Par reviewer" in content
+    assert content.index("Dissociation de HAL") < content.index("Source importée")
     assert "Marquer comme supprimée de HAL" not in content
