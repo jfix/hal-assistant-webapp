@@ -6,9 +6,9 @@ from typing import Any
 from django.contrib.auth.models import AbstractBaseUser
 from django.db import IntegrityError, transaction
 
-from catalog.integrations.hal_assistant import readiness_for_publication
 from catalog.models import AssertionDecision, AuditEvent, FieldAssertion, Publication
 from catalog.services.imports import MATERIALIZED_FIELDS, coerce_field_value
+from catalog.services.publication_readiness import recalculate_hal_readiness
 
 
 def _json_safe(value: Any) -> Any:
@@ -20,6 +20,7 @@ def _json_safe(value: Any) -> Any:
     if isinstance(value, dict):
         return {str(key): _json_safe(item) for key, item in value.items()}
     return value
+
 
 # Bibliographic fields a reviewer may edit directly. Identity fields (doi,
 # hal_id), workflow/state fields, and controlled-vocabulary types are excluded:
@@ -58,17 +59,6 @@ class ReviewError(Exception):
 
 class ReviewConflict(Exception):
     """The publication changed since the reviewer loaded it (optimistic lock)."""
-
-
-def _recalculate_hal_readiness(publication: Publication) -> None:
-    """Invalidate downstream validation and recompute the current HAL minimum."""
-    ready, missing, _document_type = readiness_for_publication(publication)
-    publication.missing_required_fields = missing
-    publication.readiness_state = (
-        Publication.ReadinessState.HAL_READY
-        if ready
-        else Publication.ReadinessState.NEEDS_ENRICHMENT
-    )
 
 
 def pending_proposals(publication: Publication) -> list[FieldAssertion]:
@@ -128,7 +118,7 @@ def decide_assertion(
         setattr(publication, assertion.field_path, applied_value)
         resulting_version = publication.version + 1
         publication.version = resulting_version
-        _recalculate_hal_readiness(publication)
+        recalculate_hal_readiness(publication)
         publication.save(
             update_fields=[
                 assertion.field_path,
@@ -202,7 +192,7 @@ def edit_field(
     resulting_version = locked.version + 1
     setattr(locked, field_path, applied_value)
     locked.version = resulting_version
-    _recalculate_hal_readiness(locked)
+    recalculate_hal_readiness(locked)
     locked.save(
         update_fields=[
             field_path,

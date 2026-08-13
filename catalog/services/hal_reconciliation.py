@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from django.db import transaction
 
-from catalog.integrations.hal_assistant import readiness_for_publication
 from catalog.models import AuditEvent, HALRemovalRecord, Publication
+from catalog.services.publication_readiness import recalculate_hal_readiness
 
 
 class HALReconciliationError(ValueError):
@@ -37,7 +37,6 @@ def mark_removed_from_hal(
     if not cleaned_reason:
         raise HALReconciliationError("Indiquez la raison de cette remise en brouillon.")
 
-    ready, missing, _document_type = readiness_for_publication(locked)
     record = HALRemovalRecord.objects.create(
         publication=locked,
         former_hal_id=former_hal_id,
@@ -49,12 +48,7 @@ def mark_removed_from_hal(
     locked.hal_id = ""
     locked.hal_status = "removed_from_hal"
     locked.hal_synced_version = None
-    locked.missing_required_fields = missing
-    locked.readiness_state = (
-        Publication.ReadinessState.HAL_READY
-        if ready
-        else Publication.ReadinessState.NEEDS_ENRICHMENT
-    )
+    recalculate_hal_readiness(locked)
     # Every payload and preproduction decision belongs to the preceding cycle.
     locked.version += 1
     locked.save(

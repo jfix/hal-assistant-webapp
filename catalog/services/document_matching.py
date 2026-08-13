@@ -7,8 +7,8 @@ from difflib import SequenceMatcher
 
 from django.db import transaction
 
-from catalog.integrations.hal_assistant import readiness_for_publication
 from catalog.models import AuditEvent, DocumentPublicationLink, DocumentSummaryCache, Publication
+from catalog.services.publication_readiness import recalculate_hal_readiness
 
 
 def _normalized(value: str) -> str:
@@ -86,13 +86,7 @@ def link_summary(*, summary: DocumentSummaryCache, publication: Publication, act
         for field_name in populated:
             setattr(publication, field_name, generated_fields[field_name])
         publication.version += 1
-        ready, missing, _document_type = readiness_for_publication(publication)
-        publication.missing_required_fields = missing
-        publication.readiness_state = (
-            Publication.ReadinessState.HAL_READY
-            if ready
-            else Publication.ReadinessState.NEEDS_ENRICHMENT
-        )
+        recalculate_hal_readiness(publication)
         publication.save(
             update_fields=[
                 *populated,
