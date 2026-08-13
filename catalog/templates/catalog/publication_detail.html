@@ -89,26 +89,6 @@
     </aside>
   {% endif %}
 
-  {% if publication.hal_id and can_review %}
-    <details class="panel hal-removal-reconciliation">
-      <summary>La notice a été supprimée manuellement de HAL</summary>
-      <div class="details-body">
-        <p><strong>Cette action ne supprime rien dans HAL.</strong> Elle sert uniquement à remettre notre notice en brouillon après une suppression déjà effectuée dans l’interface HAL.</p>
-        <form class="stack" method="post" action="{% url 'hal-reconcile-removal' publication.id %}">
-          {% csrf_token %}
-          <label>Raison de la remise en brouillon
-            <textarea name="reason" rows="3" required></textarea>
-          </label>
-          <label>Recopiez l’identifiant <code>{{ publication.hal_id }}</code>
-            <input name="confirmed_hal_id" autocomplete="off" required>
-          </label>
-          <label class="confirmation-check"><input type="checkbox" name="remote_removal_confirmed" value="yes" required> Je confirme avoir déjà supprimé cette notice dans l’interface HAL.</label>
-          <button class="danger-button" type="submit">Marquer comme supprimée de HAL</button>
-        </form>
-      </div>
-    </details>
-  {% endif %}
-
   <div class="detail-grid">
     <section class="panel" id="publication-metadata">
       <h2>Métadonnées structurées</h2>
@@ -314,4 +294,24 @@
     </div>
     </div>
   </details>
+
+  {% if publication.hal_id and can_review %}
+    <details class="panel meta-panel hal-removal-reconciliation">
+      <summary><span class="meta-panel-title">Gestion exceptionnelle de la présence sur HAL</span></summary>
+      <div class="meta-panel-content">
+        <p><strong>Cette action ne supprime rien dans HAL.</strong> Elle sert uniquement à remettre notre notice en brouillon après une suppression déjà effectuée dans l’interface HAL.</p>
+        <form class="stack" method="post" action="{% url 'hal-reconcile-removal' publication.id %}">
+          {% csrf_token %}
+          <label>Raison de la remise en brouillon
+            <textarea name="reason" rows="3" required></textarea>
+          </label>
+          <label>Recopiez l’identifiant <code>{{ publication.hal_id }}</code>
+            <input name="confirmed_hal_id" autocomplete="off" required>
+          </label>
+          <label class="confirmation-check"><input type="checkbox" name="remote_removal_confirmed" value="yes" required> Je confirme avoir déjà supprimé cette notice dans l’interface HAL.</label>
+          <button class="danger-button" type="submit">Marquer comme supprimée de HAL</button>
+        </form>
+      </div>
+    </details>
+  {% endif %}
 {% endblock %}

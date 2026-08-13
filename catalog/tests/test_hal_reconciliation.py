@@ -141,7 +141,11 @@ def test_detail_exposes_local_only_action_and_then_history(
     client.force_login(reviewer)
 
     before = client.get(reverse("publication-detail", args=[published_publication.id]))
-    assert "Cette action ne supprime rien dans HAL" in before.content.decode()
+    before_content = before.content.decode()
+    assert "Cette action ne supprime rien dans HAL" in before_content
+    assert before_content.index("Métadonnées structurées") < before_content.index(
+        "Gestion exceptionnelle de la présence sur HAL"
+    )
 
     response = client.post(
         reverse("hal-reconcile-removal", args=[published_publication.id]),
