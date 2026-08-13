@@ -12,6 +12,7 @@ from .models import (
     HALPayload,
     HALProductionAttempt,
     HALProductionDeposit,
+    HALRemovalRecord,
     HALSubmissionAttempt,
     Publication,
     SourceImport,
@@ -55,6 +56,7 @@ admin.site.register(HALPayload, ReadOnlyAdmin)
 admin.site.register(HALSubmissionAttempt, ReadOnlyAdmin)
 admin.site.register(HALProductionDeposit, ReadOnlyAdmin)
 admin.site.register(HALProductionAttempt, ReadOnlyAdmin)
+admin.site.register(HALRemovalRecord, ReadOnlyAdmin)
 
 
 @admin.register(DocumentSummaryGenerationAttempt)

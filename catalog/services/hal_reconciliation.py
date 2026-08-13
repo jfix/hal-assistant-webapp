@@ -1,0 +1,86 @@
+from __future__ import annotations
+
+from django.db import transaction
+
+from catalog.integrations.hal_assistant import readiness_for_publication
+from catalog.models import AuditEvent, HALRemovalRecord, Publication
+
+
+class HALReconciliationError(ValueError):
+    pass
+
+
+@transaction.atomic
+def mark_removed_from_hal(
+    *,
+    publication: Publication,
+    actor,
+    confirmed_hal_id: str,
+    reason: str,
+    remote_removal_confirmed: bool,
+) -> HALRemovalRecord:
+    """Reconcile local state after a user has removed the notice in HAL itself.
+
+    This function performs no network operation and can never delete from HAL.
+    """
+    locked = Publication.objects.select_for_update().get(pk=publication.pk)
+    former_hal_id = locked.hal_id.strip()
+    if not former_hal_id:
+        raise HALReconciliationError("Cette notice n’a pas d’identifiant HAL actif.")
+    if not remote_removal_confirmed:
+        raise HALReconciliationError(
+            "Confirmez que la suppression a déjà été effectuée dans l’interface HAL."
+        )
+    if confirmed_hal_id.strip() != former_hal_id:
+        raise HALReconciliationError("L’identifiant HAL saisi ne correspond pas.")
+    cleaned_reason = reason.strip()
+    if not cleaned_reason:
+        raise HALReconciliationError("Indiquez la raison de cette remise en brouillon.")
+
+    ready, missing, _document_type = readiness_for_publication(locked)
+    record = HALRemovalRecord.objects.create(
+        publication=locked,
+        former_hal_id=former_hal_id,
+        former_hal_status=locked.hal_status,
+        actor=actor,
+        reason=cleaned_reason,
+    )
+    previous_version = locked.version
+    locked.hal_id = ""
+    locked.hal_status = "removed_from_hal"
+    locked.hal_synced_version = None
+    locked.missing_required_fields = missing
+    locked.readiness_state = (
+        Publication.ReadinessState.HAL_READY
+        if ready
+        else Publication.ReadinessState.NEEDS_ENRICHMENT
+    )
+    # Every payload and preproduction decision belongs to the preceding cycle.
+    locked.version += 1
+    locked.save(
+        update_fields=[
+            "hal_id",
+            "hal_status",
+            "hal_synced_version",
+            "missing_required_fields",
+            "readiness_state",
+            "version",
+            "updated_at",
+        ]
+    )
+    AuditEvent.objects.create(
+        actor=actor,
+        action="hal.removal.reconciled",
+        object_type="publication",
+        object_id=str(locked.id),
+        metadata={
+            "former_hal_id": former_hal_id,
+            "former_hal_status": record.former_hal_status,
+            "reason": cleaned_reason,
+            "confirmation_method": record.confirmation_method,
+            "previous_version": previous_version,
+            "resulting_version": locked.version,
+            "network_operation": False,
+        },
+    )
+    return record

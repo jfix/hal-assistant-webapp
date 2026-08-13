@@ -67,6 +67,11 @@ input:focus, select:focus, button:focus, a:focus { outline: 3px solid #77cabb; o
 .primary-button { border: 1px solid var(--accent); background: var(--accent); color: white; cursor: pointer; }
 .primary-button:hover { background: var(--accent-dark); color: white; }
 .secondary-button { border: 1px solid var(--accent); color: var(--accent); background: white; }
+.danger-button { justify-self: start; border: 1px solid #9b2c2c; border-radius: .2rem; padding: .62rem .9rem; background: white; color: #9b2c2c; cursor: pointer; font-weight: 750; }
+.danger-button:hover { background: #9b2c2c; color: white; }
+.hal-history-note { display: grid; gap: .2rem; margin: 0 0 1rem; padding: .9rem 1rem; border-left: .25rem solid var(--warning); background: var(--warning-soft); font-size: .85rem; }
+.hal-removal-reconciliation { margin-bottom: 1rem; border-color: #d9a25c; }
+.hal-removal-reconciliation summary { cursor: pointer; color: #8b4b15; font-weight: 750; }
 .production-confirmation { border-color: #d9a25c; background: #fffaf1; }
 .confirmation-check { display: flex; grid-template-columns: none; gap: .65rem; align-items: flex-start; }
 .confirmation-check input { width: auto; margin-top: .15rem; }

@@ -44,6 +44,7 @@ from .services.hal_credentials import (
     save_credentials,
     saved_login_for,
 )
+from .services.hal_reconciliation import HALReconciliationError, mark_removed_from_hal
 from .services.hal_submission import (
     HALDuplicateError,
     HALSubmissionError,
@@ -799,6 +800,7 @@ def publication_detail(request: HttpRequest, publication_id):
             "document_links__summary__owner",
             "document_links__actor",
             "hal_operations__attempts",
+            "hal_removal_records__actor",
         ),
         id=publication_id,
     )
@@ -858,8 +860,37 @@ def publication_detail(request: HttpRequest, publication_id):
             "can_submit_preprod": can_submit_preprod,
             "can_submit_production": can_submit_production,
             "hal_journey": hal_journey,
+            "latest_hal_removal": publication.hal_removal_records.first(),
         },
     )
+
+
+@login_required
+@require_POST
+def reconcile_hal_removal(request: HttpRequest, publication_id):
+    publication = get_object_or_404(Publication, id=publication_id)
+    if not request.user.has_perm(REVIEW_PERMISSION):
+        messages.error(
+            request,
+            "Vous n’avez pas le droit de modifier l’état HAL de cette notice.",
+        )
+        return redirect("publication-detail", publication_id=publication.id)
+    try:
+        mark_removed_from_hal(
+            publication=publication,
+            actor=request.user,
+            confirmed_hal_id=request.POST.get("confirmed_hal_id", ""),
+            reason=request.POST.get("reason", ""),
+            remote_removal_confirmed=request.POST.get("remote_removal_confirmed") == "yes",
+        )
+    except HALReconciliationError as exc:
+        messages.error(request, str(exc))
+    else:
+        messages.success(
+            request,
+            "La notice a été remise en brouillon localement. L’historique HAL est conservé.",
+        )
+    return redirect("publication-detail", publication_id=publication.id)
 
 
 @login_required

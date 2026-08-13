@@ -80,6 +80,11 @@ urlpatterns = [
         name="hal-production-prepare",
     ),
     path(
+        "publications/<uuid:publication_id>/hal/reconcile-removal/",
+        views.reconcile_hal_removal,
+        name="hal-reconcile-removal",
+    ),
+    path(
         "hal/production/<uuid:deposit_id>/",
         views.hal_production_deposit,
         name="hal-production-deposit",

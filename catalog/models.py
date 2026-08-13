@@ -527,6 +527,42 @@ class AuditEvent(ImmutableModel):
         return f"{self.action}: {self.object_type}/{self.object_id}"
 
 
+class HALRemovalRecord(ImmutableModel):
+    """Immutable local acknowledgement that a HAL notice was removed manually."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    publication = models.ForeignKey(
+        Publication,
+        on_delete=models.PROTECT,
+        related_name="hal_removal_records",
+    )
+    former_hal_id = models.CharField(max_length=80)
+    former_hal_status = models.CharField(max_length=40, blank=True)
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="hal_removal_records",
+    )
+    reason = models.TextField()
+    confirmation_method = models.CharField(
+        max_length=40,
+        default="manual_hal_interface",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["publication", "former_hal_id"],
+                name="unique_publication_former_hal_id",
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.publication_id} · anciennement {self.former_hal_id}"
+
+
 class HALCredential(models.Model):
     """Encrypted, replaceable HAL credentials owned by exactly one user."""
 
