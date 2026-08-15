@@ -1,7 +1,7 @@
 import { Container, getContainer } from "@cloudflare/containers";
 import { env } from "cloudflare:workers";
 
-import { definedEnvironment } from "./environment.js";
+import { forwardedEnvironment } from "./environment.js";
 import { proxyToContainer } from "./proxy.js";
 
 export class DjangoContainer extends Container {
@@ -9,24 +9,7 @@ export class DjangoContainer extends Container {
   requiredPorts = [8080];
   pingEndpoint = "/healthz";
   sleepAfter = "10m";
-  envVars = definedEnvironment({
-    DATABASE_URL: env.DATABASE_URL,
-    DJANGO_SECRET_KEY: env.DJANGO_SECRET_KEY,
-    DJANGO_DEBUG: env.DJANGO_DEBUG,
-    DJANGO_ALLOWED_HOSTS: env.DJANGO_ALLOWED_HOSTS,
-    DJANGO_CSRF_TRUSTED_ORIGINS: env.DJANGO_CSRF_TRUSTED_ORIGINS,
-    R2_BUCKET_NAME: env.R2_BUCKET_NAME,
-    R2_ENDPOINT_URL: env.R2_ENDPOINT_URL,
-    R2_ACCESS_KEY_ID: env.R2_ACCESS_KEY_ID,
-    R2_SECRET_ACCESS_KEY: env.R2_SECRET_ACCESS_KEY,
-    OPENAI_API_KEY: env.OPENAI_API_KEY,
-    OPENAI_MODEL: env.OPENAI_MODEL,
-    HAL_CREDENTIAL_ENCRYPTION_KEY: env.HAL_CREDENTIAL_ENCRYPTION_KEY,
-    SUMMARY_USER_MINUTE_LIMIT: env.SUMMARY_USER_MINUTE_LIMIT,
-    SUMMARY_USER_DAILY_LIMIT: env.SUMMARY_USER_DAILY_LIMIT,
-    SUMMARY_GLOBAL_DAILY_LIMIT: env.SUMMARY_GLOBAL_DAILY_LIMIT,
-    SUMMARY_CACHE_RETENTION_DAYS: env.SUMMARY_CACHE_RETENTION_DAYS,
-  });
+  envVars = forwardedEnvironment(env);
 }
 
 export default {

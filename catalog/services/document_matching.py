@@ -1,72 +1,23 @@
 from __future__ import annotations
 
-import re
-import unicodedata
-from dataclasses import dataclass
-from difflib import SequenceMatcher
-
 from django.db import transaction
 from django.utils.translation import gettext as _
 
 from catalog.models import AuditEvent, DocumentPublicationLink, DocumentSummaryCache, Publication
+from catalog.services.matching import PublicationMatch, normalized, score_publication_matches
 from catalog.services.publication_readiness import recalculate_hal_readiness
-
-
-def _normalized(value: str) -> str:
-    value = unicodedata.normalize("NFKD", value or "")
-    value = "".join(char for char in value if not unicodedata.combining(char)).lower()
-    return " ".join(re.sub(r"[^a-z0-9]+", " ", value).split())
-
-
-@dataclass(frozen=True)
-class PublicationMatch:
-    publication: Publication
-    score: int
-    reasons: tuple[str, ...]
 
 
 def find_publication_matches(
     summary: DocumentSummaryCache, limit: int = 5
 ) -> list[PublicationMatch]:
-    title = _normalized(summary.document_title)
-    authors = {_normalized(item) for item in summary.suggested_authors if item}
-    doi = _normalized(summary.suggested_doi)
-    matches = []
-    for publication in Publication.objects.all().iterator():
-        score, reasons = 0, []
-        candidate_title = _normalized(publication.title)
-        ratio = (
-            SequenceMatcher(None, title, candidate_title).ratio()
-            if title and candidate_title
-            else 0
-        )
-        if title == candidate_title and title:
-            score += 70
-            reasons.append(_("même titre"))
-        elif ratio >= 0.9:
-            score += 50
-            reasons.append(_("titre très proche (%(ratio)s)") % {"ratio": f"{ratio:.0%}"})
-        elif ratio >= 0.75:
-            score += 30
-            reasons.append(_("titre proche (%(ratio)s)") % {"ratio": f"{ratio:.0%}"})
-        candidate_authors = {_normalized(str(item)) for item in publication.authors if item}
-        if authors and candidate_authors and any(
-            a in c or c in a for a in authors for c in candidate_authors
-        ):
-            score += 20
-            reasons.append(_("auteur en commun"))
-        if (
-            summary.suggested_publication_year
-            and publication.publication_year == summary.suggested_publication_year
-        ):
-            score += 10
-            reasons.append(_("même année"))
-        if doi and doi == _normalized(publication.doi):
-            score += 100
-            reasons.append(_("même DOI"))
-        if score >= 30:
-            matches.append(PublicationMatch(publication, score, tuple(reasons)))
-    return sorted(matches, key=lambda item: (-item.score, item.publication.title))[:limit]
+    return score_publication_matches(
+        title=normalized(summary.document_title),
+        authors={normalized(item) for item in summary.suggested_authors if item},
+        doi=normalized(summary.suggested_doi),
+        publication_year=summary.suggested_publication_year,
+        limit=limit,
+    )
 
 
 @transaction.atomic

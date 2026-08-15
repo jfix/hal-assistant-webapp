@@ -1,16 +1,13 @@
 from __future__ import annotations
 
-import re
-import unicodedata
 import uuid
-from dataclasses import dataclass
-from difflib import SequenceMatcher
 
 from django.db import transaction
 from django.utils.translation import gettext as _
 
 from catalog.integrations.hal_assistant import readiness_for
 from catalog.models import AuditEvent, Publication
+from catalog.services.matching import PublicationMatch, normalized, score_publication_matches
 
 PUBLICATION_TYPE_BY_HAL = {
     "ART": "journal_article",
@@ -21,54 +18,14 @@ PUBLICATION_TYPE_BY_HAL = {
 }
 
 
-def _normalized(value: str) -> str:
-    value = unicodedata.normalize("NFKD", value or "")
-    value = "".join(char for char in value if not unicodedata.combining(char)).lower()
-    return " ".join(re.sub(r"[^a-z0-9]+", " ", value).split())
-
-
-@dataclass(frozen=True)
-class ManualPublicationMatch:
-    publication: Publication
-    score: int
-    reasons: tuple[str, ...]
-
-
-def find_manual_publication_matches(data: dict, limit: int = 5):
-    title = _normalized(data.get("title", ""))
-    authors = {_normalized(item) for item in data.get("authors", []) if item}
-    doi = _normalized(data.get("doi", ""))
-    matches = []
-    for publication in Publication.objects.all().iterator():
-        score, reasons = 0, []
-        candidate_title = _normalized(publication.title)
-        ratio = SequenceMatcher(None, title, candidate_title).ratio()
-        if title and title == candidate_title:
-            score += 70
-            reasons.append(_("même titre"))
-        elif ratio >= 0.9:
-            score += 50
-            reasons.append(_("titre très proche (%(ratio)s)") % {"ratio": f"{ratio:.0%}"})
-        elif ratio >= 0.75:
-            score += 30
-            reasons.append(_("titre proche (%(ratio)s)") % {"ratio": f"{ratio:.0%}"})
-        candidate_authors = {_normalized(str(item)) for item in publication.authors if item}
-        if authors and candidate_authors and any(
-            author in candidate or candidate in author
-            for author in authors
-            for candidate in candidate_authors
-        ):
-            score += 20
-            reasons.append(_("auteur en commun"))
-        if data.get("publication_year") == publication.publication_year:
-            score += 10
-            reasons.append(_("même année"))
-        if doi and doi == _normalized(publication.doi):
-            score += 100
-            reasons.append(_("même DOI"))
-        if score >= 30:
-            matches.append(ManualPublicationMatch(publication, score, tuple(reasons)))
-    return sorted(matches, key=lambda item: (-item.score, item.publication.title))[:limit]
+def find_manual_publication_matches(data: dict, limit: int = 5) -> list[PublicationMatch]:
+    return score_publication_matches(
+        title=normalized(data.get("title", "")),
+        authors={normalized(item) for item in data.get("authors", []) if item},
+        doi=normalized(data.get("doi", "")),
+        publication_year=data.get("publication_year"),
+        limit=limit,
+    )
 
 
 @transaction.atomic
