@@ -90,6 +90,9 @@ input:focus, select:focus, button:focus, a:focus { outline: 3px solid #77cabb; o
 .confirmation-check { display: flex; grid-template-columns: none; gap: .65rem; align-items: flex-start; }
 .confirmation-check input { width: auto; margin-top: .15rem; }
 .account-settings-grid { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 1rem; align-items: start; }
+.pwa-install-panel { display: none; }
+@media (max-width: 720px) { .pwa-install-panel { display: block; } }
+.pwa-install-panel.is-installable { display: block; }
 .panel { padding: 1.25rem; border: 1px solid var(--line); background: var(--paper); }
 .narrow-panel { max-width: 42rem; }
 .hal-journey { margin-bottom: 1rem; padding: clamp(1.1rem, 3vw, 2rem); }

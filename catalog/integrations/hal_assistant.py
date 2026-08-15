@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from django.utils.translation import gettext_lazy as _
-
 from hal_assistant.hal_requirements import audit_record
 from hal_assistant.hal_xml import HAL_NS, TEI_NS, XSI_NS, build_tei, validate_tei
 from hal_assistant.review_cli import HAL_DOCUMENT_TYPES
@@ -38,7 +37,9 @@ def hal_document_type_display(
     code = explicit_type.strip().upper() or HAL_DOCUMENT_TYPES.get(
         publication_type, publication_type.upper()
     )
-    label = HAL_DOCUMENT_TYPE_LABELS_FR.get(code, _("Type de document HAL : %(code)s") % {"code": code})
+    label = HAL_DOCUMENT_TYPE_LABELS_FR.get(
+        code, _("Type de document HAL : %(code)s") % {"code": code}
+    )
     return code, label
 
 

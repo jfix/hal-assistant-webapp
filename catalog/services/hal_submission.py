@@ -160,7 +160,9 @@ def _submission_for(publication: Publication):
     submission = build_submission_xml(source.raw_data, publication=publication)
     if not submission.xml or submission.errors:
         details = "; ".join(submission.errors) or _("XML vide")
-        raise HALSubmissionError(_("La notice XML n’est pas valide : %(details)s") % {"details": details})
+        raise HALSubmissionError(
+            _("La notice XML n’est pas valide : %(details)s") % {"details": details}
+        )
     return submission
 
 

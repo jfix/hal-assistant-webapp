@@ -10,7 +10,8 @@ from django.db.models import Q
 from django.http import FileResponse, Http404, HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone, translation
-from django.utils.translation import gettext as _, gettext_lazy, ngettext
+from django.utils.translation import gettext as _
+from django.utils.translation import gettext_lazy, ngettext
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_GET, require_POST
 
@@ -885,7 +886,9 @@ def execute_hal_preprod(request: HttpRequest, operation_id):
     if not request.user.has_perm(PREPROD_PERMISSION):
         messages.error(request, _("Vous n’avez pas le droit de valider dans HAL préproduction."))
     elif request.POST.get("confirmation", "").strip() != operation.publication.publication_key:
-        messages.error(request, _("La confirmation ne correspond pas à l’identifiant de la notice."))
+        messages.error(
+            request, _("La confirmation ne correspond pas à l’identifiant de la notice.")
+        )
     else:
         try:
             attempt = execute_preprod_operation(operation=operation, actor=request.user)
@@ -1045,7 +1048,11 @@ def decide_assertion_view(request: HttpRequest, publication_id, assertion_id):
     else:
         messages.success(
             request,
-            _("Champ « %(field_path)s » — %(outcome)s.") % {"field_path": decision.field_path, "outcome": decision.get_outcome_display()},
+            _("Champ « %(field_path)s » — %(outcome)s.")
+            % {
+                "field_path": decision.field_path,
+                "outcome": decision.get_outcome_display(),
+            },
         )
     return redirect("publication-detail", publication_id=publication_id)
 

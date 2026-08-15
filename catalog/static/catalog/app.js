@@ -462,6 +462,9 @@ window.addEventListener("beforeinstallprompt", (event) => {
   document.querySelectorAll("[data-install-app]").forEach((button) => {
     button.hidden = false;
   });
+  document.querySelectorAll(".pwa-install-panel").forEach((panel) => {
+    panel.classList.add("is-installable");
+  });
 });
 
 document.addEventListener("click", async (event) => {
