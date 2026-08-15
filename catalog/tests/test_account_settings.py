@@ -4,7 +4,7 @@ import pytest
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 
-from catalog.models import AuditEvent, HALCredential
+from catalog.models import AuditEvent, HALCredential, UserInterfacePreference
 from catalog.services.hal_credentials import credentials_for
 
 pytestmark = pytest.mark.django_db
@@ -111,3 +111,28 @@ def test_app_password_change_requires_current_password(client, account_user) -> 
     account_user.refresh_from_db()
     assert response.status_code == 302
     assert account_user.check_password("A-new-strong-password-984!")
+
+
+def test_browser_language_is_used_when_no_preference_is_saved(client, account_user) -> None:
+    client.force_login(account_user)
+
+    response = client.get(reverse("account-settings"), HTTP_ACCEPT_LANGUAGE="en-GB,en;q=0.9")
+
+    assert response.status_code == 200
+    assert 'lang="en"' in response.content.decode()
+    assert "HAL Publication Manager" in response.content.decode()
+
+
+def test_saved_interface_language_overrides_browser_language(client, account_user) -> None:
+    client.force_login(account_user)
+
+    response = client.post(
+        reverse("account-settings"),
+        {"action": "save_interface_language", "language": "fr"},
+        HTTP_ACCEPT_LANGUAGE="en",
+        follow=True,
+    )
+
+    assert response.status_code == 200
+    assert UserInterfacePreference.objects.get(user=account_user).language == "fr"
+    assert 'lang="fr"' in response.content.decode()
