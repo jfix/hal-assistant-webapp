@@ -23,7 +23,13 @@
       <div class="manual-form-grid">
         <label class="wide">{{ form.hal_document_type.label }}{{ form.hal_document_type }}{{ form.hal_document_type.errors }}</label>
         <label class="full">{{ form.title.label }}{{ form.title }}{{ form.title.errors }}</label>
-        <label class="full">{{ form.authors.label }}{{ form.authors }}<span class="subtle">{{ form.authors.help_text }}</span>{{ form.authors.errors }}</label>
+        <div class="full reference-typeahead" data-reference-widget data-search-url="{% url 'publication-reference-search' %}">
+          <label for="{{ form.authors.id_for_label }}">{{ form.authors.label }}</label>
+          {{ form.authors }}
+          <div id="author-reference-results" class="publication-search-results" role="listbox"></div>
+          <span class="subtle">{{ form.authors.help_text }}</span>
+          {{ form.authors.errors }}
+        </div>
         <label>{{ form.publication_year.label }}{{ form.publication_year }}{{ form.publication_year.errors }}</label>
         <label>{{ form.language.label }}{{ form.language }}{{ form.language.errors }}</label>
         <label class="full">{{ form.doi.label }}{{ form.doi }}{{ form.doi.errors }}</label>
@@ -32,11 +38,26 @@
 
     <fieldset data-hal-fields="ART">
       <legend>Revue</legend>
-      <label>{{ form.journal_title.label }}{{ form.journal_title }}{{ form.journal_title.errors }}</label>
+      <div class="reference-typeahead" data-reference-widget data-search-url="{% url 'publication-reference-search' %}">
+        <label for="{{ form.journal_title.id_for_label }}">{{ form.journal_title.label }}</label>
+        {{ form.journal_title }}
+        {{ form.journal_hal_id }}
+        {{ form.journal_issn }}
+        {{ form.journal_publisher }}
+        <div id="journal-reference-results" class="publication-search-results" role="listbox"></div>
+      </div>
+      <p class="subtle reference-help">Recherchez dans le référentiel HAL ou saisissez librement le nom de la revue.</p>
+      {{ form.journal_title.errors }}
     </fieldset>
     <fieldset data-hal-fields="COUV">
       <legend>Ouvrage contenant le chapitre</legend>
-      <label>{{ form.book_title.label }}{{ form.book_title }}{{ form.book_title.errors }}</label>
+      <div class="reference-typeahead" data-reference-widget data-search-url="{% url 'publication-reference-search' %}">
+        <label for="{{ form.book_title.id_for_label }}">{{ form.book_title.label }}</label>
+        {{ form.book_title }}
+        <div id="book-reference-results" class="publication-search-results" role="listbox"></div>
+      </div>
+      <p class="subtle reference-help">Recherchez parmi les ouvrages déjà cités dans HAL ou saisissez librement un titre.</p>
+      {{ form.book_title.errors }}
     </fieldset>
     <fieldset data-hal-fields="COMM">
       <legend>Congrès</legend>
@@ -74,8 +95,6 @@
     {% endif %}
   </form>
 
-  <datalist id="journal-suggestions">{% for value in suggestions.journals %}<option value="{{ value }}">{% endfor %}</datalist>
-  <datalist id="book-suggestions">{% for value in suggestions.books %}<option value="{{ value }}">{% endfor %}</datalist>
   <datalist id="conference-suggestions">{% for value in suggestions.conferences %}<option value="{{ value }}">{% endfor %}</datalist>
   <datalist id="city-suggestions">{% for value in suggestions.cities %}<option value="{{ value }}">{% endfor %}</datalist>
   <datalist id="country-suggestions">{% for value in suggestions.countries %}<option value="{{ value }}">{% endfor %}</datalist>

@@ -26,6 +26,7 @@ EXPORT_COLUMNS: tuple[tuple[str, str], ...] = (
     ("keywords_en", "keywords_en"),
     ("keywords_fr", "keywords_fr"),
     ("journal_title", "journal_title"),
+    ("journal_hal_id", "journal_hal_id"),
     ("book_title", "book_title"),
     ("publisher", "publisher"),
     ("publisher_city", "publisher_city"),

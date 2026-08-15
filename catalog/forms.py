@@ -34,8 +34,20 @@ class ManualPublicationForm(forms.Form):
     title = forms.CharField(label="Titre", max_length=1000)
     authors = forms.CharField(
         label="Auteurs",
-        help_text="Séparez plusieurs auteurs par un point-virgule.",
-        widget=forms.TextInput(attrs={"placeholder": "Prénom Nom ; Prénom Nom"}),
+        help_text=(
+            "Ajoutez librement un auteur ou choisissez une forme existante dans HAL. "
+            "Séparez plusieurs auteurs par un point-virgule."
+        ),
+        widget=forms.TextInput(
+            attrs={
+                "placeholder": "Prénom Nom ; Prénom Nom",
+                "autocomplete": "off",
+                "data-reference-typeahead": "author",
+                "aria-autocomplete": "list",
+                "aria-expanded": "false",
+                "aria-controls": "author-reference-results",
+            }
+        ),
     )
     publication_year = forms.IntegerField(
         label="Année",
@@ -65,13 +77,32 @@ class ManualPublicationForm(forms.Form):
         label="Revue",
         max_length=1000,
         required=False,
-        widget=forms.TextInput(attrs={"list": "journal-suggestions"}),
+        widget=forms.TextInput(
+            attrs={
+                "autocomplete": "off",
+                "data-reference-typeahead": "journal",
+                "aria-autocomplete": "list",
+                "aria-expanded": "false",
+                "aria-controls": "journal-reference-results",
+            }
+        ),
     )
+    journal_hal_id = forms.CharField(required=False, widget=forms.HiddenInput())
+    journal_issn = forms.CharField(required=False, widget=forms.HiddenInput())
+    journal_publisher = forms.CharField(required=False, widget=forms.HiddenInput())
     book_title = forms.CharField(
         label="Titre de l’ouvrage",
         max_length=1000,
         required=False,
-        widget=forms.TextInput(attrs={"list": "book-suggestions"}),
+        widget=forms.TextInput(
+            attrs={
+                "autocomplete": "off",
+                "data-reference-typeahead": "book",
+                "aria-autocomplete": "list",
+                "aria-expanded": "false",
+                "aria-controls": "book-reference-results",
+            }
+        ),
     )
     conference_title = forms.CharField(
         label="Nom du congrès",
@@ -145,4 +176,7 @@ class ManualPublicationForm(forms.Form):
                 "conference_end_date",
                 "La date de fin doit être postérieure ou égale à la date de début.",
             )
+        if document_type != "ART":
+            for field_name in ("journal_hal_id", "journal_issn", "journal_publisher"):
+                cleaned[field_name] = ""
         return cleaned

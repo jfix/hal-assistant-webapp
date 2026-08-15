@@ -46,6 +46,7 @@ from .services.hal_credentials import (
 )
 from .services.hal_journey import build_hal_journey
 from .services.hal_reconciliation import HALReconciliationError, mark_removed_from_hal
+from .services.hal_references import search_hal_references
 from .services.hal_submission import (
     HALDuplicateError,
     HALSubmissionError,
@@ -543,6 +544,54 @@ def publication_search(request: HttpRequest) -> JsonResponse:
 
 
 @login_required
+@require_GET
+def publication_reference_search(request: HttpRequest) -> JsonResponse:
+    """Search HAL references, with corpus values as a fail-soft fallback."""
+    if not request.user.has_perm(REVIEW_PERMISSION):
+        return JsonResponse({"error": "Accès refusé."}, status=403)
+    query = request.GET.get("q", "").strip()[:80]
+    kind = request.GET.get("kind", "")
+    if kind not in {"journal", "book", "author"} or len(query) < 2:
+        return JsonResponse({"results": []})
+
+    remote = [suggestion.as_dict() for suggestion in search_hal_references(kind, query)]
+    if kind == "author":
+        local_authors = set()
+        for authors in Publication.objects.values_list("authors", flat=True):
+            for author in authors or []:
+                name = str(author).strip()
+                if query.casefold() in name.casefold():
+                    local_authors.add(name)
+        local_values = sorted(local_authors, key=str.casefold)[:16]
+    else:
+        field_name = "journal_title" if kind == "journal" else "book_title"
+        local_values = (
+            Publication.objects.exclude(**{field_name: ""})
+            .filter(**{f"{field_name}__icontains": query})
+            .order_by(field_name)
+            .values_list(field_name, flat=True)
+            .distinct()[:16]
+        )
+    seen = {item["value"].casefold().strip() for item in remote}
+    for value in local_values:
+        key = value.casefold().strip()
+        if key in seen:
+            continue
+        seen.add(key)
+        remote.append(
+            {
+                "value": value,
+                "source": "Corpus local",
+                "hal_id": "",
+                "issn": "",
+                "publisher": "",
+                "humanities": False,
+            }
+        )
+    return JsonResponse({"results": remote[:8]})
+
+
+@login_required
 def create_publication_manually(request: HttpRequest):
     if not request.user.has_perm(REVIEW_PERMISSION):
         messages.error(request, "Vous n’avez pas le droit de créer un brouillon.")
@@ -572,14 +621,6 @@ def create_publication_manually(request: HttpRequest):
                 return redirect("publication-detail", publication_id=publication.id)
 
     suggestions = {
-        "journals": Publication.objects.exclude(journal_title="")
-        .order_by("journal_title")
-        .values_list("journal_title", flat=True)
-        .distinct(),
-        "books": Publication.objects.exclude(book_title="")
-        .order_by("book_title")
-        .values_list("book_title", flat=True)
-        .distinct(),
         "conferences": Publication.objects.exclude(conference_title="")
         .order_by("conference_title")
         .values_list("conference_title", flat=True)

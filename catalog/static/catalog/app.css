@@ -291,6 +291,9 @@ blockquote { margin: .8rem 0 0; padding: .8rem 1rem; border-left: 4px solid var(
 .manual-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .9rem 1rem; }
 .manual-form-grid .wide, .manual-form-grid .full { grid-column: 1 / -1; }
 .manual-publication-form .errorlist { margin: .15rem 0 0; padding: 0; color: #a32626; font-size: .76rem; font-weight: 600; list-style: none; }
+.reference-typeahead { position: relative; }
+.reference-typeahead > input[type="text"] { width: 100%; }
+.reference-help { margin: .4rem 0 0; }
 .manual-form-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .8rem; }
 .duplicate-review { margin-top: 1.5rem; padding: 1rem; border: 1px solid #d8a25f; background: var(--warning-soft); }
 .duplicate-review article { padding: .7rem 0; border-top: 1px solid #e4c59d; }

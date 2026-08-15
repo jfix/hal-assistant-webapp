@@ -43,6 +43,11 @@ urlpatterns = [
         views.publication_search,
         name="publication-search",
     ),
+    path(
+        "publications/references/search/",
+        views.publication_reference_search,
+        name="publication-reference-search",
+    ),
     path("publications/export/", views.publication_export, name="publication-export"),
     path(
         "publications/<uuid:publication_id>/",

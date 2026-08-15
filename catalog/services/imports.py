@@ -35,6 +35,7 @@ MATERIALIZED_FIELDS = (
     "authors",
     "editors",
     "journal_title",
+    "journal_hal_id",
     "book_title",
     "publisher",
     "publisher_city",
@@ -244,6 +245,7 @@ def normalize_row(row: dict[str, Any]) -> dict[str, Any]:
         "keywords_en": _list(row.get("keywords_en")),
         "keywords_fr": _list(row.get("keywords_fr")),
         "journal_title": _text(_first(row, "journal_title", "journal")),
+        "journal_hal_id": _text(row.get("journal_hal_id")),
         "book_title": _text(row.get("book_title")),
         "conference_start_date": _date(
             _first(row, "conference_start_date", "conferenceStartDate")
@@ -283,6 +285,7 @@ def normalize_row(row: dict[str, Any]) -> dict[str, Any]:
         "authors": authors,
         "editors": _list(row.get("editors")),
         "journal_title": _text(_first(row, "journal_title", "journal")),
+        "journal_hal_id": normalized_for_audit["journal_hal_id"],
         "book_title": _text(row.get("book_title")),
         "publisher": _text(row.get("publisher")),
         "publisher_city": _text(row.get("publisher_city")),

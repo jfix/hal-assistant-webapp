@@ -46,6 +46,7 @@ class Publication(models.Model):
     authors = models.JSONField(default=list)
     editors = models.JSONField(default=list)
     journal_title = models.TextField(blank=True)
+    journal_hal_id = models.CharField(max_length=80, blank=True)
     book_title = models.TextField(blank=True)
     publisher = models.TextField(blank=True)
     publisher_city = models.CharField(max_length=200, blank=True)

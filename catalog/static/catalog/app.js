@@ -318,13 +318,128 @@
         fieldset.hidden = !active;
         fieldset.querySelectorAll("input, select, textarea").forEach(function (control) {
           control.disabled = !active;
-          control.required = active;
+          control.required = active && control.type !== "hidden";
         });
       });
     }
 
     typeSelect.addEventListener("change", showRelevantFields);
     showRelevantFields();
+  });
+
+  document.querySelectorAll("[data-reference-widget]").forEach(function (widget) {
+    var input = widget.querySelector("[data-reference-typeahead]");
+    var results = widget.querySelector("[role='listbox']");
+    if (!input || !results) return;
+
+    var kind = input.dataset.referenceTypeahead;
+    var timer;
+    var controller;
+
+    function closeResults() {
+      results.replaceChildren();
+      input.setAttribute("aria-expanded", "false");
+    }
+
+    function clearJournalReference() {
+      if (kind !== "journal") return;
+      ["#id_journal_hal_id", "#id_journal_issn", "#id_journal_publisher"].forEach(function (selector) {
+        var field = widget.querySelector(selector);
+        if (field) field.value = "";
+      });
+    }
+
+    function choose(item) {
+      if (kind === "author") {
+        var authors = input.value.split(";");
+        authors[authors.length - 1] = " " + item.value;
+        input.value = authors.map(function (author) { return author.trim(); }).filter(Boolean).join(" ; ") + " ; ";
+      } else {
+        input.value = item.value;
+      }
+      if (kind === "journal") {
+        var halId = widget.querySelector("#id_journal_hal_id");
+        var issn = widget.querySelector("#id_journal_issn");
+        var publisher = widget.querySelector("#id_journal_publisher");
+        if (halId) halId.value = item.hal_id || "";
+        if (issn) issn.value = item.issn || "";
+        if (publisher) publisher.value = item.publisher || "";
+      }
+      closeResults();
+      input.focus();
+    }
+
+    function resultButton(item) {
+      var button = document.createElement("button");
+      var title = document.createElement("strong");
+      var meta = document.createElement("span");
+      var details = [item.source];
+      button.type = "button";
+      button.className = "publication-search-result";
+      button.setAttribute("role", "option");
+      title.textContent = item.value;
+      if (item.issn) details.push("ISSN " + item.issn);
+      if (item.publisher) details.push(item.publisher);
+      if (kind === "author" && item.hal_id) details.push("idHAL " + item.hal_id);
+      if (item.humanities) details.push("Sciences humaines et sociales");
+      meta.textContent = details.join(" · ");
+      button.append(title, meta);
+      button.addEventListener("click", function () { choose(item); });
+      return button;
+    }
+
+    async function searchReference(query) {
+      if (controller) controller.abort();
+      controller = new AbortController();
+      try {
+        var url = widget.dataset.searchUrl + "?kind=" + encodeURIComponent(kind) + "&q=" + encodeURIComponent(query);
+        var response = await fetch(url, {
+          credentials: "same-origin",
+          signal: controller.signal,
+        });
+        if (!response.ok) throw new Error("reference search failed");
+        var payload = await response.json();
+        results.replaceChildren();
+        payload.results.forEach(function (item) { results.append(resultButton(item)); });
+        if (!payload.results.length) {
+          var empty = document.createElement("p");
+          empty.className = "subtle";
+          empty.textContent = "Aucune référence trouvée. Vous pouvez conserver votre saisie.";
+          results.append(empty);
+        }
+        input.setAttribute("aria-expanded", "true");
+      } catch (error) {
+        if (error.name !== "AbortError") closeResults();
+      }
+    }
+
+    input.addEventListener("input", function () {
+      clearTimeout(timer);
+      clearJournalReference();
+      var query = kind === "author"
+        ? input.value.split(";").pop().trim()
+        : input.value.trim();
+      if (query.length < 2) {
+        if (controller) controller.abort();
+        closeResults();
+        return;
+      }
+      timer = setTimeout(function () { searchReference(query); }, 180);
+    });
+    input.addEventListener("keydown", function (event) {
+      if (event.key === "ArrowDown") {
+        var first = results.querySelector("button");
+        if (first) {
+          event.preventDefault();
+          first.focus();
+        }
+      } else if (event.key === "Escape") {
+        closeResults();
+      }
+    });
+    document.addEventListener("click", function (event) {
+      if (!widget.contains(event.target)) closeResults();
+    });
   });
 
   var uploadForm = document.querySelector("[data-upload-form]");

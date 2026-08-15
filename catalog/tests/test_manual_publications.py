@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from unittest.mock import patch
+
 import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
@@ -82,6 +84,24 @@ def test_manual_draft_is_local_ready_and_audited() -> None:
         action="publication.manual_created",
         object_id=str(publication.id),
     ).exists()
+
+
+def test_manual_draft_preserves_selected_hal_journal_metadata() -> None:
+    user = _reviewer("journal-reference-creator")
+
+    publication = create_manual_draft(
+        data=_data(
+            journal_hal_id="12345",
+            journal_issn="1234-5678",
+            journal_publisher="Éditions Exemple",
+        ),
+        actor=user,
+        duplicate_reviewed=False,
+    )
+
+    assert publication.journal_hal_id == "12345"
+    assert publication.issn == ["1234-5678"]
+    assert publication.publisher == "Éditions Exemple"
 
 
 def test_probable_duplicate_blocks_manual_creation_even_after_confirmation() -> None:
@@ -173,6 +193,94 @@ def test_manual_form_shows_adaptive_fields_and_existing_value_suggestions(client
     assert 'data-hal-fields="COMM"' in content
     assert '<option value="Congrès des humanités">' in content
     assert '<option value="Paris">' in content
+    assert 'data-reference-typeahead="journal"' in content
+    assert 'data-reference-typeahead="book"' in content
+    assert reverse("publication-reference-search") in content
+    assert 'id="journal-suggestions"' not in content
+
+
+@patch("catalog.views.search_hal_references")
+def test_reference_search_combines_hal_and_local_results(search_hal, client) -> None:
+    from catalog.services.hal_references import HALReferenceSuggestion
+
+    user = _reviewer("reference-searcher")
+    Publication.objects.create(
+        publication_key="local-journal",
+        publication_type="journal_article",
+        title="Local article",
+        journal_title="Revue locale",
+    )
+    search_hal.return_value = [
+        HALReferenceSuggestion(
+            value="Revue HAL",
+            source="HAL",
+            hal_id="42",
+            issn="1234-5678",
+        )
+    ]
+    client.force_login(user)
+
+    response = client.get(
+        reverse("publication-reference-search"),
+        {"kind": "journal", "q": "revue"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["results"] == [
+        {
+            "value": "Revue HAL",
+            "source": "HAL",
+            "hal_id": "42",
+            "issn": "1234-5678",
+            "publisher": "",
+            "humanities": False,
+        },
+        {
+            "value": "Revue locale",
+            "source": "Corpus local",
+            "hal_id": "",
+            "issn": "",
+            "publisher": "",
+            "humanities": False,
+        },
+    ]
+
+
+def test_reference_search_requires_reviewer_permission(client) -> None:
+    user = get_user_model().objects.create_user(
+        username="reference-reader", password="test"
+    )
+    client.force_login(user)
+
+    response = client.get(
+        reverse("publication-reference-search"),
+        {"kind": "journal", "q": "revue"},
+    )
+
+    assert response.status_code == 403
+
+
+@patch("catalog.views.search_hal_references", return_value=[])
+def test_author_reference_search_falls_back_to_local_author_names(
+    search_hal, client
+) -> None:
+    user = _reviewer("author-searcher")
+    Publication.objects.create(
+        publication_key="local-authors",
+        publication_type="book",
+        title="Local book",
+        authors=["Florence Fix", "Jakob Fix"],
+    )
+    client.force_login(user)
+
+    response = client.get(
+        reverse("publication-reference-search"),
+        {"kind": "author", "q": "flor"},
+    )
+
+    assert response.status_code == 200
+    assert [item["value"] for item in response.json()["results"]] == ["Florence Fix"]
+    search_hal.assert_called_once_with("author", "flor")
 
 
 def test_manual_creation_requires_reviewer_permission(client) -> None:
