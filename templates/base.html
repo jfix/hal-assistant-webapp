@@ -1,15 +1,16 @@
-{% load static %}
+{% load i18n static %}
+{% get_current_language as LANGUAGE_CODE %}
 <!doctype html>
-<html lang="fr">
+<html lang="{{ LANGUAGE_CODE }}">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{% block title %}Gestionnaire de publications HAL{% endblock %}</title>
+    <title>{% block title %}{% translate "Gestionnaire de publications HAL" %}{% endblock %}</title>
     <meta name="theme-color" content="#102b2a">
-    <meta name="application-name" content="Assistant de publications HAL">
+    <meta name="application-name" content="{% translate 'Assistant de publications HAL' %}">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Publications HAL">
+    <meta name="apple-mobile-web-app-title" content="{% translate 'Publications HAL' %}">
     <link rel="manifest" href="{% static 'catalog/manifest.webmanifest' %}">
     <link rel="icon" href="{% static 'catalog/app-icon.svg' %}" type="image/svg+xml">
     <link rel="apple-touch-icon" sizes="180x180" href="{% static 'catalog/icons/apple-touch-icon.png' %}">
@@ -17,15 +18,15 @@
     <script src="{% static 'catalog/app.js' %}?v={{ asset_version }}" defer></script>
   </head>
   <body>
-    <a class="skip-link" href="#main">Aller au contenu</a>
+    <a class="skip-link" href="#main">{% translate "Aller au contenu" %}</a>
     <header class="site-header">
       <div>
-        <a class="brand" href="{% url 'home' %}">Assistant de publications</a>
-        <nav class="site-nav" aria-label="Navigation principale">
-          <a href="{% url 'home' %}">Accueil</a>
-          <a href="{% url 'document-summary' %}">Ajouter une publication</a>
-          <a href="{% url 'publication-list' %}">Liste des publications</a>
-          {% if user.is_staff %}<a href="{% url 'admin:index' %}">Administration</a>{% endif %}
+        <a class="brand" href="{% url 'home' %}">{% translate "Assistant de publications" %}</a>
+        <nav class="site-nav" aria-label="{% translate 'Navigation principale' %}">
+          <a href="{% url 'home' %}">{% translate "Accueil" %}</a>
+          <a href="{% url 'document-summary' %}">{% translate "Ajouter une publication" %}</a>
+          <a href="{% url 'publication-list' %}">{% translate "Liste des publications" %}</a>
+          {% if user.is_staff %}<a href="{% url 'admin:index' %}">{% translate "Administration" %}</a>{% endif %}
         </nav>
       </div>
       {% if user.is_authenticated %}
@@ -33,7 +34,7 @@
           <a href="{% url 'account-settings' %}">{{ user.get_full_name|default:user.get_username }}</a>
           <form action="{% url 'logout' %}" method="post">
             {% csrf_token %}
-            <button class="link-button" type="submit">Se déconnecter</button>
+            <button class="link-button" type="submit">{% translate "Se déconnecter" %}</button>
           </form>
         </div>
       {% endif %}

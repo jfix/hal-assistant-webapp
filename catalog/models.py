@@ -4,6 +4,7 @@ import uuid
 
 from django.conf import settings
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 
 class ImmutableModel(models.Model):
@@ -14,6 +15,23 @@ class ImmutableModel(models.Model):
         if not self._state.adding:
             raise ValueError(f"{type(self).__name__} records are immutable")
         super().save(*args, **kwargs)
+
+
+class UserInterfacePreference(models.Model):
+    class Language(models.TextChoices):
+        AUTOMATIC = "", _("Automatique — langue du navigateur")
+        FRENCH = "fr", _("Français")
+        ENGLISH = "en", "English"
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="interface_preference",
+    )
+    language = models.CharField(max_length=2, choices=Language.choices, blank=True)
+
+    def __str__(self) -> str:
+        return f"Interface preference for {self.user}"
 
 
 class Publication(models.Model):

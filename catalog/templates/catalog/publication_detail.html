@@ -1,19 +1,20 @@
 {% extends "base.html" %}
+{% load i18n %}
 
-{% block title %}{{ publication.title }} · Gestionnaire de publications HAL{% endblock %}
+{% block title %}{{ publication.title }} · {% translate "Gestionnaire de publications HAL" %}{% endblock %}
 
 {% block content %}
-  <nav class="breadcrumb" aria-label="Fil d'Ariane">
-    <a href="{% url 'publication-list' %}">Publications</a>
+  <nav class="breadcrumb" aria-label="{% translate "Fil d'Ariane" %}">
+    <a href="{% url 'publication-list' %}">{% translate "Publications" %}</a>
     <span aria-hidden="true">/</span>
-    <span>Notice</span>
+    <span>{% translate "Notice" %}</span>
   </nav>
 
   <header class="detail-heading">
     <div>
       <p class="eyebrow">{{ publication.publication_type }}</p>
       <h1>{{ publication.title }}</h1>
-      <div class="status-summary status-summary-detail" aria-label="Statuts de la publication">
+      <div class="status-summary status-summary-detail" aria-label="{% translate "Statuts de la publication" %}">
         {% for status in publication.workflow_statuses %}
           <div class="status-item status-{{ status.tone }}"><span class="status-dot" aria-hidden="true"></span><span class="status-dimension">{{ status.dimension }}</span><span class="status-value">{{ status.label }}</span></div>
         {% endfor %}
@@ -23,21 +24,21 @@
       </div>
     </div>
     <div class="detail-actions">
-      <a class="secondary-button" href="{% url 'publication-xml' publication.id %}">XML de soumission</a>
+      <a class="secondary-button" href="{% url 'publication-xml' publication.id %}">{% translate "XML de soumission" %}</a>
     </div>
   </header>
 
   <section class="panel hal-journey" aria-labelledby="hal-journey-title">
     <div class="hal-journey-heading">
       <div>
-        <p class="eyebrow">Du brouillon au dépôt</p>
-        <h2 id="hal-journey-title">Parcours vers HAL</h2>
+        <p class="eyebrow">{% translate "Du brouillon au dépôt" %}</p>
+        <h2 id="hal-journey-title">{% translate "Parcours vers HAL" %}</h2>
       </div>
       <div class="hal-journey-progress">
         {% if hal_journey.published %}
-          <strong>Objectif atteint</strong>
+          <strong>{% translate "Objectif atteint" %}</strong>
         {% else %}
-          <strong>{{ hal_journey.completed }} étape{{ hal_journey.completed|pluralize }} sur {{ hal_journey.total }}</strong>
+          <strong>{% blocktranslate with completed=hal_journey.completed total=hal_journey.total %}{{ completed }} étape{{ completed|pluralize }} sur {{ total }}{% endblocktranslate %}</strong>
         {% endif %}
         <progress value="{{ hal_journey.completed }}" max="{{ hal_journey.total }}">{{ hal_journey.completed }}/{{ hal_journey.total }}</progress>
       </div>
@@ -50,30 +51,30 @@
           </div>
           <article class="journey-card">
             <p class="journey-state">
-              {% if step.state == "complete" %}Étape accomplie{% elif step.state == "current" %}À vous de jouer{% elif step.state == "blocked" %}Action nécessaire{% elif step.state == "external" %}Hors application{% else %}À venir{% endif %}
+              {% if step.state == "complete" %}{% translate "Étape accomplie" %}{% elif step.state == "current" %}{% translate "À vous de jouer" %}{% elif step.state == "blocked" %}{% translate "Action nécessaire" %}{% elif step.state == "external" %}{% translate "Hors application" %}{% else %}{% translate "À venir" %}{% endif %}
             </p>
             <h3>{{ step.title }}</h3>
             {% if step.date %}<time datetime="{{ step.date|date:'c' }}">{{ step.date|date:"j F Y à H:i" }}</time>{% endif %}
             <p>{{ step.description }}</p>
             {% if step.action == "complete_metadata" %}
-              <a class="primary-button" href="#publication-metadata">Compléter les métadonnées</a>
+              <a class="primary-button" href="#publication-metadata">{% translate "Compléter les métadonnées" %}</a>
             {% elif step.action == "prepare_test" %}
               <form method="post" action="{% url 'hal-preprod-prepare' publication.id %}">
                 {% csrf_token %}
-                <button class="primary-button" type="submit">Préparer le test HAL</button>
+                <button class="primary-button" type="submit">{% translate "Préparer le test HAL" %}</button>
               </form>
             {% elif step.action == "resume_test" %}
-              <a class="primary-button" href="{% url 'hal-preprod-operation' latest_hal_operation.id %}">Envoyer le test</a>
+              <a class="primary-button" href="{% url 'hal-preprod-operation' latest_hal_operation.id %}">{% translate "Envoyer le test" %}</a>
             {% elif step.action == "configure_credentials" %}
-              <a class="primary-button" href="{% url 'account-settings' %}">Configurer mes identifiants HAL</a>
+              <a class="primary-button" href="{% url 'account-settings' %}">{% translate "Configurer mes identifiants HAL" %}</a>
             {% elif step.action == "view_history" %}
-              <a class="secondary-button" href="{% url 'hal-preprod-operation' latest_hal_operation.id %}">Voir l’historique du test</a>
+              <a class="secondary-button" href="{% url 'hal-preprod-operation' latest_hal_operation.id %}">{% translate "Voir l'historique du test" %}</a>
             {% elif step.action == "open_hal" %}
-              <a class="secondary-button" href="https://hal.science/{{ publication.hal_id }}" target="_blank" rel="noopener noreferrer">Ouvrir la notice HAL</a>
+              <a class="secondary-button" href="https://hal.science/{{ publication.hal_id }}" target="_blank" rel="noopener noreferrer">{% translate "Ouvrir la notice HAL" %}</a>
             {% elif step.action == "prepare_production" %}
               <form method="post" action="{% url 'hal-production-prepare' publication.id %}">
                 {% csrf_token %}
-                <button class="primary-button" type="submit">Préparer le dépôt réel</button>
+                <button class="primary-button" type="submit">{% translate "Préparer le dépôt réel" %}</button>
               </form>
             {% endif %}
           </article>
@@ -84,32 +85,32 @@
 
   {% if latest_hal_removal %}
     <p class="former-hal-indicator">
-      <span>Ancien dépôt HAL</span>
+      <span>{% translate "Ancien dépôt HAL" %}</span>
       <code>{{ latest_hal_removal.former_hal_id }}</code>
-      <a href="#audit-trail">Voir dans l’historique</a>
+      <a href="#audit-trail">{% translate "Voir dans l'historique" %}</a>
     </p>
   {% endif %}
 
   <div class="detail-grid">
     <section class="panel" id="publication-metadata">
-      <h2>Métadonnées structurées</h2>
+      <h2>{% translate "Métadonnées structurées" %}</h2>
       <dl class="metadata">
         {% for field in metadata_fields %}{% include "catalog/_field_row.html" %}{% endfor %}
       </dl>
     </section>
 
     <section class="panel">
-      <h2>Préparation</h2>
+      <h2>{% translate "Préparation" %}</h2>
       {% if publication.missing_required_fields %}
-        <p>Cette notice n'a pas les champs suivants :</p>
+        <p>{% translate "Cette notice n'a pas les champs suivants :" %}</p>
         <ul>
           {% for field in publication.missing_required_fields %}<li>{{ field }}</li>{% endfor %}
         </ul>
       {% else %}
-        <p>Aucun champ obligatoire manquant signalé par le paquet épinglé.</p>
+        <p>{% translate "Aucun champ obligatoire manquant signalé par le paquet épinglé." %}</p>
       {% endif %}
       {% if publication.conference_title %}
-        <h3>Conférence</h3>
+        <h3>{% translate "Conférence" %}</h3>
         <dl class="metadata">
           {% for field in conference_fields %}{% include "catalog/_field_row.html" %}{% endfor %}
         </dl>
@@ -120,27 +121,27 @@
   <section class="panel" aria-labelledby="publication-summaries-title">
     <div class="section-heading summary-section-heading">
       <div>
-        <h2 id="publication-summaries-title">Résumés et mots-clés</h2>
-        <p class="subtle">Ces valeurs font partie de la notice et seront utilisées lors de la préparation du dépôt HAL.</p>
+        <h2 id="publication-summaries-title">{% translate "Résumés et mots-clés" %}</h2>
+        <p class="subtle">{% translate "Ces valeurs font partie de la notice et seront utilisées lors de la préparation du dépôt HAL." %}</p>
       </div>
       {% if can_review and not summary_generation_missing %}
         <details class="document-generation-discreet">
-          <summary>Générer depuis un document</summary>
+          <summary>{% translate "Générer depuis un document" %}</summary>
           <form method="post" enctype="multipart/form-data" action="{% url 'publication-generate-from-document' publication.id %}" data-upload-form>
             {% csrf_token %}
             <input type="file" name="document" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" required>
-            <button class="secondary-button" type="submit" data-submit>Analyser et comparer</button>
+            <button class="secondary-button" type="submit" data-submit data-loading-label="{% translate 'Analyse en cours…' %}">{% translate "Analyser et comparer" %}</button>
           </form>
         </details>
       {% endif %}
     </div>
     {% if can_review and summary_generation_missing %}
       <div class="document-generation-callout">
-        <div><strong>Compléter depuis votre article</strong><span>Importez un PDF ou un document Word pour proposer les résumés et mots-clés manquants.</span></div>
+        <div><strong>{% translate "Compléter depuis votre article" %}</strong><span>{% translate "Importez un PDF ou un document Word pour proposer les résumés et mots-clés manquants." %}</span></div>
         <form method="post" enctype="multipart/form-data" action="{% url 'publication-generate-from-document' publication.id %}" data-upload-form>
           {% csrf_token %}
           <input type="file" name="document" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" required>
-          <button class="primary-button" type="submit" data-submit>Générer et comparer</button>
+          <button class="primary-button" type="submit" data-submit data-loading-label="{% translate 'Analyse en cours…' %}">{% translate "Générer et comparer" %}</button>
         </form>
       </div>
     {% endif %}
@@ -151,36 +152,36 @@
 
   {% if proposals %}
     <section class="panel" aria-labelledby="proposed-changes">
-      <h2 id="proposed-changes">Modifications proposées <span class="badge">{{ proposals|length }} en attente</span></h2>
+      <h2 id="proposed-changes">{% translate "Modifications proposées" %} <span class="badge">{% blocktranslate count count=proposals|length %}{{ count }} en attente{% plural %}{{ count }} en attente{% endblocktranslate %}</span></h2>
       {% if not can_review %}
-        <p class="subtle">Vous pouvez consulter les modifications proposées mais n'avez pas le droit de les accepter ou de les rejeter.</p>
+        <p class="subtle">{% translate "Vous pouvez consulter les modifications proposées mais n'avez pas le droit de les accepter ou de les rejeter." %}</p>
       {% endif %}
       {% for item in proposals %}
         <article class="proposal">
           <div class="proposal-field"><strong>{{ item.label }}</strong>
-            <span class="subtle">issu de {{ item.source_label }}{% if item.assertion.confidence %} · génération IA{% endif %}</span>
+            <span class="subtle">{% blocktranslate with source=item.source_label %}issu de {{ source }}{% endblocktranslate %}{% if item.assertion.confidence %} · {% translate "génération IA" %}{% endif %}</span>
           </div>
           <div class="proposal-diff">
-            <div><dt>Valeur actuelle</dt><dd class="before">{{ item.current_text|default:"—" }}</dd></div>
-            <div><dt>Valeur proposée</dt><dd class="after">{{ item.proposed_text|default:"—" }}</dd></div>
+            <div><dt>{% translate "Valeur actuelle" %}</dt><dd class="before">{{ item.current_text|default:"—" }}</dd></div>
+            <div><dt>{% translate "Valeur proposée" %}</dt><dd class="after">{{ item.proposed_text|default:"—" }}</dd></div>
           </div>
           {% if can_review %}
             <form method="post" action="{% url 'assertion-decide' publication.id item.assertion.id %}" class="decision-form">
               {% csrf_token %}
               <input type="hidden" name="base_version" value="{{ publication.version }}">
-              <label>Motif (facultatif)
+              <label>{% translate "Motif (facultatif)" %}
                 <input type="text" name="reason" maxlength="500" autocomplete="off">
               </label>
               <div class="decision-actions">
-                <button class="primary-button" type="submit" name="outcome" value="accepted">Accepter la proposition</button>
-                <button class="secondary-button" type="submit" name="outcome" value="rejected">Rejeter</button>
+                <button class="primary-button" type="submit" name="outcome" value="accepted">{% translate "Accepter la proposition" %}</button>
+                <button class="secondary-button" type="submit" name="outcome" value="rejected">{% translate "Rejeter" %}</button>
               </div>
-              <label class="edit-field">Ou appliquer une autre valeur
+              <label class="edit-field">{% translate "Ou appliquer une autre valeur" %}
                 <input type="text" name="edited_value" value="{{ item.proposed_text }}" autocomplete="off">
-                {% if item.assertion.field_path in list_fields %}<span class="subtle">Séparez plusieurs valeurs par « ; ».</span>{% endif %}
+                {% if item.assertion.field_path in list_fields %}<span class="subtle">{% translate "Séparez plusieurs valeurs par « ; »." %}</span>{% endif %}
               </label>
               <div class="decision-actions">
-                <button class="secondary-button" type="submit" name="outcome" value="edited">Appliquer cette valeur</button>
+                <button class="secondary-button" type="submit" name="outcome" value="edited">{% translate "Appliquer cette valeur" %}</button>
               </div>
             </form>
           {% endif %}
@@ -191,25 +192,25 @@
 
   {% if document_analyses %}
     <details class="panel meta-panel">
-      <summary><span class="meta-panel-title">Analyses de documents associées</span> <span class="badge">{{ document_analyses|length }}</span></summary>
+      <summary><span class="meta-panel-title">{% translate "Analyses de documents associées" %}</span> <span class="badge">{{ document_analyses|length }}</span></summary>
       <div class="meta-panel-content">
-      <p class="subtle">Informations sur le traitement et l’association des documents ; elles ne modifient pas automatiquement les métadonnées de la notice.</p>
+      <p class="subtle">{% translate "Informations sur le traitement et l'association des documents ; elles ne modifient pas automatiquement les métadonnées de la notice." %}</p>
       {% for item in document_analyses %}
         <article class="document-analysis">
           <div class="source-meta">
             <strong>{{ item.summary.document_title|default:item.summary.source_filename|default:"Document sans titre" }}</strong>
             <span>{{ item.summary.source_filename|default:"Nom de fichier non disponible" }}</span>
             <span>{{ item.link.get_action_display }} · {{ item.link.actor.get_username }} · {{ item.link.created_at }}</span>
-            {% if item.summary.source_file %}<a class="secondary-button" href="{% url 'associated-document' item.summary.id %}" target="_blank" rel="noopener">Ouvrir le document original</a>{% endif %}
-            {% if item.can_open_cache %}<a href="{% url 'document-summary-cache-detail' item.summary.id %}">Ouvrir le résultat en cache</a>{% endif %}
+            {% if item.summary.source_file %}<a class="secondary-button" href="{% url 'associated-document' item.summary.id %}" target="_blank" rel="noopener">{% translate "Ouvrir le document original" %}</a>{% endif %}
+            {% if item.can_open_cache %}<a href="{% url 'document-summary-cache-detail' item.summary.id %}">{% translate "Ouvrir le résultat en cache" %}</a>{% endif %}
           </div>
           <details class="document-analysis-results">
-            <summary>Afficher la génération IA originale conservée</summary>
+            <summary>{% translate "Afficher la génération IA originale conservée" %}</summary>
             <dl class="metadata">
-              <div><dt>Résumé français</dt><dd>{{ item.summary.abstract_fr }}</dd></div>
-              <div><dt>English abstract</dt><dd>{{ item.summary.abstract_en }}</dd></div>
-              <div><dt>Mots-clés français</dt><dd>{{ item.summary.keywords_fr|join:", " }}</dd></div>
-              <div><dt>English keywords</dt><dd>{{ item.summary.keywords_en|join:", " }}</dd></div>
+              <div><dt>{% translate "Résumé français" %}</dt><dd>{{ item.summary.abstract_fr }}</dd></div>
+              <div><dt>{% translate "English abstract" %}</dt><dd>{{ item.summary.abstract_en }}</dd></div>
+              <div><dt>{% translate "Mots-clés français" %}</dt><dd>{{ item.summary.keywords_fr|join:", " }}</dd></div>
+              <div><dt>{% translate "English keywords" %}</dt><dd>{{ item.summary.keywords_en|join:", " }}</dd></div>
             </dl>
           </details>
         </article>
@@ -219,7 +220,7 @@
   {% endif %}
 
   <details class="panel meta-panel audit-trail" id="audit-trail">
-    <summary><span class="meta-panel-title">Historique et traçabilité</span> <span class="badge">{{ traceability_events|length }}</span></summary>
+    <summary><span class="meta-panel-title">{% translate "Historique et traçabilité" %}</span> <span class="badge">{{ traceability_events|length }}</span></summary>
     <div class="meta-panel-content">
       <ol class="audit-event-list">
         {% for event in traceability_events %}
@@ -229,49 +230,49 @@
               <time datetime="{{ event.created_at|date:'c' }}">{{ event.created_at|date:"j F Y à H:i" }}</time>
             </div>
             <p>{{ event.description }}</p>
-            {% if event.reason %}<p class="audit-event-reason"><span>Motif</span> {{ event.reason }}</p>{% endif %}
-            <span class="subtle">{% if event.actor %}Par {{ event.actor.get_username }}{% else %}Import automatique{% endif %}</span>
+            {% if event.reason %}<p class="audit-event-reason"><span>{% translate "Motif" %}</span> {{ event.reason }}</p>{% endif %}
+            <span class="subtle">{% if event.actor %}{% blocktranslate with actor=event.actor.get_username %}Par {{ actor }}{% endblocktranslate %}{% else %}{% translate "Import automatique" %}{% endif %}</span>
           </li>
         {% empty %}
-          <li>Aucun événement enregistré pour cette notice.</li>
+          <li>{% translate "Aucun événement enregistré pour cette notice." %}</li>
         {% endfor %}
       </ol>
 
       {% if latest_hal_operation %}
-        <p>Les charges utiles figées, tentatives et réponses techniques sont conservées séparément.</p>
-        <a class="secondary-button" href="{% url 'hal-preprod-operation' latest_hal_operation.id %}">Consulter le dernier test HAL</a>
+        <p>{% translate "Les charges utiles figées, tentatives et réponses techniques sont conservées séparément." %}</p>
+        <a class="secondary-button" href="{% url 'hal-preprod-operation' latest_hal_operation.id %}">{% translate "Consulter le dernier test HAL" %}</a>
       {% endif %}
 
       <details class="audit-technical">
-        <summary>Sources d’origine <span class="badge">{{ publication.source_records.all|length }}</span></summary>
+        <summary>{% translate "Sources d'origine" %} <span class="badge">{{ publication.source_records.all|length }}</span></summary>
         {% for source in publication.source_records.all %}
           <article class="source-record">
             <div class="source-meta"><strong>{{ source.source_import.source_name }}</strong><span>{{ source.locator }}</span><code>{{ source.source_import.file_sha256|slice:":12" }}</code></div>
             <blockquote>{{ source.original_citation|default:"Aucune citation d'origine fournie." }}</blockquote>
           </article>
-        {% empty %}<p>Aucune source immuable n'est associée.</p>{% endfor %}
+        {% empty %}<p>{% translate "Aucune source immuable n'est associée." %}</p>{% endfor %}
       </details>
 
       <details class="audit-technical">
-        <summary>Assertions de champs <span class="badge">{{ publication.assertions.all|length }}</span></summary>
+        <summary>{% translate "Assertions de champs" %} <span class="badge">{{ publication.assertions.all|length }}</span></summary>
         <div class="table-wrap"><table>
-          <thead><tr><th>Champ</th><th>Valeur</th><th>État</th><th>Origine</th><th>Source</th></tr></thead>
+          <thead><tr><th>{% translate "Champ" %}</th><th>{% translate "Valeur" %}</th><th>{% translate "État" %}</th><th>{% translate "Origine" %}</th><th>{% translate "Source" %}</th></tr></thead>
           <tbody>{% for assertion in publication.assertions.all %}<tr>
             <td><code>{{ assertion.field_path }}</code></td><td>{{ assertion.value }}</td><td>{{ assertion.get_state_display }}</td><td>{{ assertion.origin }}</td>
             <td>{% if assertion.source_record %}{{ assertion.source_record.locator }}{% elif assertion.document_summary %}{{ assertion.document_summary.source_filename|default:"Document analysé" }}{% else %}—{% endif %}</td>
-          </tr>{% empty %}<tr><td colspan="5">Aucune assertion enregistrée.</td></tr>{% endfor %}</tbody>
+          </tr>{% empty %}<tr><td colspan="5">{% translate "Aucune assertion enregistrée." %}</td></tr>{% endfor %}</tbody>
         </table></div>
       </details>
 
       <details class="audit-technical">
-        <summary>Détails des décisions éditoriales <span class="badge">{{ decisions|length }}</span></summary>
+        <summary>{% translate "Détails des décisions éditoriales" %} <span class="badge">{{ decisions|length }}</span></summary>
         <div class="table-wrap"><table>
-          <thead><tr><th>Date</th><th>Champ</th><th>Décision</th><th>Valeur appliquée</th><th>Réviseur</th><th>Version</th><th>Motif</th></tr></thead>
+          <thead><tr><th>{% translate "Date" %}</th><th>{% translate "Champ" %}</th><th>{% translate "Décision" %}</th><th>{% translate "Valeur appliquée" %}</th><th>{% translate "Réviseur" %}</th><th>{% translate "Version" %}</th><th>{% translate "Motif" %}</th></tr></thead>
           <tbody>{% for decision in decisions %}<tr>
             <td>{{ decision.created_at }}</td><td><code>{{ decision.field_path }}</code></td><td>{{ decision.get_outcome_display }}</td>
-            <td>{% if decision.outcome == "rejected" %}<span class="subtle">— (valeur actuelle conservée)</span>{% else %}{{ decision.applied_value|default:"—" }}{% endif %}</td>
+            <td>{% if decision.outcome == "rejected" %}<span class="subtle">{% translate "— (valeur actuelle conservée)" %}</span>{% else %}{{ decision.applied_value|default:"—" }}{% endif %}</td>
             <td>{{ decision.actor.get_username|default:"—" }}</td><td>{{ decision.base_version }} → {{ decision.resulting_version }}</td><td>{{ decision.reason|default:"—" }}</td>
-          </tr>{% empty %}<tr><td colspan="7">Aucune décision de révision enregistrée pour l'instant.</td></tr>{% endfor %}</tbody>
+          </tr>{% empty %}<tr><td colspan="7">{% translate "Aucune décision de révision enregistrée pour l'instant." %}</td></tr>{% endfor %}</tbody>
         </table></div>
       </details>
     </div>
@@ -279,19 +280,19 @@
 
   {% if publication.hal_id and can_review %}
     <details class="panel meta-panel hal-removal-reconciliation">
-      <summary><span class="meta-panel-title">Gestion exceptionnelle de la présence sur HAL</span></summary>
+      <summary><span class="meta-panel-title">{% translate "Gestion exceptionnelle de la présence sur HAL" %}</span></summary>
       <div class="meta-panel-content">
-        <p><strong>Cette action ne supprime rien dans HAL.</strong> Elle sert uniquement à remettre notre notice en brouillon après une suppression déjà effectuée dans l’interface HAL.</p>
+        <p><strong>{% translate "Cette action ne supprime rien dans HAL." %}</strong> {% translate "Elle sert uniquement à remettre notre notice en brouillon après une suppression déjà effectuée dans l'interface HAL." %}</p>
         <form class="stack" method="post" action="{% url 'hal-reconcile-removal' publication.id %}">
           {% csrf_token %}
-          <label>Raison de la remise en brouillon
+          <label>{% translate "Raison de la remise en brouillon" %}
             <textarea name="reason" rows="3" required></textarea>
           </label>
-          <label>Recopiez l’identifiant <code>{{ publication.hal_id }}</code>
+          <label>{% blocktranslate with hal_id=publication.hal_id %}Recopiez l'identifiant <code>{{ hal_id }}</code>{% endblocktranslate %}
             <input name="confirmed_hal_id" autocomplete="off" required>
           </label>
-          <label class="confirmation-check"><input type="checkbox" name="remote_removal_confirmed" value="yes" required> Je confirme avoir déjà supprimé cette notice dans l’interface HAL.</label>
-          <button class="danger-button" type="submit">Marquer comme supprimée de HAL</button>
+          <label class="confirmation-check"><input type="checkbox" name="remote_removal_confirmed" value="yes" required> {% translate "Je confirme avoir déjà supprimé cette notice dans l'interface HAL." %}</label>
+          <button class="danger-button" type="submit">{% translate "Marquer comme supprimée de HAL" %}</button>
         </form>
       </div>
     </details>

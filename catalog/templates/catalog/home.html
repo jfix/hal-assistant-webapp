@@ -1,49 +1,50 @@
 {% extends "base.html" %}
+{% load i18n %}
 
-{% block title %}Accueil · Assistant de publications{% endblock %}
+{% block title %}{% translate "Accueil" %} · {% translate "Assistant de publications" %}{% endblock %}
 
 {% block content %}
   <header class="dashboard-hero">
     <div>
-      <p class="eyebrow">Tableau de bord</p>
-      <h1><span data-local-greeting>Bonjour</span>, {{ user.first_name|default:user.get_username|capfirst }}</h1>
-      <p class="lede">Préparez une nouvelle publication ou reprenez les notices qui demandent encore votre attention.</p>
+      <p class="eyebrow">{% translate "Tableau de bord" %}</p>
+      <h1><span data-local-greeting data-greeting-morning="{% translate 'Bonjour' %}" data-greeting-afternoon="{% translate 'Bon après-midi' %}" data-greeting-evening="{% translate 'Bonsoir' %}">{% translate "Bonjour" %}</span>, {{ user.first_name|default:user.get_username|capfirst }}</h1>
+      <p class="lede">{% translate "Préparez une nouvelle publication ou reprenez les notices qui demandent encore votre attention." %}</p>
     </div>
     <div class="dashboard-actions">
-      <a class="primary-button dashboard-primary-action" href="{% url 'document-summary' %}">Ajouter depuis un document</a>
-      {% if perms.catalog.review_publication %}<a class="secondary-button" href="{% url 'publication-create-manual' %}">Créer manuellement</a>{% endif %}
+      <a class="primary-button dashboard-primary-action" href="{% url 'document-summary' %}">{% translate "Ajouter depuis un document" %}</a>
+      {% if perms.catalog.review_publication %}<a class="secondary-button" href="{% url 'publication-create-manual' %}">{% translate "Créer manuellement" %}</a>{% endif %}
     </div>
   </header>
 
-  <section class="dashboard-stats" aria-label="Vue d’ensemble du corpus">
-    <a class="stat-card" href="{% url 'publication-list' %}"><strong>{{ stats.total }}</strong><span>Publications</span></a>
-    <a class="stat-card" href="{% url 'publication-list' %}?workflow=draft"><strong>{{ stats.drafts }}</strong><span>Brouillons</span></a>
-    <a class="stat-card" href="{% url 'publication-list' %}?workflow=draft&amp;readiness=hal_ready"><strong>{{ stats.ready }}</strong><span>Prêts pour HAL</span></a>
-    <a class="stat-card" href="{% url 'publication-list' %}?workflow=published"><strong>{{ stats.published }}</strong><span>Publiés sur HAL</span></a>
-    <a class="stat-card" href="{% url 'publication-list' %}?workflow=modified"><strong>{{ stats.modified }}</strong><span>Modifiés localement après HAL</span></a>
+  <section class="dashboard-stats" aria-label="{% translate 'Vue d’ensemble du corpus' %}">
+    <a class="stat-card" href="{% url 'publication-list' %}"><strong>{{ stats.total }}</strong><span>{% translate "Publications" %}</span></a>
+    <a class="stat-card" href="{% url 'publication-list' %}?workflow=draft"><strong>{{ stats.drafts }}</strong><span>{% translate "Brouillons" %}</span></a>
+    <a class="stat-card" href="{% url 'publication-list' %}?workflow=draft&amp;readiness=hal_ready"><strong>{{ stats.ready }}</strong><span>{% translate "Prêts pour HAL" %}</span></a>
+    <a class="stat-card" href="{% url 'publication-list' %}?workflow=published"><strong>{{ stats.published }}</strong><span>{% translate "Publiés sur HAL" %}</span></a>
+    <a class="stat-card" href="{% url 'publication-list' %}?workflow=modified"><strong>{{ stats.modified }}</strong><span>{% translate "Modifiés localement après HAL" %}</span></a>
   </section>
 
   <section class="dashboard-section" aria-labelledby="drafts-title">
     <div class="section-heading">
       <div>
-        <p class="eyebrow">À poursuivre</p>
-        <h2 id="drafts-title">Publications en brouillon</h2>
+        <p class="eyebrow">{% translate "À poursuivre" %}</p>
+        <h2 id="drafts-title">{% translate "Publications en brouillon" %}</h2>
       </div>
-      <a href="{% url 'publication-list' %}?workflow=draft">Voir tous les brouillons</a>
+      <a href="{% url 'publication-list' %}?workflow=draft">{% translate "Voir tous les brouillons" %}</a>
     </div>
     <div class="table-wrap">
       <table class="dashboard-table">
-        <thead><tr><th>Publication</th><th>Année</th><th>Données</th><th></th></tr></thead>
+        <thead><tr><th>{% translate "Publication" %}</th><th>{% translate "Année" %}</th><th>{% translate "Données" %}</th><th></th></tr></thead>
         <tbody>
           {% for publication in drafts %}
             <tr>
               <td><a class="record-title" href="{% url 'publication-detail' publication.id %}">{{ publication.title }}</a></td>
               <td>{{ publication.publication_year|default:"—" }}</td>
-              <td>{% if publication.missing_required_fields %}{{ publication.missing_required_fields|length }} champ{{ publication.missing_required_fields|length|pluralize }} à compléter{% else %}Prêt pour HAL{% endif %}</td>
-              <td><a href="{% url 'publication-detail' publication.id %}">Continuer</a></td>
+              <td>{% if publication.missing_required_fields %}{% blocktranslate count count=publication.missing_required_fields|length %}{{ count }} champ à compléter{% plural %}{{ count }} champs à compléter{% endblocktranslate %}{% else %}{% translate "Prêt pour HAL" %}{% endif %}</td>
+              <td><a href="{% url 'publication-detail' publication.id %}">{% translate "Continuer" %}</a></td>
             </tr>
           {% empty %}
-            <tr><td colspan="4">Aucun brouillon à terminer.</td></tr>
+            <tr><td colspan="4">{% translate "Aucun brouillon à terminer." %}</td></tr>
           {% endfor %}
         </tbody>
       </table>

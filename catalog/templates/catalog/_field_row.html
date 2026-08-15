@@ -3,16 +3,17 @@ Renders one metadata field: display value + optional inline (click-to-edit) form
 Expects `field` (descriptor) plus `publication`, `can_review`, `list_fields`
 from the surrounding context.
 {% endcomment %}
+{% load i18n %}
 <div class="{% if can_review and field.editable %}editable-field{% endif %}">
   <dt>{{ field.label }}</dt>
   <dd>
     <span class="field-display">
       {% if field.kind == "doi" %}
-        <span class="editable-value">{{ field.value|default:"—" }}</span>{% if field.value %} <a class="ext" href="https://doi.org/{{ field.value }}" target="_blank" rel="noopener noreferrer" title="Ouvrir">↗</a>{% endif %}
+        <span class="editable-value">{{ field.value|default:"—" }}</span>{% if field.value %} <a class="ext" href="https://doi.org/{{ field.value }}" target="_blank" rel="noopener noreferrer" title="{% translate "Ouvrir" %}">↗</a>{% endif %}
       {% elif field.kind == "isbn" %}
         <span class="editable-value">{{ field.value|join:"; "|default:"—" }}</span>{% for isbn in field.value %} <a class="ext" href="https://search.worldcat.org/isbn/{{ isbn|urlencode }}" target="_blank" rel="noopener noreferrer" title="WorldCat">↗</a>{% endfor %}
       {% elif field.kind == "url" %}
-        <span class="editable-value">{{ field.value|default:"—" }}</span>{% if field.value %} <a class="ext" href="{{ field.value }}" target="_blank" rel="noopener noreferrer" title="Ouvrir">↗</a>{% endif %}
+        <span class="editable-value">{{ field.value|default:"—" }}</span>{% if field.value %} <a class="ext" href="{{ field.value }}" target="_blank" rel="noopener noreferrer" title="{% translate "Ouvrir" %}">↗</a>{% endif %}
       {% elif field.kind == "keywords" %}
         <span class="editable-value keyword-list" aria-label="{{ field.label }}">
           {% for keyword in field.value %}<span class="keyword-pill">{{ keyword }}</span>{% empty %}—{% endfor %}
@@ -35,20 +36,20 @@ from the surrounding context.
           <div class="keyword-editor-ui" data-keyword-editor>
             <div class="keyword-list" data-keyword-list></div>
             <div class="keyword-add-row">
-              <input type="text" autocomplete="off" aria-label="Nouveau mot-clé pour {{ field.label }}" data-keyword-input>
-              <button class="secondary-button" type="button" data-keyword-add>Ajouter</button>
+              <input type="text" autocomplete="off" aria-label="{% blocktranslate with label=field.label %}Nouveau mot-clé pour {{ label }}{% endblocktranslate %}" data-keyword-input>
+              <button class="secondary-button" type="button" data-keyword-add>{% translate "Ajouter" %}</button>
             </div>
             <div class="keyword-editor-actions">
-              <button class="primary-button" type="button" data-keyword-save>Enregistrer</button>
-              <button class="secondary-button" type="button" data-keyword-cancel>Annuler</button>
+              <button class="primary-button" type="button" data-keyword-save>{% translate "Enregistrer" %}</button>
+              <button class="secondary-button" type="button" data-keyword-cancel>{% translate "Annuler" %}</button>
             </div>
           </div>
         {% else %}
           <input type="text" name="edited_value" value="{{ field.edit_value }}" autocomplete="off" aria-label="{{ field.label }}">
         {% endif %}
-        {% if field.name in list_fields %}<span class="subtle">Une valeur par mot-clé. Sans JavaScript, séparez-les par « ; ». Une virgule reste dans le mot-clé.</span>{% endif %}
-        {% if field.kind != "keywords" %}<span class="subtle edit-hint">Entrée ou clic à l'extérieur pour enregistrer · Échap pour annuler</span>{% endif %}
-        <noscript><button class="primary-button" type="submit">Enregistrer</button></noscript>
+        {% if field.name in list_fields %}<span class="subtle">{% translate "Une valeur par mot-clé. Sans JavaScript, séparez-les par « ; ». Une virgule reste dans le mot-clé." %}</span>{% endif %}
+        {% if field.kind != "keywords" %}<span class="subtle edit-hint">{% translate "Entrée ou clic à l'extérieur pour enregistrer · Échap pour annuler" %}</span>{% endif %}
+        <noscript><button class="primary-button" type="submit">{% translate "Enregistrer" %}</button></noscript>
       </form>
     {% endif %}
   </dd>

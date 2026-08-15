@@ -1,29 +1,30 @@
 {% extends "base.html" %}
+{% load i18n %}
 
-{% block title %}Créer une publication · Assistant de publications{% endblock %}
+{% block title %}{% translate "Créer une publication" %} · {% translate "Assistant de publications" %}{% endblock %}
 
 {% block content %}
-  <nav class="breadcrumb" aria-label="Fil d’Ariane">
-    <a href="{% url 'home' %}">Accueil</a><span aria-hidden="true">/</span><span>Nouvelle publication</span>
+  <nav class="breadcrumb" aria-label="{% translate "Fil d'Ariane" %}">
+    <a href="{% url 'home' %}">{% translate "Accueil" %}</a><span aria-hidden="true">/</span><span>{% translate "Nouvelle publication" %}</span>
   </nav>
   <header class="page-heading manual-heading">
     <div>
-      <p class="eyebrow">Création manuelle</p>
-      <h1>Créer une publication</h1>
-      <p>Commencez par les informations nécessaires à une notice HAL. Vous pourrez enrichir et corriger le brouillon ensuite.</p>
+      <p class="eyebrow">{% translate "Création manuelle" %}</p>
+      <h1>{% translate "Créer une publication" %}</h1>
+      <p>{% translate "Commencez par les informations nécessaires à une notice HAL. Vous pourrez enrichir et corriger le brouillon ensuite." %}</p>
     </div>
-    <a href="{% url 'document-summary' %}">J’ai un document à importer</a>
+    <a href="{% url 'document-summary' %}">{% translate "J'ai un document à importer" %}</a>
   </header>
 
   <form method="post" class="panel manual-publication-form" data-manual-publication-form>
     {% csrf_token %}
     {% if form.non_field_errors %}<div class="alert alert-error">{{ form.non_field_errors }}</div>{% endif %}
     <fieldset>
-      <legend>Informations essentielles</legend>
+      <legend>{% translate "Informations essentielles" %}</legend>
       <div class="manual-form-grid">
         <label class="wide">{{ form.hal_document_type.label }}{{ form.hal_document_type }}{{ form.hal_document_type.errors }}</label>
         <label class="full">{{ form.title.label }}{{ form.title }}{{ form.title.errors }}</label>
-        <div class="full reference-typeahead" data-reference-widget data-search-url="{% url 'publication-reference-search' %}">
+        <div class="full reference-typeahead" data-reference-widget data-empty-label="{% translate 'Aucune référence trouvée. Vous pouvez conserver votre saisie.' %}" data-search-url="{% url 'publication-reference-search' %}">
           <label for="{{ form.authors.id_for_label }}">{{ form.authors.label }}</label>
           {{ form.authors }}
           <div id="author-reference-results" class="publication-search-results" role="listbox"></div>
@@ -37,8 +38,8 @@
     </fieldset>
 
     <fieldset data-hal-fields="ART">
-      <legend>Revue</legend>
-      <div class="reference-typeahead" data-reference-widget data-search-url="{% url 'publication-reference-search' %}">
+      <legend>{% translate "Revue" %}</legend>
+      <div class="reference-typeahead" data-reference-widget data-empty-label="{% translate 'Aucune référence trouvée. Vous pouvez conserver votre saisie.' %}" data-search-url="{% url 'publication-reference-search' %}">
         <label for="{{ form.journal_title.id_for_label }}">{{ form.journal_title.label }}</label>
         {{ form.journal_title }}
         {{ form.journal_hal_id }}
@@ -46,21 +47,21 @@
         {{ form.journal_publisher }}
         <div id="journal-reference-results" class="publication-search-results" role="listbox"></div>
       </div>
-      <p class="subtle reference-help">Recherchez dans le référentiel HAL ou saisissez librement le nom de la revue.</p>
+      <p class="subtle reference-help">{% translate "Recherchez dans le référentiel HAL ou saisissez librement le nom de la revue." %}</p>
       {{ form.journal_title.errors }}
     </fieldset>
     <fieldset data-hal-fields="COUV">
-      <legend>Ouvrage contenant le chapitre</legend>
-      <div class="reference-typeahead" data-reference-widget data-search-url="{% url 'publication-reference-search' %}">
+      <legend>{% translate "Ouvrage contenant le chapitre" %}</legend>
+      <div class="reference-typeahead" data-reference-widget data-empty-label="{% translate 'Aucune référence trouvée. Vous pouvez conserver votre saisie.' %}" data-search-url="{% url 'publication-reference-search' %}">
         <label for="{{ form.book_title.id_for_label }}">{{ form.book_title.label }}</label>
         {{ form.book_title }}
         <div id="book-reference-results" class="publication-search-results" role="listbox"></div>
       </div>
-      <p class="subtle reference-help">Recherchez parmi les ouvrages déjà cités dans HAL ou saisissez librement un titre.</p>
+      <p class="subtle reference-help">{% translate "Recherchez parmi les ouvrages déjà cités dans HAL ou saisissez librement un titre." %}</p>
       {{ form.book_title.errors }}
     </fieldset>
     <fieldset data-hal-fields="COMM">
-      <legend>Congrès</legend>
+      <legend>{% translate "Congrès" %}</legend>
       <div class="manual-form-grid">
         <label class="full">{{ form.conference_title.label }}{{ form.conference_title }}{{ form.conference_title.errors }}</label>
         <label>{{ form.conference_start_date.label }}{{ form.conference_start_date }}{{ form.conference_start_date.errors }}</label>
@@ -72,8 +73,8 @@
 
     {% if matches %}
       <section class="duplicate-review" aria-labelledby="duplicate-review-title">
-        <h2 id="duplicate-review-title">Vérifiez les notices proches</h2>
-        <p>Ces rapprochements combinent titre, auteurs, année et DOI. Ouvrez la bonne notice si elle existe déjà.</p>
+        <h2 id="duplicate-review-title">{% translate "Vérifiez les notices proches" %}</h2>
+        <p>{% translate "Ces rapprochements combinent titre, auteurs, année et DOI. Ouvrez la bonne notice si elle existe déjà." %}</p>
         {% for match in matches %}
           <article>
             <a class="record-title" href="{% url 'publication-detail' match.publication.id %}" target="_blank" rel="noopener">{{ match.publication.title }}</a>
@@ -82,15 +83,15 @@
           </article>
         {% endfor %}
         {% if duplicate_blocked %}
-          <p class="alert alert-warning">Une correspondance est trop probable pour créer une nouvelle notice. Ouvrez la notice existante ou corrigez les informations saisies.</p>
+          <p class="alert alert-warning">{% translate "Une correspondance est trop probable pour créer une nouvelle notice. Ouvrez la notice existante ou corrigez les informations saisies." %}</p>
         {% else %}
-          <button class="primary-button" type="submit" name="duplicate_reviewed" value="1">Aucune ne correspond : créer le brouillon</button>
+          <button class="primary-button" type="submit" name="duplicate_reviewed" value="1">{% translate "Aucune ne correspond : créer le brouillon" %}</button>
         {% endif %}
       </section>
     {% else %}
       <div class="manual-form-actions">
-        <button class="primary-button" type="submit">Vérifier et créer le brouillon</button>
-        <span class="subtle">Aucune donnée ne sera envoyée à HAL.</span>
+        <button class="primary-button" type="submit">{% translate "Vérifier et créer le brouillon" %}</button>
+        <span class="subtle">{% translate "Aucune donnée ne sera envoyée à HAL." %}</span>
       </div>
     {% endif %}
   </form>

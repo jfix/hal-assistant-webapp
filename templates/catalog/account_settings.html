@@ -1,40 +1,51 @@
 {% extends "base.html" %}
+{% load i18n %}
 
-{% block title %}Mon compte · Gestionnaire de publications HAL{% endblock %}
+{% block title %}{% translate "Mon compte" %} · {% translate "Gestionnaire de publications HAL" %}{% endblock %}
 
 {% block content %}
   <div class="page-heading">
     <div>
-      <p class="eyebrow">Paramètres personnels</p>
-      <h1>Mon compte</h1>
+      <p class="eyebrow">{% translate "Paramètres personnels" %}</p>
+      <h1>{% translate "Mon compte" %}</h1>
     </div>
   </div>
 
   <div class="account-settings-grid">
     <section class="panel">
-      <h2>Compte de l’application</h2>
+      <h2>{% translate "Compte de l'application" %}</h2>
       <p><strong>{{ user.get_full_name|default:user.get_username }}</strong></p>
       <p class="subtle">{{ user.email }}</p>
-      <a class="secondary-button" href="{% url 'password-change' %}">Modifier mon mot de passe</a>
-    </section>
-
-    <section class="panel pwa-install-panel">
-      <h2>Installer l’application</h2>
-      <p>Ajoutez l’assistant à votre écran d’accueil pour l’ouvrir comme une application.</p>
-      <button class="primary-button" type="button" data-install-app hidden>Installer l’application</button>
-      <details>
-        <summary>Installation manuelle</summary>
-        <p><strong>iPhone ou iPad :</strong> dans Safari, touchez Partager, puis « Sur l’écran d’accueil ».</p>
-        <p><strong>Android :</strong> ouvrez le menu du navigateur, puis choisissez « Installer l’application » ou « Ajouter à l’écran d’accueil ».</p>
-      </details>
-      <p class="subtle">Pour protéger vos données, les notices et documents ne sont pas enregistrés pour une consultation hors connexion.</p>
+      <a class="secondary-button" href="{% url 'password-change' %}">{% translate "Modifier mon mot de passe" %}</a>
     </section>
 
     <section class="panel">
-      <h2>Identifiants HAL</h2>
-      <p>Ils sont chiffrés et servent uniquement lors de vos propres envois vers HAL.</p>
+      <h2>{% translate "Langue de l'interface" %}</h2>
+      <p>{% translate "Choisissez une langue ou laissez le navigateur décider." %}</p>
+      <form method="post" class="stacked-form">
+        {% csrf_token %}
+        <label>{{ language_form.language.label }}{{ language_form.language }}<small>{{ language_form.language.help_text }}</small></label>
+        <button class="primary-button" type="submit" name="action" value="save_interface_language">{% translate "Enregistrer la langue" %}</button>
+      </form>
+    </section>
+
+    <section class="panel pwa-install-panel">
+      <h2>{% translate "Installer l'application" %}</h2>
+      <p>{% translate "Ajoutez l'assistant à votre écran d'accueil pour l'ouvrir comme une application." %}</p>
+      <button class="primary-button" type="button" data-install-app hidden>{% translate "Installer l'application" %}</button>
+      <details>
+        <summary>{% translate "Installation manuelle" %}</summary>
+        <p><strong>{% translate "iPhone ou iPad :" %}</strong> {% translate "dans Safari, touchez Partager, puis « Sur l'écran d'accueil »." %}</p>
+        <p><strong>{% translate "Android :" %}</strong> {% translate "ouvrez le menu du navigateur, puis choisissez « Installer l'application » ou « Ajouter à l'écran d'accueil »." %}</p>
+      </details>
+      <p class="subtle">{% translate "Pour protéger vos données, les notices et documents ne sont pas enregistrés pour une consultation hors connexion." %}</p>
+    </section>
+
+    <section class="panel">
+      <h2>{% translate "Identifiants HAL" %}</h2>
+      <p>{% translate "Ils sont chiffrés et servent uniquement lors de vos propres envois vers HAL." %}</p>
       {% if has_hal_credentials %}
-        <p class="credential-state">Identifiants enregistrés. Saisissez de nouveau le mot de passe pour les remplacer.</p>
+        <p class="credential-state">{% translate "Identifiants enregistrés. Saisissez de nouveau le mot de passe pour les remplacer." %}</p>
       {% endif %}
       <form method="post" class="stacked-form">
         {% csrf_token %}
@@ -42,12 +53,12 @@
         {% for field in form %}
           <label>{{ field.label }}{{ field }}{{ field.errors }}{% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}</label>
         {% endfor %}
-        <button class="primary-button" type="submit" name="action" value="save_hal_credentials">Enregistrer</button>
+        <button class="primary-button" type="submit" name="action" value="save_hal_credentials">{% translate "Enregistrer" %}</button>
       </form>
       {% if has_hal_credentials %}
         <form method="post" class="credential-delete-form">
           {% csrf_token %}
-          <button class="link-button danger-link" type="submit" name="action" value="delete_hal_credentials">Supprimer mes identifiants HAL</button>
+          <button class="link-button danger-link" type="submit" name="action" value="delete_hal_credentials">{% translate "Supprimer mes identifiants HAL" %}</button>
         </form>
       {% endif %}
     </section>

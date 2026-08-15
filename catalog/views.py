@@ -10,10 +10,11 @@ from django.db.models import Q
 from django.http import FileResponse, Http404, HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.utils.translation import gettext as _, ngettext
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_GET, require_POST
 
-from .forms import HALCredentialForm, ManualPublicationForm
+from .forms import HALCredentialForm, InterfaceLanguageForm, ManualPublicationForm
 from .integrations.hal_assistant import (
     build_submission_xml,
     hal_document_type_display,
@@ -27,6 +28,7 @@ from .models import (
     HALOperation,
     HALProductionDeposit,
     Publication,
+    UserInterfacePreference,
 )
 from .services.document_matching import (
     create_draft_from_summary,
@@ -146,11 +148,27 @@ def _field_descriptors(publication, specs):
 @login_required
 def account_settings(request: HttpRequest):
     saved_login = saved_login_for(request.user)
+    saved_language = (
+        UserInterfacePreference.objects.filter(user=request.user)
+        .values_list("language", flat=True)
+        .first()
+        or ""
+    )
+    language_form = InterfaceLanguageForm(initial={"language": saved_language})
     if request.method == "POST":
         action = request.POST.get("action")
+        if action == "save_interface_language":
+            language_form = InterfaceLanguageForm(request.POST)
+            if language_form.is_valid():
+                UserInterfacePreference.objects.update_or_create(
+                    user=request.user,
+                    defaults={"language": language_form.cleaned_data["language"]},
+                )
+                messages.success(request, _("Votre langue d’interface a été enregistrée."))
+                return redirect("account-settings")
         if action == "delete_hal_credentials":
             delete_credentials(user=request.user)
-            messages.success(request, "Vos identifiants HAL ont été supprimés.")
+            messages.success(request, _("Vos identifiants HAL ont été supprimés."))
             return redirect("account-settings")
         form = HALCredentialForm(request.POST)
         if form.is_valid():
@@ -163,14 +181,18 @@ def account_settings(request: HttpRequest):
             except (HALCredentialError, ValueError) as exc:
                 messages.error(request, str(exc))
             else:
-                messages.success(request, "Vos identifiants HAL ont été enregistrés.")
+                messages.success(request, _("Vos identifiants HAL ont été enregistrés."))
                 return redirect("account-settings")
     else:
         form = HALCredentialForm(initial={"login": saved_login})
     return render(
         request,
         "catalog/account_settings.html",
-        {"form": form, "has_hal_credentials": bool(saved_login)},
+        {
+            "form": form,
+            "language_form": language_form,
+            "has_hal_credentials": bool(saved_login),
+        },
     )
 
 
@@ -229,7 +251,7 @@ def document_summary(request: HttpRequest):
     if request.method == "POST":
         upload = request.FILES.get("document")
         if upload is None:
-            messages.error(request, "Sélectionnez un document PDF ou Word.")
+            messages.error(request, _("Sélectionnez un document PDF ou Word."))
         else:
             filename = upload.name
             try:
@@ -264,7 +286,7 @@ def delete_document_summary_cache(request: HttpRequest, cache_id):
     except ValueError as exc:
         messages.error(request, str(exc))
     else:
-        messages.success(request, "Le résultat mis en cache a été supprimé.")
+        messages.success(request, _("Le résultat mis en cache a été supprimé."))
     return redirect("document-summary")
 
 
@@ -273,9 +295,9 @@ def delete_document_summary_cache(request: HttpRequest, cache_id):
 def link_document_summary(request: HttpRequest, cache_id):
     entry = get_object_or_404(DocumentSummaryCache, id=cache_id, owner=request.user)
     if not request.user.has_perm(REVIEW_PERMISSION):
-        messages.error(request, "Vous n'avez pas le droit d’associer une notice.")
+        messages.error(request, _("Vous n'avez pas le droit d’associer une notice."))
     elif hasattr(entry, "publication_link"):
-        messages.warning(request, "Ce document est déjà associé à une notice.")
+        messages.warning(request, _("Ce document est déjà associé à une notice."))
     else:
         publication = get_object_or_404(Publication, id=request.POST.get("publication_id"))
         link_summary(
@@ -286,7 +308,7 @@ def link_document_summary(request: HttpRequest, cache_id):
         )
         messages.success(
             request,
-            "Le document, les résumés et les mots-clés sont associés à la notice.",
+            _("Le document, les résumés et les mots-clés sont associés à la notice."),
         )
     return redirect("document-summary-cache-detail", cache_id=entry.id)
 
@@ -296,9 +318,9 @@ def link_document_summary(request: HttpRequest, cache_id):
 def create_publication_from_document(request: HttpRequest, cache_id):
     entry = get_object_or_404(DocumentSummaryCache, id=cache_id, owner=request.user)
     if not request.user.has_perm(REVIEW_PERMISSION):
-        messages.error(request, "Vous n'avez pas le droit de créer un brouillon.")
+        messages.error(request, _("Vous n'avez pas le droit de créer un brouillon."))
     elif hasattr(entry, "publication_link"):
-        messages.warning(request, "Ce document est déjà associé à une notice.")
+        messages.warning(request, _("Ce document est déjà associé à une notice."))
     else:
         try:
             link = create_draft_from_summary(summary=entry, actor=request.user)
@@ -307,7 +329,7 @@ def create_publication_from_document(request: HttpRequest, cache_id):
         else:
             messages.success(
                 request,
-                "Un brouillon local a été créé. Aucune donnée n’a été envoyée à HAL.",
+                _("Un brouillon local a été créé. Aucune donnée n’a été envoyée à HAL."),
             )
             return redirect("publication-detail", publication_id=link.publication_id)
     return redirect("document-summary-cache-detail", cache_id=entry.id)
@@ -594,7 +616,7 @@ def publication_reference_search(request: HttpRequest) -> JsonResponse:
 @login_required
 def create_publication_manually(request: HttpRequest):
     if not request.user.has_perm(REVIEW_PERMISSION):
-        messages.error(request, "Vous n’avez pas le droit de créer un brouillon.")
+        messages.error(request, _("Vous n’avez pas le droit de créer un brouillon."))
         return redirect("home")
 
     form = ManualPublicationForm(request.POST or None)
@@ -616,7 +638,7 @@ def create_publication_manually(request: HttpRequest):
             else:
                 messages.success(
                     request,
-                    "Le brouillon local a été créé. Aucune donnée n’a été envoyée à HAL.",
+                    _("Le brouillon local a été créé. Aucune donnée n’a été envoyée à HAL."),
                 )
                 return redirect("publication-detail", publication_id=publication.id)
 
@@ -745,7 +767,7 @@ def reconcile_hal_removal(request: HttpRequest, publication_id):
     if not request.user.has_perm(REVIEW_PERMISSION):
         messages.error(
             request,
-            "Vous n’avez pas le droit de modifier l’état HAL de cette notice.",
+            _("Vous n’avez pas le droit de modifier l’état HAL de cette notice."),
         )
         return redirect("publication-detail", publication_id=publication.id)
     try:
@@ -761,7 +783,7 @@ def reconcile_hal_removal(request: HttpRequest, publication_id):
     else:
         messages.success(
             request,
-            "La notice a été remise en brouillon localement. L’historique HAL est conservé.",
+            _("La notice a été remise en brouillon localement. L’historique HAL est conservé."),
         )
     return redirect("publication-detail", publication_id=publication.id)
 
@@ -773,13 +795,13 @@ def generate_publication_fields_from_document(request: HttpRequest, publication_
     if not request.user.has_perm(REVIEW_PERMISSION):
         messages.error(
             request,
-            "Vous n’avez pas le droit de proposer des résumés et mots-clés.",
+            _("Vous n’avez pas le droit de proposer des résumés et mots-clés."),
         )
         return redirect("publication-detail", publication_id=publication.id)
 
     upload = request.FILES.get("document")
     if upload is None:
-        messages.error(request, "Sélectionnez un document PDF ou Word.")
+        messages.error(request, _("Sélectionnez un document PDF ou Word."))
         return redirect("publication-detail", publication_id=publication.id)
 
     try:
@@ -793,17 +815,21 @@ def generate_publication_fields_from_document(request: HttpRequest, publication_
         messages.error(request, str(exc))
     else:
         if not created:
-            messages.info(request, "Ce document a déjà été analysé pour cette notice.")
+            messages.info(request, _("Ce document a déjà été analysé pour cette notice."))
         elif assertions:
-            cache_note = " Le résultat existant a été réutilisé." if generation.cache_hit else ""
+            cache_note = _(" Le résultat existant a été réutilisé.") if generation.cache_hit else ""
             messages.success(
                 request,
-                f"{len(assertions)} proposition(s) à vérifier ont été créées.{cache_note}",
+                ngettext(
+                    "%(count)d proposition à vérifier a été créée.",
+                    "%(count)d propositions à vérifier ont été créées.",
+                    len(assertions)
+                ) % {"count": len(assertions)} + cache_note,
             )
         else:
             messages.success(
                 request,
-                "Le document est associé ; les valeurs générées sont identiques à la notice.",
+                _("Le document est associé ; les valeurs générées sont identiques à la notice."),
             )
     return redirect("publication-detail", publication_id=publication.id)
 
@@ -812,7 +838,7 @@ def generate_publication_fields_from_document(request: HttpRequest, publication_
 @require_POST
 def prepare_hal_preprod(request: HttpRequest, publication_id):
     if not request.user.has_perm(PREPROD_PERMISSION):
-        messages.error(request, "Vous n’avez pas le droit de valider dans HAL préproduction.")
+        messages.error(request, _("Vous n’avez pas le droit de valider dans HAL préproduction."))
         return redirect("publication-detail", publication_id=publication_id)
     publication = get_object_or_404(Publication, id=publication_id)
     try:
@@ -852,9 +878,9 @@ def execute_hal_preprod(request: HttpRequest, operation_id):
         HALOperation.objects.select_related("publication", "payload"), id=operation_id
     )
     if not request.user.has_perm(PREPROD_PERMISSION):
-        messages.error(request, "Vous n’avez pas le droit de valider dans HAL préproduction.")
+        messages.error(request, _("Vous n’avez pas le droit de valider dans HAL préproduction."))
     elif request.POST.get("confirmation", "").strip() != operation.publication.publication_key:
-        messages.error(request, "La confirmation ne correspond pas à l’identifiant de la notice.")
+        messages.error(request, _("La confirmation ne correspond pas à l’identifiant de la notice."))
     else:
         try:
             attempt = execute_preprod_operation(operation=operation, actor=request.user)
@@ -862,9 +888,9 @@ def execute_hal_preprod(request: HttpRequest, operation_id):
             messages.error(request, str(exc))
         else:
             if attempt.accepted:
-                messages.success(request, "HAL préproduction a accepté la notice de test.")
+                messages.success(request, _("HAL préproduction a accepté la notice de test."))
             else:
-                messages.error(request, "HAL préproduction a refusé la notice de test.")
+                messages.error(request, _("HAL préproduction a refusé la notice de test."))
     return redirect("hal-preprod-operation", operation_id=operation.id)
 
 
@@ -873,11 +899,11 @@ def execute_hal_preprod(request: HttpRequest, operation_id):
 def prepare_hal_production(request: HttpRequest, publication_id):
     publication = get_object_or_404(Publication, id=publication_id)
     if not request.user.has_perm(PRODUCTION_PERMISSION):
-        messages.error(request, "Vous n’avez pas le droit de déposer dans HAL production.")
+        messages.error(request, _("Vous n’avez pas le droit de déposer dans HAL production."))
         return redirect("publication-detail", publication_id=publication.id)
     operation = publication.hal_operations.filter(state=HALOperation.State.ACCEPTED).first()
     if operation is None:
-        messages.error(request, "Un test de préproduction accepté est requis.")
+        messages.error(request, _("Un test de préproduction accepté est requis."))
         return redirect("publication-detail", publication_id=publication.id)
     try:
         deposit = prepare_production_deposit(preprod_operation=operation, actor=request.user)
@@ -916,11 +942,11 @@ def execute_hal_production(request: HttpRequest, deposit_id):
         id=deposit_id,
     )
     if not request.user.has_perm(PRODUCTION_PERMISSION):
-        messages.error(request, "Vous n’avez pas le droit de déposer dans HAL production.")
-    elif request.POST.get("confirmation", "").strip() != "DÉPOSER SUR HAL":
-        messages.error(request, "La phrase de confirmation ne correspond pas.")
+        messages.error(request, _("Vous n’avez pas le droit de déposer dans HAL production."))
+    elif request.POST.get("confirmation", "").strip() != _("DÉPOSER SUR HAL"):
+        messages.error(request, _("La phrase de confirmation ne correspond pas."))
     elif request.POST.get("understood") != "yes":
-        messages.error(request, "Confirmez que ce dépôt créera une notice réelle dans HAL.")
+        messages.error(request, _("Confirmez que ce dépôt créera une notice réelle dans HAL."))
     else:
         try:
             attempt = execute_production_deposit(deposit=deposit, actor=request.user)
@@ -929,11 +955,11 @@ def execute_hal_production(request: HttpRequest, deposit_id):
         else:
             deposit.refresh_from_db()
             if attempt.accepted:
-                messages.success(request, "HAL a accepté le dépôt réel.")
+                messages.success(request, _("HAL a accepté le dépôt réel."))
             elif deposit.state == HALProductionDeposit.State.UNCERTAIN:
-                messages.error(request, "Résultat incertain : vérification manuelle requise.")
+                messages.error(request, _("Résultat incertain : vérification manuelle requise."))
             else:
-                messages.error(request, "HAL a refusé le dépôt réel.")
+                messages.error(request, _("HAL a refusé le dépôt réel."))
     return redirect("hal-production-deposit", deposit_id=deposit.id)
 
 
@@ -941,7 +967,7 @@ def execute_hal_production(request: HttpRequest, deposit_id):
 @require_POST
 def edit_field_view(request: HttpRequest, publication_id):
     if not request.user.has_perm(REVIEW_PERMISSION):
-        messages.error(request, "Vous n'avez pas le droit de modifier les champs.")
+        messages.error(request, _("Vous n'avez pas le droit de modifier les champs."))
         return redirect("publication-detail", publication_id=publication_id)
 
     publication = get_object_or_404(Publication, id=publication_id)
@@ -950,7 +976,7 @@ def edit_field_view(request: HttpRequest, publication_id):
     except ValueError:
         messages.error(
             request,
-            "Jeton de version manquant ou invalide ; rechargez la page et réessayez.",
+            _("Jeton de version manquant ou invalide ; rechargez la page et réessayez."),
         )
         return redirect("publication-detail", publication_id=publication_id)
 
@@ -976,7 +1002,7 @@ def edit_field_view(request: HttpRequest, publication_id):
 @require_POST
 def decide_assertion_view(request: HttpRequest, publication_id, assertion_id):
     if not request.user.has_perm(REVIEW_PERMISSION):
-        messages.error(request, "Vous n'avez pas le droit de réviser les modifications.")
+        messages.error(request, _("Vous n'avez pas le droit de réviser les modifications."))
         return redirect("publication-detail", publication_id=publication_id)
 
     assertion = get_object_or_404(
@@ -989,7 +1015,7 @@ def decide_assertion_view(request: HttpRequest, publication_id, assertion_id):
     except ValueError:
         messages.error(
             request,
-            "Jeton de version manquant ou invalide ; rechargez la page et réessayez.",
+            _("Jeton de version manquant ou invalide ; rechargez la page et réessayez."),
         )
         return redirect("publication-detail", publication_id=publication_id)
 
@@ -1012,7 +1038,7 @@ def decide_assertion_view(request: HttpRequest, publication_id, assertion_id):
     else:
         messages.success(
             request,
-            f"Champ « {decision.field_path} » — {decision.get_outcome_display()}.",
+            _("Champ « %(field_path)s » — %(outcome)s.") % {"field_path": decision.field_path, "outcome": decision.get_outcome_display()},
         )
     return redirect("publication-detail", publication_id=publication_id)
 

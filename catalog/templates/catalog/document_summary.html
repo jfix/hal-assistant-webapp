@@ -1,52 +1,53 @@
 {% extends "base.html" %}
+{% load i18n %}
 
-{% block title %}Résumés bilingues · Assistant de publications{% endblock %}
+{% block title %}{% translate "Résumés bilingues" %} · {% translate "Assistant de publications" %}{% endblock %}
 
 {% block content %}
   <header class="summary-heading">
-    <p class="eyebrow">Résumé académique bilingue</p>
-    <h1>Du document aux mots justes.</h1>
-    <p class="lede">Déposez un article PDF ou Word. L’assistant produit un résumé en français, un abstract en anglais et jusqu’à dix mots-clés dans chaque langue.</p>
-    {% if perms.catalog.review_publication %}<p class="subtle">Vous n’avez pas de document ? <a href="{% url 'publication-create-manual' %}">Créez une publication manuellement.</a></p>{% endif %}
+    <p class="eyebrow">{% translate "Résumé académique bilingue" %}</p>
+    <h1>{% translate "Du document aux mots justes." %}</h1>
+    <p class="lede">{% translate "Déposez un article PDF ou Word. L'assistant produit un résumé en français, un abstract en anglais et jusqu'à dix mots-clés dans chaque langue." %}</p>
+    {% if perms.catalog.review_publication %}<p class="subtle">{% translate "Vous n'avez pas de document ?" %} <a href="{% url 'publication-create-manual' %}">{% translate "Créez une publication manuellement." %}</a></p>{% endif %}
   </header>
 
   <form class="upload-panel" method="post" enctype="multipart/form-data" data-upload-form>
     {% csrf_token %}
     <label class="drop-zone" data-drop-zone>
       <span class="drop-icon" aria-hidden="true">⇧</span>
-      <strong data-file-label>Glissez votre document ici</strong>
-      <span>ou cliquez pour choisir un fichier · PDF ou DOCX · 20 Mo maximum</span>
+      <strong data-file-label>{% translate "Glissez votre document ici" %}</strong>
+      <span>{% translate "ou cliquez pour choisir un fichier · PDF ou DOCX · 20 Mo maximum" %}</span>
       <input name="document" type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" required data-file-input>
     </label>
-    <div class="privacy-note"><span aria-hidden="true">◉</span> Le fichier est conservé avec l’analyse afin de pouvoir l’associer à une notice. Il reste privé et soumis à la même durée de conservation que le résultat.</div>
-    <button class="primary-button generate-button" type="submit" data-submit>Créer les résumés</button>
+    <div class="privacy-note"><span aria-hidden="true">◉</span> {% translate "Le fichier est conservé avec l'analyse afin de pouvoir l'associer à une notice. Il reste privé et soumis à la même durée de conservation que le résultat." %}</div>
+    <button class="primary-button generate-button" type="submit" data-submit data-loading-label="{% translate 'Analyse en cours…' %}">{% translate "Créer les résumés" %}</button>
   </form>
 
   {% if result %}
     <section class="results" aria-labelledby="results-title">
       <div class="results-heading">
         <div>
-          <p class="eyebrow">Document traité</p>
+          <p class="eyebrow">{% translate "Document traité" %}</p>
           <h2 id="results-title">{{ filename }}</h2>
-          {% if cache_hit %}<span class="badge badge-hal_ready">Résultat mis en cache · aucun appel API</span>{% endif %}
+          {% if cache_hit %}<span class="badge badge-hal_ready">{% translate "Résultat mis en cache · aucun appel API" %}</span>{% endif %}
         </div>
-        <a href="{% url 'document-summary' %}">Nouveau document</a>
+        <a href="{% url 'document-summary' %}">{% translate "Nouveau document" %}</a>
       </div>
       <div class="result-grid">
         <article class="result-card">
-          <div class="card-heading"><h3>Résumé français</h3><button type="button" class="copy-button" data-copy-target="abstract-fr">Copier</button></div>
+          <div class="card-heading"><h3>{% translate "Résumé français" %}</h3><button type="button" class="copy-button" data-copy-target="abstract-fr">{% translate "Copier" %}</button></div>
           <textarea id="abstract-fr" readonly>{{ result.abstract_fr }}</textarea>
         </article>
         <article class="result-card">
-          <div class="card-heading"><h3>English abstract</h3><button type="button" class="copy-button" data-copy-target="abstract-en">Copy</button></div>
+          <div class="card-heading"><h3>{% translate "English abstract" %}</h3><button type="button" class="copy-button" data-copy-target="abstract-en">{% translate "Copy" %}</button></div>
           <textarea id="abstract-en" readonly>{{ result.abstract_en }}</textarea>
         </article>
         <article class="result-card">
-          <div class="card-heading"><h3>Mots-clés français</h3><button type="button" class="copy-button" data-copy-target="keywords-fr">Copier</button></div>
+          <div class="card-heading"><h3>{% translate "Mots-clés français" %}</h3><button type="button" class="copy-button" data-copy-target="keywords-fr">{% translate "Copier" %}</button></div>
           <textarea id="keywords-fr" class="keyword-output" readonly>{{ result.keywords_fr|join:", " }}</textarea>
         </article>
         <article class="result-card">
-          <div class="card-heading"><h3>English keywords</h3><button type="button" class="copy-button" data-copy-target="keywords-en">Copy</button></div>
+          <div class="card-heading"><h3>{% translate "English keywords" %}</h3><button type="button" class="copy-button" data-copy-target="keywords-en">{% translate "Copy" %}</button></div>
           <textarea id="keywords-en" class="keyword-output" readonly>{{ result.keywords_en|join:", " }}</textarea>
         </article>
       </div>
@@ -57,13 +58,13 @@
   {% if cache_entries %}
     <section class="cache-history" aria-labelledby="cache-history-title">
       <div>
-        <p class="eyebrow">Données conservées</p>
-        <h2 id="cache-history-title">Mes résultats en cache</h2>
-        <p class="subtle">Les résultats sont supprimés automatiquement après {{ cache_retention_days }} jours.</p>
+        <p class="eyebrow">{% translate "Données conservées" %}</p>
+        <h2 id="cache-history-title">{% translate "Mes résultats en cache" %}</h2>
+        <p class="subtle">{% blocktranslate with days=cache_retention_days %}Les résultats sont supprimés automatiquement après {{ days }} jours.{% endblocktranslate %}</p>
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Document</th><th>Création</th><th>Modèle</th><th></th></tr></thead>
+          <thead><tr><th>{% translate "Document" %}</th><th>{% translate "Création" %}</th><th>{% translate "Modèle" %}</th><th></th></tr></thead>
           <tbody>
             {% for entry in cache_entries %}
               <tr>
@@ -76,7 +77,7 @@
                 <td>
                   <form method="post" action="{% url 'document-summary-cache-delete' entry.id %}">
                     {% csrf_token %}
-                    <button class="link-button danger-link" type="submit">Supprimer</button>
+                    <button class="link-button danger-link" type="submit">{% translate "Supprimer" %}</button>
                   </form>
                 </td>
               </tr>

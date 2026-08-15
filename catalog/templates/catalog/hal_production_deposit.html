@@ -1,38 +1,39 @@
 {% extends "base.html" %}
+{% load i18n %}
 
-{% block title %}Dépôt HAL · {{ publication.title }}{% endblock %}
+{% block title %}{% translate "Dépôt HAL" %} · {{ publication.title }}{% endblock %}
 
 {% block content %}
-  <nav class="breadcrumb" aria-label="Fil d'Ariane"><a href="{% url 'publication-detail' publication.id %}">Notice</a><span>/</span><span>Dépôt HAL</span></nav>
-  <header class="detail-heading"><div><p class="eyebrow">HAL production · dépôt réel</p><h1>Déposer cette notice sur HAL</h1><p class="subtle">{{ publication.title }}</p></div><span class="badge">{{ deposit.get_state_display }}</span></header>
+  <nav class="breadcrumb" aria-label="{% translate "Fil d'Ariane" %}"><a href="{% url 'publication-detail' publication.id %}">{% translate "Notice" %}</a><span>/</span><span>{% translate "Dépôt HAL" %}</span></nav>
+  <header class="detail-heading"><div><p class="eyebrow">{% translate "HAL production · dépôt réel" %}</p><h1>{% translate "Déposer cette notice sur HAL" %}</h1><p class="subtle">{{ publication.title }}</p></div><span class="badge">{{ deposit.get_state_display }}</span></header>
 
-  <p class="alert alert-warning" role="alert"><strong>Cette action est réelle.</strong> Contrairement au test précédent, elle transmettra la notice à HAL production et pourra créer un nouvel identifiant HAL.</p>
+  <p class="alert alert-warning" role="alert"><strong>{% translate "Cette action est réelle." %}</strong> {% translate "Contrairement au test précédent, elle transmettra la notice à HAL production et pourra créer un nouvel identifiant HAL." %}</p>
   <section class="panel">
-    <h2>Contrôles effectués</h2>
+    <h2>{% translate "Contrôles effectués" %}</h2>
     <dl class="metadata">
-      <div><dt>Préproduction</dt><dd>Acceptée</dd></div>
-      <div><dt>Version de la notice</dt><dd>{{ deposit.publication_version }}</dd></div>
-      <div><dt>XML testé et figé</dt><dd><code>{{ deposit.payload_sha256 }}</code></dd></div>
-      <div><dt>Doublons</dt><dd>Contrôle multi-champs relancé · {{ deposit.duplicate_check.candidates|length }} candidat{{ deposit.duplicate_check.candidates|length|pluralize }}</dd></div>
-      <div><dt>Compte demandeur</dt><dd>{{ deposit.requested_by.get_username }}</dd></div>
+      <div><dt>{% translate "Préproduction" %}</dt><dd>{% translate "Acceptée" %}</dd></div>
+      <div><dt>{% translate "Version de la notice" %}</dt><dd>{{ deposit.publication_version }}</dd></div>
+      <div><dt>{% translate "XML testé et figé" %}</dt><dd><code>{{ deposit.payload_sha256 }}</code></dd></div>
+      <div><dt>{% translate "Doublons" %}</dt><dd>{% blocktranslate with count=deposit.duplicate_check.candidates|length %}Contrôle multi-champs relancé · {{ count }} candidat{% plural %}Contrôle multi-champs relancé · {{ count }} candidats{% endblocktranslate %}</dd></div>
+      <div><dt>{% translate "Compte demandeur" %}</dt><dd>{{ deposit.requested_by.get_username }}</dd></div>
     </dl>
   </section>
 
   {% if deposit.state == "prepared" and can_submit_production %}
     <section class="panel production-confirmation">
-      <h2>Confirmation finale</h2>
+      <h2>{% translate "Confirmation finale" %}</h2>
       <form class="stack" method="post" action="{% url 'hal-production-execute' deposit.id %}">
         {% csrf_token %}
-        <label class="confirmation-check"><input type="checkbox" name="understood" value="yes" required> Je comprends que cette action crée un dépôt réel dans HAL.</label>
-        <label>Recopiez exactement <code>DÉPOSER SUR HAL</code>
+        <label class="confirmation-check"><input type="checkbox" name="understood" value="yes" required> {% translate "Je comprends que cette action crée un dépôt réel dans HAL." %}</label>
+        <label>{% blocktranslate %}Recopiez exactement <code>DÉPOSER SUR HAL</code>{% endblocktranslate %}
           <input name="confirmation" autocomplete="off" required>
         </label>
-        <button class="primary-button" type="submit">Déposer maintenant sur HAL</button>
+        <button class="primary-button" type="submit">{% translate "Déposer maintenant sur HAL" %}</button>
       </form>
     </section>
   {% endif %}
 
   {% if deposit.attempt %}
-    <section class="panel"><h2>Reçu de production</h2><p><strong>{% if deposit.attempt.accepted %}Dépôt accepté{% else %}Dépôt non confirmé{% endif %}</strong> · HTTP {{ deposit.attempt.status_code|default:"—" }}</p>{% if deposit.attempt.returned_hal_id %}<p>Identifiant : {% if deposit.attempt.returned_hal_url %}<a href="{{ deposit.attempt.returned_hal_url }}" target="_blank" rel="noopener noreferrer">{{ deposit.attempt.returned_hal_id }}</a>{% else %}{{ deposit.attempt.returned_hal_id }}{% endif %}</p>{% endif %}{% if deposit.attempt.error %}<p class="alert">{{ deposit.attempt.error }}</p>{% endif %}</section>
+    <section class="panel"><h2>{% translate "Reçu de production" %}</h2><p><strong>{% if deposit.attempt.accepted %}{% translate "Dépôt accepté" %}{% else %}{% translate "Dépôt non confirmé" %}{% endif %}</strong> · HTTP {{ deposit.attempt.status_code|default:"—" }}</p>{% if deposit.attempt.returned_hal_id %}<p>{% translate "Identifiant :" %} {% if deposit.attempt.returned_hal_url %}<a href="{{ deposit.attempt.returned_hal_url }}" target="_blank" rel="noopener noreferrer">{{ deposit.attempt.returned_hal_id }}</a>{% else %}{{ deposit.attempt.returned_hal_id }}{% endif %}</p>{% endif %}{% if deposit.attempt.error %}<p class="alert">{{ deposit.attempt.error }}</p>{% endif %}</section>
   {% endif %}
 {% endblock %}

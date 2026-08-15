@@ -10,11 +10,11 @@
   if (greeting) {
     var localHour = new Date().getHours();
     if (localHour >= 5 && localHour < 12) {
-      greeting.textContent = "Bonjour";
+      greeting.textContent = greeting.getAttribute("data-greeting-morning") || "Bonjour";
     } else if (localHour >= 12 && localHour < 18) {
-      greeting.textContent = "Bon après-midi";
+      greeting.textContent = greeting.getAttribute("data-greeting-afternoon") || "Bon après-midi";
     } else {
-      greeting.textContent = "Bonsoir";
+      greeting.textContent = greeting.getAttribute("data-greeting-evening") || "Bonsoir";
     }
   }
 
@@ -226,14 +226,14 @@
     function clearSelection() {
       idInput.value = "";
       submit.disabled = true;
-      selected.textContent = "Aucune notice sélectionnée.";
+      selected.textContent = selected.getAttribute("data-empty-label") || "Aucune notice sélectionnée.";
     }
 
     function choose(item) {
       idInput.value = item.id;
       submit.disabled = false;
       input.value = item.title;
-      selected.textContent = "Notice sélectionnée : " + item.title;
+      selected.textContent = (selected.getAttribute("data-selected-label") || "Notice sélectionnée :") + " " + item.title;
       closeResults();
       submit.focus();
     }
@@ -272,7 +272,7 @@
         if (!payload.results.length) {
           var empty = document.createElement("p");
           empty.className = "subtle";
-          empty.textContent = "Aucune notice trouvée.";
+          empty.textContent = results.getAttribute("data-empty-label") || "Aucune notice trouvée.";
           results.append(empty);
         }
         input.setAttribute("aria-expanded", "true");
@@ -404,7 +404,7 @@
         if (!payload.results.length) {
           var empty = document.createElement("p");
           empty.className = "subtle";
-          empty.textContent = "Aucune référence trouvée. Vous pouvez conserver votre saisie.";
+          empty.textContent = widget.getAttribute("data-empty-label") || "Aucune référence trouvée. Vous pouvez conserver votre saisie.";
           results.append(empty);
         }
         input.setAttribute("aria-expanded", "true");
@@ -447,7 +447,7 @@
     uploadForm.addEventListener("submit", function () {
       var submit = uploadForm.querySelector("[data-submit]");
       submit.disabled = true;
-      submit.textContent = "Analyse en cours…";
+      submit.textContent = submit.getAttribute("data-loading-label") || "Analyse en cours…";
     });
   }
 })();

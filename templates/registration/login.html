@@ -1,26 +1,27 @@
 {% extends "base.html" %}
+{% load i18n %}
 
-{% block title %}Connexion · Gestionnaire de publications HAL{% endblock %}
+{% block title %}{% translate "Connexion" %} · {% translate "Gestionnaire de publications HAL" %}{% endblock %}
 
 {% block content %}
   <section class="login-panel">
-    <p class="eyebrow">Accès réservé aux réviseurs</p>
-    <h1>Connexion</h1>
+    <p class="eyebrow">{% translate "Accès réservé aux réviseurs" %}</p>
+    <h1>{% translate "Connexion" %}</h1>
     {% if form.errors %}
-      <div class="alert" role="alert">Identifiant ou mot de passe non reconnu.</div>
+      <div class="alert" role="alert">{% translate "Identifiant ou mot de passe non reconnu." %}</div>
     {% endif %}
     <form method="post" class="stack">
       {% csrf_token %}
       <label>
-        Identifiant
+        {% translate "Identifiant" %}
         {{ form.username }}
       </label>
       <label>
-        Mot de passe
+        {% translate "Mot de passe" %}
         {{ form.password }}
       </label>
       {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
-      <button class="primary-button" type="submit">Se connecter</button>
+      <button class="primary-button" type="submit">{% translate "Se connecter" %}</button>
     </form>
   </section>
 {% endblock %}

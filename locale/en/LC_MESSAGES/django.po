@@ -1,0 +1,978 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: HAL Publication Manager\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Identifiant HAL"
+msgstr "HAL username"
+
+msgid "Mot de passe HAL"
+msgstr "HAL password"
+
+msgid "Le mot de passe enregistré n’est jamais affiché."
+msgstr "The saved password is never displayed."
+
+msgid "Langue de l’interface"
+msgstr "Interface language"
+
+msgid "Automatique — langue du navigateur"
+msgstr "Automatic — browser language"
+
+msgid "Français"
+msgstr "French"
+
+msgid "Le français est utilisé si la langue du navigateur n’est pas prise en charge."
+msgstr "French is used if your browser language is not supported."
+
+msgid "Gestionnaire de publications HAL"
+msgstr "HAL Publication Manager"
+
+msgid "Assistant de publications HAL"
+msgstr "HAL Publication Assistant"
+
+msgid "Publications HAL"
+msgstr "HAL Publications"
+
+msgid "Aller au contenu"
+msgstr "Skip to content"
+
+msgid "Assistant de publications"
+msgstr "Publication Assistant"
+
+msgid "Navigation principale"
+msgstr "Main navigation"
+
+msgid "Accueil"
+msgstr "Home"
+
+msgid "Ajouter une publication"
+msgstr "Add a publication"
+
+msgid "Liste des publications"
+msgstr "Publication list"
+
+msgid "Administration"
+msgstr "Administration"
+
+msgid "Se déconnecter"
+msgstr "Sign out"
+
+msgid "Mon compte"
+msgstr "My account"
+
+msgid "Paramètres personnels"
+msgstr "Personal settings"
+
+msgid "Compte de l'application"
+msgstr "Application account"
+
+msgid "Modifier mon mot de passe"
+msgstr "Change my password"
+
+msgid "Connexion"
+msgstr "Login"
+
+msgid "Identifiant"
+msgstr "Username"
+
+msgid "Mot de passe"
+msgstr "Password"
+
+msgid "Se connecter"
+msgstr "Sign in"
+
+msgid "Accès réservé aux réviseurs"
+msgstr "Access restricted to reviewers"
+
+msgid "Identifiant ou mot de passe non reconnu."
+msgstr "Username or password not recognized."
+
+msgid "Choisissez une langue ou laissez le navigateur décider."
+msgstr "Choose a language or let your browser decide."
+
+msgid "Enregistrer la langue"
+msgstr "Save language"
+
+msgid "Installer l'application"
+msgstr "Install the app"
+
+msgid "Ajoutez l’assistant à votre écran d’accueil pour l’ouvrir comme une application."
+msgstr "Add the assistant to your home screen to open it like an app."
+
+msgid "Installation manuelle"
+msgstr "Manual installation"
+
+msgid "iPhone ou iPad :"
+msgstr "iPhone or iPad:"
+
+msgid "dans Safari, touchez Partager, puis « Sur l'écran d'accueil »."
+msgstr "in Safari, tap Share, then “Add to Home Screen”."
+
+msgid "Android :"
+msgstr "Android:"
+
+msgid "ouvrez le menu du navigateur, puis choisissez « Installer l'application » ou « Ajouter à l'écran d'accueil »."
+msgstr "open the browser menu, then choose “Install app” or “Add to home screen”."
+
+msgid "Pour protéger vos données, les notices et documents ne sont pas enregistrés pour une consultation hors connexion."
+msgstr "To protect your data, records and documents are not saved for offline viewing."
+
+msgid "Identifiants HAL"
+msgstr "HAL credentials"
+
+msgid "Ils sont chiffrés et servent uniquement lors de vos propres envois vers HAL."
+msgstr "They are encrypted and used only for your own submissions to HAL."
+
+msgid "Identifiants enregistrés. Saisissez de nouveau le mot de passe pour les remplacer."
+msgstr "Credentials saved. Enter the password again to replace them."
+
+msgid "Enregistrer"
+msgstr "Save"
+
+msgid "Supprimer mes identifiants HAL"
+msgstr "Delete my HAL credentials"
+
+msgid "Configurer mes identifiants HAL"
+msgstr "Configure my HAL credentials"
+
+msgid "Tableau de bord"
+msgstr "Dashboard"
+
+msgid "Bonjour"
+msgstr "Good morning"
+
+msgid "Bon après-midi"
+msgstr "Good afternoon"
+
+msgid "Bonsoir"
+msgstr "Good evening"
+
+msgid "Préparez une nouvelle publication ou reprenez les notices qui demandent encore votre attention."
+msgstr "Prepare a new publication or resume any records that still need your attention."
+
+msgid "Brouillons"
+msgstr "Drafts"
+
+msgid "Aucun brouillon à terminer."
+msgstr "No draft to complete."
+
+msgid "Voir tous les brouillons"
+msgstr "View all drafts"
+
+msgid "Vue d’ensemble du corpus"
+msgstr "Corpus overview"
+
+msgid "Corpus révisé"
+msgstr "Reviewed corpus"
+
+msgid "Publications en brouillon"
+msgstr "Draft publications"
+
+msgid "Publiés sur HAL"
+msgstr "Published on HAL"
+
+msgid "Prêts pour HAL"
+msgstr "Ready for HAL"
+
+msgid "Modifiés localement après HAL"
+msgstr "Modified locally after HAL"
+
+msgid "Données"
+msgstr "Data"
+
+msgid "À poursuivre"
+msgstr "To continue"
+
+msgid "À venir"
+msgstr "Coming soon"
+
+msgid "À vous de jouer"
+msgstr "Over to you"
+
+msgid "Étape accomplie"
+msgstr "Step completed"
+
+msgid "%(count)s champ à compléter"
+msgid_plural "%(count)s champs à compléter"
+msgstr[0] "%(count)s field to complete"
+msgstr[1] "%(count)s fields to complete"
+
+msgid "Filtrer"
+msgstr "Filter"
+
+msgid "Réinitialiser"
+msgstr "Reset"
+
+msgid "Recherche"
+msgstr "Search"
+
+msgid "Titre, identifiant de publication, identifiant HAL ou auteur"
+msgstr "Title, publication ID, HAL ID or author"
+
+msgid "Type"
+msgstr "Type"
+
+msgid "Année"
+msgstr "Year"
+
+msgid "État"
+msgstr "Status"
+
+msgid "État de préparation"
+msgstr "Preparation status"
+
+msgid "État HAL"
+msgstr "HAL status"
+
+msgid "État du dépôt"
+msgstr "Deposit status"
+
+msgid "Trier par état HAL, puis par état de préparation"
+msgstr "Sort by HAL status, then by preparation status"
+
+msgid "Exporter (XLSX)"
+msgstr "Export (XLSX)"
+
+msgid "Publication"
+msgstr "Publication"
+
+msgid "Mots-clés français"
+msgstr "French keywords"
+
+msgid "Résumé français"
+msgstr "French abstract"
+
+msgid "Mots-clés anglais"
+msgstr "English keywords"
+
+msgid "Résumé anglais"
+msgstr "English abstract"
+
+msgid "Au moins un résumé"
+msgstr "At least one abstract"
+
+msgid "Au moins une langue de mots-clés"
+msgstr "At least one keyword language"
+
+msgid "Contenu manquant"
+msgstr "Missing content"
+
+msgid "Champ HAL manquant"
+msgstr "Missing HAL field"
+
+msgid "Aucune publication ne correspond à ces filtres."
+msgstr "No publication matches these filters."
+
+msgid "Précédent"
+msgstr "Previous"
+
+msgid "Suivant"
+msgstr "Next"
+
+msgid "Tous"
+msgstr "All"
+
+msgid "Pages de publications"
+msgstr "Publication pages"
+
+msgid "notice"
+msgid_plural "notices"
+msgstr[0] "record"
+msgstr[1] "records"
+
+msgid "Statuts de %(title)s"
+msgstr "Statuses of %(title)s"
+
+msgid "Page %(num)s sur %(total)s"
+msgstr "Page %(num)s of %(total)s"
+
+msgid "Notice"
+msgstr "Record"
+
+msgid "Parcours vers HAL"
+msgstr "Path to HAL"
+
+msgid "Du brouillon au dépôt"
+msgstr "From draft to deposit"
+
+msgid "Préparation"
+msgstr "Preparation"
+
+msgid "Compléter les métadonnées"
+msgstr "Complete the metadata"
+
+msgid "Prêt pour HAL"
+msgstr "Ready for HAL"
+
+msgid "Dépôt HAL"
+msgstr "HAL deposit"
+
+msgid "Déposer cette notice sur HAL"
+msgstr "Deposit this record on HAL"
+
+msgid "Validation HAL préproduction"
+msgstr "HAL pre-production validation"
+
+msgid "Validation avant dépôt"
+msgstr "Pre-deposit validation"
+
+msgid "Consulter le dernier test HAL"
+msgstr "View latest HAL test"
+
+msgid "Préparer le dépôt réel"
+msgstr "Prepare the actual deposit"
+
+msgid "Objectif atteint"
+msgstr "Goal achieved"
+
+msgid "Hors application"
+msgstr "Outside the app"
+
+msgid "Version"
+msgstr "Version"
+
+msgid "Date"
+msgstr "Date"
+
+msgid "Origine"
+msgstr "Origin"
+
+msgid "Source"
+msgstr "Source"
+
+msgid "Action nécessaire"
+msgstr "Action required"
+
+msgid "Statuts de la publication"
+msgstr "Publication statuses"
+
+msgid "Métadonnées structurées"
+msgstr "Structured metadata"
+
+msgid "Informations essentielles"
+msgstr "Essential information"
+
+msgid "Commencez par les informations nécessaires à une notice HAL. Vous pourrez enrichir et corriger le brouillon ensuite."
+msgstr "Start with the information needed for a HAL record. You can enrich and correct the draft later."
+
+msgid "Compléter depuis votre article"
+msgstr "Complete from your article"
+
+msgid "J'ai un document à importer"
+msgstr "I have a document to import"
+
+msgid "Vous n'avez pas de document ?"
+msgstr "Don't have a document?"
+
+msgid "Ajouter depuis un document"
+msgstr "Add from a document"
+
+msgid "Créer manuellement"
+msgstr "Create manually"
+
+msgid "Générer depuis un document"
+msgstr "Generate from a document"
+
+msgid "Importez un PDF ou un document Word pour proposer les résumés et mots-clés manquants."
+msgstr "Import a PDF or Word document to suggest missing abstracts and keywords."
+
+msgid "Analyser et comparer"
+msgstr "Analyse and compare"
+
+msgid "Générer et comparer"
+msgstr "Generate and compare"
+
+msgid "Ces valeurs font partie de la notice et seront utilisées lors de la préparation du dépôt HAL."
+msgstr "These values are part of the record and will be used when preparing the HAL deposit."
+
+msgid "Analyses de documents associées"
+msgstr "Associated document analyses"
+
+msgid "Informations sur le traitement et l'association des documents ; elles ne modifient pas automatiquement les métadonnées de la notice."
+msgstr "Information about document processing and association; they do not automatically update the record’s metadata."
+
+msgid "Mes résultats en cache"
+msgstr "My cached results"
+
+msgid "Ouvrir le résultat en cache"
+msgstr "Open cached result"
+
+msgid "Assertions de champs"
+msgstr "Field assertions"
+
+msgid "Aucune assertion enregistrée."
+msgstr "No assertion recorded."
+
+msgid "Champ"
+msgstr "Field"
+
+msgid "Valeur"
+msgstr "Value"
+
+msgid "Décision"
+msgstr "Decision"
+
+msgid "Réviseur"
+msgstr "Reviewer"
+
+msgid "Modifications proposées"
+msgstr "Proposed changes"
+
+msgid "Aucune décision de révision enregistrée pour l'instant."
+msgstr "No review decision recorded yet."
+
+msgid "Vous pouvez consulter les modifications proposées mais n'avez pas le droit de les accepter ou de les rejeter."
+msgstr "You can view the proposed changes but are not authorised to accept or reject them."
+
+msgid "Valeur proposée"
+msgstr "Proposed value"
+
+msgid "Valeur actuelle"
+msgstr "Current value"
+
+msgid "Valeur appliquée"
+msgstr "Applied value"
+
+msgid "Accepter la proposition"
+msgstr "Accept the proposal"
+
+msgid "Rejeter"
+msgstr "Reject"
+
+msgid "Refusée"
+msgstr "Rejected"
+
+msgid "Acceptée"
+msgstr "Accepted"
+
+msgid "Appliquer cette valeur"
+msgstr "Apply this value"
+
+msgid "Ou appliquer une autre valeur"
+msgstr "Or apply a different value"
+
+msgid "Voir dans l'historique"
+msgstr "View in history"
+
+msgid "Détails des décisions éditoriales"
+msgstr "Editorial decision details"
+
+msgid "Historique et traçabilité"
+msgstr "History and audit trail"
+
+msgid "Aucun événement enregistré pour cette notice."
+msgstr "No event recorded for this record."
+
+msgid "Ancien dépôt HAL"
+msgstr "Previous HAL deposit"
+
+msgid "Aucune source immuable n'est associée."
+msgstr "No immutable source associated."
+
+msgid "Données conservées"
+msgstr "Preserved data"
+
+msgid "Sources d'origine"
+msgstr "Original sources"
+
+msgid "Les charges utiles figées, tentatives et réponses techniques sont conservées séparément."
+msgstr "Frozen payloads, attempts, and technical responses are stored separately."
+
+msgid "Charge utile immuable"
+msgstr "Immutable payload"
+
+msgid "Tentatives immuables"
+msgstr "Immutable attempts"
+
+msgid "Ouvrir la notice HAL"
+msgstr "Open HAL record"
+
+msgid "Ouvrir le document original"
+msgstr "Open original document"
+
+msgid "Gestion exceptionnelle de la présence sur HAL"
+msgstr "Exceptional management of HAL presence"
+
+msgid "Marquer comme supprimée de HAL"
+msgstr "Mark as removed from HAL"
+
+msgid "Je confirme avoir déjà supprimé cette notice dans l'interface HAL."
+msgstr "I confirm I have already removed this record from the HAL interface."
+
+msgid "Raison de la remise en brouillon"
+msgstr "Reason for reverting to draft"
+
+msgid "Motif (facultatif)"
+msgstr "Reason (optional)"
+
+msgid "Elle sert uniquement à remettre notre notice en brouillon après une suppression déjà effectuée dans l'interface HAL."
+msgstr "This is used only to revert the record to draft after a deletion already performed in the HAL interface."
+
+msgid "Cette action ne supprime rien dans HAL."
+msgstr "This action deletes nothing in HAL."
+
+msgid "%(completed)s étape%(completed|pluralize)s sur %(total)s"
+msgstr "Step %(completed)s of %(total)s"
+
+msgid "%(count)s en attente"
+msgid_plural "%(count)s en attente"
+msgstr[0] "%(count)s pending"
+msgstr[1] "%(count)s pending"
+
+msgid "issu de %(source)s"
+msgstr "from %(source)s"
+
+msgid "Par %(actor)s"
+msgstr "By %(actor)s"
+
+msgid "Recopiez l’identifiant <code>%(hal_id)s</code>"
+msgstr "Type the identifier <code>%(hal_id)s</code>"
+
+msgid "Résumé académique bilingue"
+msgstr "Bilingual academic abstract"
+
+msgid "Déposez un article PDF ou Word. L'assistant produit un résumé en français, un abstract en anglais et jusqu'à dix mots-clés dans chaque langue."
+msgstr "Upload a PDF or Word article. The assistant produces a French abstract, an English abstract, and up to ten keywords in each language."
+
+msgid "Glissez votre document ici"
+msgstr "Drag your document here"
+
+msgid "ou cliquez pour choisir un fichier · PDF ou DOCX · 20 Mo maximum"
+msgstr "or click to choose a file · PDF or DOCX · 20 MB maximum"
+
+msgid "Créer les résumés"
+msgstr "Create abstracts"
+
+msgid "Le fichier est conservé avec l'analyse afin de pouvoir l'associer à une notice. Il reste privé et soumis à la même durée de conservation que le résultat."
+msgstr "The file is kept with the analysis so it can be linked to a record. It remains private and subject to the same retention period as the result."
+
+msgid "Résumés"
+msgstr "Abstracts"
+
+msgid "Résultats en cache"
+msgstr "Cached results"
+
+msgid "Créé le"
+msgstr "Created on"
+
+msgid "Document traité"
+msgstr "Processed document"
+
+msgid "Nouveau document"
+msgstr "New document"
+
+msgid "Analyse en cours…"
+msgstr "Processing…"
+
+msgid "Les résultats sont supprimés automatiquement après %(days)s jours."
+msgstr "Results are automatically deleted after %(days)s days."
+
+msgid "Nouvelle publication"
+msgstr "New publication"
+
+msgid "Créer une publication"
+msgstr "Create a publication"
+
+msgid "Créez une publication manuellement."
+msgstr "Create a publication manually."
+
+msgid "Vérifier et créer le brouillon"
+msgstr "Check and create draft"
+
+msgid "Titre, auteur ou identifiant"
+msgstr "Title, author or identifier"
+
+msgid "Auteurs"
+msgstr "Authors"
+
+msgid "Revue"
+msgstr "Journal"
+
+msgid "Conférence"
+msgstr "Conference"
+
+msgid "Congrès"
+msgstr "Congress"
+
+msgid "Ouvrage contenant le chapitre"
+msgstr "Book containing the chapter"
+
+msgid "Recherchez dans le référentiel HAL ou saisissez librement le nom de la revue."
+msgstr "Search the HAL repository or enter the journal name freely."
+
+msgid "Recherchez parmi les ouvrages déjà cités dans HAL ou saisissez librement un titre."
+msgstr "Search among books already cited in HAL or enter a title freely."
+
+msgid "Aucune ne correspond : créer le brouillon"
+msgstr "None match: create draft"
+
+msgid "Une correspondance est trop probable pour créer une nouvelle notice. Ouvrez la notice existante ou corrigez les informations saisies."
+msgstr "A match is too likely to create a new record. Open the existing record or correct the information entered."
+
+msgid "Vérifiez les notices proches"
+msgstr "Check nearby records"
+
+msgid "Ces rapprochements combinent titre, auteurs, année et DOI. Ouvrez la bonne notice si elle existe déjà."
+msgstr "These matches combine title, authors, year and DOI. Open the right record if it already exists."
+
+msgid "Aucune référence trouvée. Vous pouvez conserver votre saisie."
+msgstr "No reference found. You can keep your input."
+
+msgid "Continuer"
+msgstr "Continue"
+
+msgid "ex. conference_city"
+msgstr "e.g. conference_city"
+
+msgid "Ouvrage / actes"
+msgstr "Book / proceedings"
+
+msgid "ISBN"
+msgstr "ISBN"
+
+msgid "ISSN"
+msgstr "ISSN"
+
+msgid "DOI"
+msgstr "DOI"
+
+msgid "Pages"
+msgstr "Pages"
+
+msgid "Numéro"
+msgstr "Issue"
+
+msgid "Pays"
+msgstr "Country"
+
+msgid "Début"
+msgstr "Start"
+
+msgid "Fin"
+msgstr "End"
+
+msgid "Langue"
+msgstr "Language"
+
+msgid "Directeurs d'ouvrage"
+msgstr "Book editors"
+
+msgid "Identifiant :"
+msgstr "Identifier:"
+
+msgid "Identifiant de confirmation"
+msgstr "Confirmation identifier"
+
+msgid "Motif"
+msgstr "Reason"
+
+msgid "Création"
+msgstr "Creation"
+
+msgid "Création manuelle"
+msgstr "Manual creation"
+
+msgid "Import automatique"
+msgstr "Automatic import"
+
+msgid "Corpus local"
+msgstr "Local corpus"
+
+msgid "génération IA"
+msgstr "AI generation"
+
+msgid "Afficher la génération IA originale conservée"
+msgstr "Show the original saved AI generation"
+
+msgid "Séparez plusieurs valeurs par « ; »."
+msgstr "Separate multiple values with “;”."
+
+msgid "HAL préproduction · X-test uniquement"
+msgstr "HAL pre-production · X-test only"
+
+msgid "Aucune requête n'a encore été envoyée."
+msgstr "No request has been sent yet."
+
+msgid "Envoyer le X-test à HAL préproduction"
+msgstr "Send X-test to HAL pre-production"
+
+msgid "Envoyer le test"
+msgstr "Send test"
+
+msgid "Environnement"
+msgstr "Environment"
+
+msgid "Empreinte SHA-256"
+msgstr "SHA-256 fingerprint"
+
+msgid "Version de la notice"
+msgstr "Record version"
+
+msgid "XML de soumission"
+msgstr "Submission XML"
+
+msgid "XML testé et figé"
+msgstr "Tested and frozen XML"
+
+msgid "Réponse HAL assainie"
+msgstr "Sanitised HAL response"
+
+msgid "Préproduction"
+msgstr "Pre-production"
+
+msgid "Aucune donnée ne sera envoyée à HAL."
+msgstr "No data will be sent to HAL."
+
+msgid "Voir l'historique du test"
+msgstr "View test history"
+
+msgid "Cette opération cible exclusivement HAL préproduction avec l'en-tête <code>X-test</code>. Elle ne peut créer aucune notice dans HAL production."
+msgstr "This operation exclusively targets HAL pre-production with the <code>X-test</code> header. It cannot create any record in HAL production."
+
+msgid "Cette notice n'a pas les champs suivants :"
+msgstr "This record is missing the following fields:"
+
+msgid "Multi-champs · %(count)s candidat"
+msgid_plural "Multi-champs · %(count)s candidats"
+msgstr[0] "Multi-field · %(count)s candidate"
+msgstr[1] "Multi-field · %(count)s candidates"
+
+msgid "Pour lancer le test, saisissez exactement <code>%(key)s</code>."
+msgstr "To run the test, type exactly <code>%(key)s</code>."
+
+msgid "HAL production · dépôt réel"
+msgstr "HAL production · actual deposit"
+
+msgid "Cette action est réelle."
+msgstr "This action is real."
+
+msgid "Contrairement au test précédent, elle transmettra la notice à HAL production et pourra créer un nouvel identifiant HAL."
+msgstr "Unlike the previous test, it will transmit the record to HAL production and may create a new HAL identifier."
+
+msgid "Contrôles effectués"
+msgstr "Checks performed"
+
+msgid "Compte demandeur"
+msgstr "Requesting account"
+
+msgid "Confirmation finale"
+msgstr "Final confirmation"
+
+msgid "Je comprends que cette action crée un dépôt réel dans HAL."
+msgstr "I understand that this action creates an actual deposit in HAL."
+
+msgid "Déposer maintenant sur HAL"
+msgstr "Deposit now on HAL"
+
+msgid "Reçu de production"
+msgstr "Production receipt"
+
+msgid "Dépôt accepté"
+msgstr "Deposit accepted"
+
+msgid "Dépôt non confirmé"
+msgstr "Deposit not confirmed"
+
+msgid "Doublons"
+msgstr "Duplicates"
+
+msgid "Contrôle multi-champs relancé · %(count)s candidat"
+msgid_plural "Contrôle multi-champs relancé · %(count)s candidats"
+msgstr[0] "Multi-field check re-run · %(count)s candidate"
+msgstr[1] "Multi-field check re-run · %(count)s candidates"
+
+msgid "Recopiez exactement <code>DÉPOSER SUR HAL</code>"
+msgstr "Type exactly <code>DEPOSIT ON HAL</code>"
+
+msgid "Résultat en cache"
+msgstr "Cached result"
+
+msgid "Fil d'Ariane"
+msgstr "Breadcrumb"
+
+msgid "Supprimer ce résultat"
+msgstr "Delete this result"
+
+msgid "Copier"
+msgstr "Copy"
+
+msgid "English abstract"
+msgstr "English abstract"
+
+msgid "English keywords"
+msgstr "English keywords"
+
+msgid "Copy"
+msgstr "Copy"
+
+msgid "Notice bibliographique"
+msgstr "Bibliographic record"
+
+msgid "Associer ce document"
+msgstr "Link this document"
+
+msgid "Un compte disposant du droit de révision doit confirmer l'association."
+msgstr "An account with review rights must confirm the link."
+
+msgid "Les rapprochements combinent le titre, les auteurs, l'année et le DOI. La décision reste humaine."
+msgstr "Matches combine title, authors, year, and DOI. The decision remains human."
+
+msgid "Associer à cette notice"
+msgstr "Link to this record"
+
+msgid "Aucune notice suffisamment proche n'a été trouvée."
+msgstr "No sufficiently close record was found."
+
+msgid "Rechercher une autre notice"
+msgstr "Search for another record"
+
+msgid "Si vous savez que cette publication existe déjà, recherchez-la par titre, auteur, identifiant HAL ou identifiant interne."
+msgstr "If you know this publication already exists, search for it by title, author, HAL ID or internal ID."
+
+msgid "Aucune notice sélectionnée."
+msgstr "No record selected."
+
+msgid "Associer la notice sélectionnée"
+msgstr "Link the selected record"
+
+msgid "Créer un nouveau brouillon local"
+msgstr "Create a new local draft"
+
+msgid "Cette action ne crée ni ne modifie aucune notice dans HAL."
+msgstr "This action creates or modifies no record in HAL."
+
+msgid "Créer le brouillon"
+msgstr "Create draft"
+
+msgid "Aucune notice trouvée."
+msgstr "No record found."
+
+msgid "Notice sélectionnée :"
+msgstr "Record selected:"
+
+msgid "Ajouter"
+msgstr "Add"
+
+msgid "Annuler"
+msgstr "Cancel"
+
+msgid "Une valeur par mot-clé. Sans JavaScript, séparez-les par « ; ». Une virgule reste dans le mot-clé."
+msgstr "One value per keyword. Without JavaScript, separate them with “;”. A comma stays in the keyword."
+
+msgid "Entrée ou clic à l'extérieur pour enregistrer · Échap pour annuler"
+msgstr "Enter or click outside to save · Escape to cancel"
+
+msgid "Nouveau mot-clé pour %(label)s"
+msgstr "New keyword for %(label)s"
+
+msgid " Le résultat existant a été réutilisé."
+msgstr " The existing result has been reused."
+
+msgid "Ce document a déjà été analysé pour cette notice."
+msgstr "This document has already been analysed for this record."
+
+msgid "Ce document est déjà associé à une notice."
+msgstr "This document is already linked to a record."
+
+msgid "Champ « %(field_path)s » — %(outcome)s."
+msgstr "Field “%(field_path)s” — %(outcome)s."
+
+msgid "Confirmez que ce dépôt créera une notice réelle dans HAL."
+msgstr "Confirm that this deposit will create an actual record in HAL."
+
+msgid "DÉPOSER SUR HAL"
+msgstr "DEPOSIT ON HAL"
+
+msgid "HAL a accepté le dépôt réel."
+msgstr "HAL has accepted the actual deposit."
+
+msgid "HAL a refusé le dépôt réel."
+msgstr "HAL rejected the actual deposit."
+
+msgid "HAL préproduction a accepté la notice de test."
+msgstr "HAL pre-production has accepted the test record."
+
+msgid "HAL préproduction a refusé la notice de test."
+msgstr "HAL pre-production rejected the test record."
+
+msgid "Jeton de version manquant ou invalide ; rechargez la page et réessayez."
+msgstr "Version token missing or invalid; reload the page and try again."
+
+msgid "La confirmation ne correspond pas à l’identifiant de la notice."
+msgstr "The confirmation does not match the record identifier."
+
+msgid "La notice a été remise en brouillon localement. L’historique HAL est conservé."
+msgstr "The record has been reverted to draft locally. The HAL history is preserved."
+
+msgid "La phrase de confirmation ne correspond pas."
+msgstr "The confirmation phrase does not match."
+
+msgid "Le brouillon local a été créé. Aucune donnée n’a été envoyée à HAL."
+msgstr "The local draft has been created. No data was sent to HAL."
+
+msgid "Le document est associé ; les valeurs générées sont identiques à la notice."
+msgstr "The document is linked; the generated values are identical to the record."
+
+msgid "Le document, les résumés et les mots-clés sont associés à la notice."
+msgstr "The document, abstracts, and keywords have been linked to the record."
+
+msgid "Le résultat mis en cache a été supprimé."
+msgstr "The cached result has been deleted."
+
+msgid "Résultat incertain : vérification manuelle requise."
+msgstr "Uncertain result: manual verification required."
+
+msgid "Sélectionnez un document PDF ou Word."
+msgstr "Select a PDF or Word document."
+
+msgid "Un brouillon local a été créé. Aucune donnée n’a été envoyée à HAL."
+msgstr "A local draft has been created. No data was sent to HAL."
+
+msgid "Un test de préproduction accepté est requis."
+msgstr "An accepted pre-production test is required."
+
+msgid "Vos identifiants HAL ont été enregistrés."
+msgstr "Your HAL credentials have been saved."
+
+msgid "Vos identifiants HAL ont été supprimés."
+msgstr "Your HAL credentials have been deleted."
+
+msgid "Votre langue d’interface a été enregistrée."
+msgstr "Your interface language has been saved."
+
+msgid "Vous n'avez pas le droit d’associer une notice."
+msgstr "You do not have permission to link a record."
+
+msgid "Vous n'avez pas le droit de créer un brouillon."
+msgstr "You do not have permission to create a draft."
+
+msgid "Vous n'avez pas le droit de modifier les champs."
+msgstr "You do not have permission to edit fields."
+
+msgid "Vous n'avez pas le droit de réviser les modifications."
+msgstr "You do not have permission to review changes."
+
+msgid "Vous n’avez pas le droit de créer un brouillon."
+msgstr "You do not have permission to create a draft."
+
+msgid "Vous n’avez pas le droit de déposer dans HAL production."
+msgstr "You do not have permission to deposit to HAL production."
+
+msgid "Vous n’avez pas le droit de modifier l’état HAL de cette notice."
+msgstr "You do not have permission to change the HAL status of this record."
+
+msgid "Vous n’avez pas le droit de proposer des résumés et mots-clés."
+msgstr "You do not have permission to propose abstracts and keywords."
+
+msgid "Vous n’avez pas le droit de valider dans HAL préproduction."
+msgstr "You do not have permission to validate in HAL pre-production."
+
+msgid "%(count)d proposition à vérifier a été créée."
+msgid_plural "%(count)d propositions à vérifier ont été créées."
+msgstr[0] "%(count)d review proposal has been created."
+msgstr[1] "%(count)d review proposals have been created."
+

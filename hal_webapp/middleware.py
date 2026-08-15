@@ -1,5 +1,31 @@
 from __future__ import annotations
 
+from django.utils import translation
+
+
+class UserLanguageMiddleware:
+    """Prefer an authenticated user's explicit interface-language choice."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        user = request.user
+        if user.is_authenticated:
+            from catalog.models import UserInterfacePreference
+
+            language = (
+                UserInterfacePreference.objects.filter(user=user)
+                .values_list("language", flat=True)
+                .first()
+            )
+            if language:
+                translation.activate(language)
+                request.LANGUAGE_CODE = language
+        response = self.get_response(request)
+        translation.deactivate()
+        return response
+
 
 class SecurityHeadersMiddleware:
     """Apply a strict CSP to the app and a compatible policy to Django Admin."""

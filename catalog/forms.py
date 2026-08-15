@@ -3,23 +3,38 @@ from __future__ import annotations
 from datetime import date
 
 from django import forms
+from django.utils.translation import gettext_lazy as _
 
 from catalog.integrations.hal_assistant import HAL_DOCUMENT_TYPE_LABELS_FR
 
 
 class HALCredentialForm(forms.Form):
     login = forms.CharField(
-        label="Identifiant HAL",
+        label=_("Identifiant HAL"),
         max_length=255,
         widget=forms.TextInput(attrs={"autocomplete": "username"}),
     )
     password = forms.CharField(
-        label="Mot de passe HAL",
+        label=_("Mot de passe HAL"),
         strip=False,
         widget=forms.PasswordInput(
             attrs={"autocomplete": "new-password"}, render_value=False
         ),
-        help_text="Le mot de passe enregistré n’est jamais affiché.",
+        help_text=_("Le mot de passe enregistré n’est jamais affiché."),
+    )
+
+
+class InterfaceLanguageForm(forms.Form):
+    language = forms.ChoiceField(
+        label=_("Langue de l’interface"),
+        choices=(
+            ("", _("Automatique — langue du navigateur")),
+            ("fr", _("Français")),
+            ("en", "English"),
+        ),
+        help_text=_(
+            "Le français est utilisé si la langue du navigateur n’est pas prise en charge."
+        ),
     )
 
 
