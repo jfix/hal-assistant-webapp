@@ -17,8 +17,10 @@ COPY manage.py ./
 COPY hal_webapp ./hal_webapp
 COPY catalog ./catalog
 COPY templates ./templates
+COPY locale ./locale
 
-RUN uv sync --frozen --no-dev --no-editable \
+RUN chmod -R a+rX ./locale \
+    && uv sync --frozen --no-dev --no-editable \
     && DJANGO_DEBUG=0 \
        DJANGO_SECRET_KEY="BuildOnly9xQ2mV7kR4tN8pL5sF1hJ6cD3wE0yU7iO2aB9gH4zX8vK" \
        OPENAI_API_KEY="build-only-placeholder" \
