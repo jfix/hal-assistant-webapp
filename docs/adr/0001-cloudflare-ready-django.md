@@ -55,7 +55,15 @@ The importer has two phases:
   SQLite and source snapshots in a host-mounted `var/` directory.
 - Node and Wrangler are needed only to exercise the Cloudflare adapter.
 - Cloudflare deployment requires a managed PostgreSQL database and Workers Paid.
-- Database migrations are a controlled release step, never an automatic
-  multi-instance container startup action.
+- Database migrations run automatically: `DjangoContainer.onStart()` in
+  `worker/index.js` execs `manage.py migrate --noinput` inside the container
+  before it starts serving. This is safe under the current `max_instances: 1`
+  cap (no concurrent-instance race), but the Worker does not currently block
+  startup or fail loudly if that migration errors — the container still comes
+  up and serves traffic against whatever schema the database already has. See
+  [`worker/index.js`](../../worker/index.js) and
+  [`worker/container-startup.js`](../../worker/container-startup.js). Always
+  check `wrangler tail` immediately after a deploy that includes new
+  migrations rather than assuming this step succeeded silently.
 - Future background enrichment can move to Queues/Workflows without changing
   domain ownership.

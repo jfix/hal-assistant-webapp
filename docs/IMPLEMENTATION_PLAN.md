@@ -113,9 +113,13 @@ For every release:
 
 1. run the Python tests, lint, Django checks, and migration-drift check;
 2. run the Worker syntax and generated-binding checks;
-3. build and smoke-test the Docker image on `linux/amd64`;
+3. build and smoke-test the Docker image on `linux/amd64` (CI does this on
+   every push — see the "Smoke-test production container" step);
 4. take a database backup before migrations outside development;
-5. run migrations as a controlled release step;
+5. migrations apply automatically on deploy (`DjangoContainer.onStart()` in
+   `worker/index.js`), but that step is not fail-closed — check
+   `npx wrangler tail` immediately after deploying and confirm no exceptions
+   rather than assuming it succeeded;
 6. verify `/healthz`, authentication, and one representative imported record;
 7. do not add HAL credentials until a separately authorized write milestone.
 
