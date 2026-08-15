@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import date
 
 from django import forms
+from django.utils.text import format_lazy
 from django.utils.translation import gettext_lazy as _
 
 from catalog.integrations.hal_assistant import HAL_DOCUMENT_TYPE_LABELS_FR
@@ -40,16 +41,16 @@ class InterfaceLanguageForm(forms.Form):
 
 class ManualPublicationForm(forms.Form):
     hal_document_type = forms.ChoiceField(
-        label="Type de publication HAL",
+        label=_("Type de publication HAL"),
         choices=[
-            (code, f"{code} — {label}")
+            (code, format_lazy("{code} — {label}", code=code, label=label))
             for code, label in HAL_DOCUMENT_TYPE_LABELS_FR.items()
         ],
     )
-    title = forms.CharField(label="Titre", max_length=1000)
+    title = forms.CharField(label=_("Titre"), max_length=1000)
     authors = forms.CharField(
-        label="Auteurs",
-        help_text=(
+        label=_("Auteurs"),
+        help_text=_(
             "Ajoutez librement un auteur ou choisissez une forme existante dans HAL. "
             "Séparez plusieurs auteurs par un point-virgule."
         ),
@@ -65,31 +66,31 @@ class ManualPublicationForm(forms.Form):
         ),
     )
     publication_year = forms.IntegerField(
-        label="Année",
+        label=_("Année"),
         min_value=1000,
         max_value=date.today().year + 1,
     )
     language = forms.ChoiceField(
-        label="Langue principale",
+        label=_("Langue principale"),
         choices=(
-            ("fr", "Français"),
-            ("en", "Anglais"),
-            ("de", "Allemand"),
-            ("es", "Espagnol"),
-            ("it", "Italien"),
-            ("da", "Danois"),
-            ("no", "Norvégien"),
-            ("sv", "Suédois"),
+            ("fr", _("Français")),
+            ("en", _("Anglais")),
+            ("de", _("Allemand")),
+            ("es", _("Espagnol")),
+            ("it", _("Italien")),
+            ("da", _("Danois")),
+            ("no", _("Norvégien")),
+            ("sv", _("Suédois")),
         ),
     )
     doi = forms.CharField(
-        label="DOI (facultatif)",
+        label=_("DOI (facultatif)"),
         max_length=255,
         required=False,
         widget=forms.TextInput(attrs={"placeholder": "10.…"}),
     )
     journal_title = forms.CharField(
-        label="Revue",
+        label=_("Revue"),
         max_length=1000,
         required=False,
         widget=forms.TextInput(
@@ -106,7 +107,7 @@ class ManualPublicationForm(forms.Form):
     journal_issn = forms.CharField(required=False, widget=forms.HiddenInput())
     journal_publisher = forms.CharField(required=False, widget=forms.HiddenInput())
     book_title = forms.CharField(
-        label="Titre de l’ouvrage",
+        label=_("Titre de l’ouvrage"),
         max_length=1000,
         required=False,
         widget=forms.TextInput(
@@ -120,29 +121,29 @@ class ManualPublicationForm(forms.Form):
         ),
     )
     conference_title = forms.CharField(
-        label="Nom du congrès",
+        label=_("Nom du congrès"),
         max_length=1000,
         required=False,
         widget=forms.TextInput(attrs={"list": "conference-suggestions"}),
     )
     conference_start_date = forms.DateField(
-        label="Date de début",
+        label=_("Date de début"),
         required=False,
         widget=forms.DateInput(attrs={"type": "date"}),
     )
     conference_end_date = forms.DateField(
-        label="Date de fin",
+        label=_("Date de fin"),
         required=False,
         widget=forms.DateInput(attrs={"type": "date"}),
     )
     conference_city = forms.CharField(
-        label="Ville",
+        label=_("Ville"),
         max_length=200,
         required=False,
         widget=forms.TextInput(attrs={"list": "city-suggestions"}),
     )
     conference_country = forms.CharField(
-        label="Pays",
+        label=_("Pays"),
         max_length=200,
         required=False,
         widget=forms.TextInput(attrs={"list": "country-suggestions"}),

@@ -36,18 +36,18 @@ class UserInterfacePreference(models.Model):
 
 class Publication(models.Model):
     class ReviewState(models.TextChoices):
-        DRAFT = "draft", "Brouillon"
-        NEEDS_REVIEW = "needs_review", "À vérifier"
-        APPROVED = "approved", "Approuvé"
-        BLOCKED = "blocked", "Bloqué"
+        DRAFT = "draft", _("Brouillon")
+        NEEDS_REVIEW = "needs_review", _("À vérifier")
+        APPROVED = "approved", _("Approuvé")
+        BLOCKED = "blocked", _("Bloqué")
 
     class ReadinessState(models.TextChoices):
-        PARSED = "parsed", "Analysé"
-        NEEDS_ENRICHMENT = "needs_enrichment", "À enrichir"
-        NEEDS_REVIEW = "needs_review", "À vérifier"
-        HAL_READY = "hal_ready", "Prêt pour HAL"
-        PREPROD_VALIDATED = "preprod_validated", "Validé en préproduction"
-        PRODUCTION_SUBMITTED = "production_submitted", "Soumis en production"
+        PARSED = "parsed", _("Analysé")
+        NEEDS_ENRICHMENT = "needs_enrichment", _("À enrichir")
+        NEEDS_REVIEW = "needs_review", _("À vérifier")
+        HAL_READY = "hal_ready", _("Prêt pour HAL")
+        PREPROD_VALIDATED = "preprod_validated", _("Validé en préproduction")
+        PRODUCTION_SUBMITTED = "production_submitted", _("Soumis en production")
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     publication_key = models.CharField(max_length=80, unique=True)
@@ -107,15 +107,15 @@ class Publication(models.Model):
         permissions = [
             (
                 "review_publication",
-                "Peut accepter ou rejeter les modifications de champs proposées",
+                _("Peut accepter ou rejeter les modifications de champs proposées"),
             ),
             (
                 "submit_hal_preprod",
-                "Peut valider une nouvelle notice dans HAL préproduction",
+                _("Peut valider une nouvelle notice dans HAL préproduction"),
             ),
             (
                 "submit_hal_production",
-                "Peut déposer une nouvelle notice dans HAL production",
+                _("Peut déposer une nouvelle notice dans HAL production"),
             ),
         ]
 
@@ -161,14 +161,16 @@ class Publication(models.Model):
             {
                 "dimension": "HAL",
                 "label": (
-                    "Publié sur HAL"
+                    _("Publié sur HAL")
                     if published
-                    else "Déposé sur HAL"
+                    else _("Déposé sur HAL")
                     if on_hal
-                    else "Brouillon"
+                    else _("Brouillon")
                 ),
                 "compact_dimension": "HAL",
-                "compact_label": "Publié" if published else "Déposé" if on_hal else "Brouillon",
+                "compact_label": (
+                    _("Publié") if published else _("Déposé") if on_hal else _("Brouillon")
+                ),
                 "tone": "published" if on_hal else "neutral",
             }
         ]
@@ -179,47 +181,49 @@ class Publication(models.Model):
             )
             if modified_since_hal:
                 data_label = (
-                    "Prêt pour mise à jour HAL"
+                    _("Prêt pour mise à jour HAL")
                     if ready
-                    else "Mise à jour à compléter"
+                    else _("Mise à jour à compléter")
                 )
-                compact_data_label = "Prêt à mettre à jour" if ready else "À compléter"
+                compact_data_label = _("Prêt à mettre à jour") if ready else _("À compléter")
             else:
-                data_label = "Minimum HAL atteint" if ready else "Minimum HAL incomplet"
+                data_label = _("Minimum HAL atteint") if ready else _("Minimum HAL incomplet")
                 compact_data_label = data_label
             statuses.append(
                 {
-                    "dimension": "Données",
+                    "dimension": _("Données"),
                     "label": data_label,
-                    "compact_dimension": "Données",
+                    "compact_dimension": _("Données"),
                     "compact_label": compact_data_label,
                     "tone": "ready" if ready else "warning",
                 }
             )
+            never_synced = False
             if self.hal_synced_version is None:
-                sync_label, sync_tone = "À vérifier", "warning"
+                sync_label, sync_tone = _("À vérifier"), "warning"
             elif self.version > self.hal_synced_version:
-                sync_label, sync_tone = "Modifié", "warning"
+                sync_label, sync_tone = _("Modifié"), "warning"
             else:
-                sync_label, sync_tone = "À jour", "synced"
+                sync_label, sync_tone = _("À jour"), "synced"
         else:
             statuses.append(
                 {
-                    "dimension": "Données",
-                    "label": "Prêt pour HAL" if ready else "À compléter",
-                    "compact_dimension": "Données",
-                    "compact_label": "Prêt" if ready else "À compléter",
+                    "dimension": _("Données"),
+                    "label": _("Prêt pour HAL") if ready else _("À compléter"),
+                    "compact_dimension": _("Données"),
+                    "compact_label": _("Prêt") if ready else _("À compléter"),
                     "tone": "ready" if ready else "warning",
                 }
             )
-            sync_label, sync_tone = "Jamais synchronisé", "neutral"
+            never_synced = True
+            sync_label, sync_tone = _("Jamais synchronisé"), "neutral"
 
         statuses.append(
             {
-                "dimension": "Synchronisation",
+                "dimension": _("Synchronisation"),
                 "label": sync_label,
-                "compact_dimension": "Sync.",
-                "compact_label": "Jamais" if sync_label == "Jamais synchronisé" else sync_label,
+                "compact_dimension": _("Sync."),
+                "compact_label": _("Jamais") if never_synced else sync_label,
                 "tone": sync_tone,
             }
         )
@@ -229,18 +233,18 @@ class Publication(models.Model):
     def attention_status(self) -> dict[str, str] | None:
         if self.review_state == self.ReviewState.BLOCKED:
             return {
-                "dimension": "Attention",
-                "label": "Bloqué",
-                "compact_dimension": "Attention",
-                "compact_label": "Bloqué",
+                "dimension": _("Attention"),
+                "label": _("Bloqué"),
+                "compact_dimension": _("Attention"),
+                "compact_label": _("Bloqué"),
                 "tone": "blocked",
             }
         if self.review_state == self.ReviewState.NEEDS_REVIEW:
             return {
-                "dimension": "Attention",
-                "label": "À vérifier",
-                "compact_dimension": "Attention",
-                "compact_label": "À vérifier",
+                "dimension": _("Attention"),
+                "label": _("À vérifier"),
+                "compact_dimension": _("Attention"),
+                "compact_label": _("À vérifier"),
                 "tone": "warning",
             }
         return None
@@ -290,8 +294,8 @@ class DocumentPublicationLink(ImmutableModel):
     """Append-only human decision associating one analysis with one publication."""
 
     class Action(models.TextChoices):
-        LINKED = "linked", "Notice existante"
-        CREATED = "created", "Nouveau brouillon local"
+        LINKED = "linked", _("Notice existante")
+        CREATED = "created", _("Nouveau brouillon local")
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     summary = models.OneToOneField(
@@ -362,9 +366,9 @@ class SourceImport(ImmutableModel):
     class SourceType(models.TextChoices):
         DOCX = "docx", "DOCX"
         XLSX = "xlsx", "XLSX"
-        GOOGLE_SHEET = "google_sheet", "Instantané Google Sheet"
-        HAL_API = "hal_api", "Instantané API HAL"
-        MANUAL = "manual", "Manuel"
+        GOOGLE_SHEET = "google_sheet", _("Instantané Google Sheet")
+        HAL_API = "hal_api", _("Instantané API HAL")
+        MANUAL = "manual", _("Manuel")
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     source_type = models.CharField(max_length=24, choices=SourceType.choices)
@@ -418,10 +422,10 @@ class SourceRecord(ImmutableModel):
 
 class FieldAssertion(ImmutableModel):
     class State(models.TextChoices):
-        PROPOSED = "proposed", "Proposé"
-        ACCEPTED = "accepted", "Accepté"
-        REJECTED = "rejected", "Rejeté"
-        SUPERSEDED = "superseded", "Remplacé"
+        PROPOSED = "proposed", _("Proposé")
+        ACCEPTED = "accepted", _("Accepté")
+        REJECTED = "rejected", _("Rejeté")
+        SUPERSEDED = "superseded", _("Remplacé")
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     publication = models.ForeignKey(
@@ -478,9 +482,9 @@ class AssertionDecision(ImmutableModel):
     """
 
     class Outcome(models.TextChoices):
-        ACCEPTED = "accepted", "Accepté"
-        REJECTED = "rejected", "Rejeté"
-        EDITED = "edited", "Modifié"
+        ACCEPTED = "accepted", _("Accepté")
+        REJECTED = "rejected", _("Rejeté")
+        EDITED = "edited", _("Modifié")
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     publication = models.ForeignKey(
@@ -603,10 +607,10 @@ class HALOperation(models.Model):
     """A gated new-deposit workflow. Production is deliberately unsupported."""
 
     class State(models.TextChoices):
-        PREPARED = "prepared", "Prêt à confirmer"
-        SUBMITTING = "submitting", "Envoi en cours"
-        ACCEPTED = "accepted", "Accepté en préproduction"
-        REJECTED = "rejected", "Refusé en préproduction"
+        PREPARED = "prepared", _("Prêt à confirmer")
+        SUBMITTING = "submitting", _("Envoi en cours")
+        ACCEPTED = "accepted", _("Accepté en préproduction")
+        REJECTED = "rejected", _("Refusé en préproduction")
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     publication = models.ForeignKey(
@@ -699,11 +703,11 @@ class HALProductionDeposit(models.Model):
     """One explicitly confirmed production attempt from an accepted test payload."""
 
     class State(models.TextChoices):
-        PREPARED = "prepared", "Prêt à confirmer"
-        SUBMITTING = "submitting", "Dépôt en cours"
-        ACCEPTED = "accepted", "Accepté par HAL"
-        REJECTED = "rejected", "Refusé par HAL"
-        UNCERTAIN = "uncertain", "Résultat à vérifier"
+        PREPARED = "prepared", _("Prêt à confirmer")
+        SUBMITTING = "submitting", _("Dépôt en cours")
+        ACCEPTED = "accepted", _("Accepté par HAL")
+        REJECTED = "rejected", _("Refusé par HAL")
+        UNCERTAIN = "uncertain", _("Résultat à vérifier")
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     publication = models.ForeignKey(

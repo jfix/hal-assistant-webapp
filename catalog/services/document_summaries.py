@@ -13,6 +13,7 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 from zipfile import BadZipFile, ZipFile
 
+from django.utils.translation import gettext as _
 from docx import Document
 from pypdf import PdfReader
 
@@ -134,7 +135,7 @@ def infer_document_title(
         if score > 0:
             return candidate[:300]
     fallback = Path(filename).stem.replace("_", " ").replace("-", " ")
-    return " ".join(fallback.split())[:300] or "Document sans titre"
+    return " ".join(fallback.split())[:300] or _("Document sans titre")
 
 
 def extract_document_title(upload, text: str) -> str:
@@ -168,24 +169,26 @@ def extract_document_text(upload) -> str:
     """Extract text from a PDF or DOCX upload without persisting the source file."""
     extension = Path(upload.name).suffix.lower()
     if extension not in ALLOWED_EXTENSIONS:
-        raise DocumentSummaryError("Formats acceptés : PDF (.pdf) et Word (.docx).")
+        raise DocumentSummaryError(_("Formats acceptés : PDF (.pdf) et Word (.docx)."))
     if upload.size > MAX_UPLOAD_BYTES:
-        raise DocumentSummaryError("Le document dépasse la limite de 20 Mo.")
+        raise DocumentSummaryError(_("Le document dépasse la limite de 20 Mo."))
 
     contents = upload.read()
     try:
         if extension == ".pdf":
             if not contents.startswith(b"%PDF-"):
                 raise DocumentSummaryError(
-                    "Le contenu du fichier ne correspond pas à un document PDF."
+                    _("Le contenu du fichier ne correspond pas à un document PDF.")
                 )
             reader = PdfReader(BytesIO(contents))
             if reader.is_encrypted:
                 raise DocumentSummaryError(
-                    "Les PDF protégés par mot de passe ne sont pas acceptés."
+                    _("Les PDF protégés par mot de passe ne sont pas acceptés.")
                 )
             if len(reader.pages) > MAX_PDF_PAGES:
-                raise DocumentSummaryError(f"Le PDF dépasse la limite de {MAX_PDF_PAGES} pages.")
+                raise DocumentSummaryError(
+                    _("Le PDF dépasse la limite de %(pages)s pages.") % {"pages": MAX_PDF_PAGES}
+                )
             extracted_pages = []
             extracted_length = 0
             for page in reader.pages:
@@ -210,14 +213,16 @@ def extract_document_text(upload) -> str:
         raise
     except Exception as exc:
         raise DocumentSummaryError(
-            "Impossible de lire ce document. Vérifiez qu’il n’est pas chiffré ou endommagé."
+            _("Impossible de lire ce document. Vérifiez qu’il n’est pas chiffré ou endommagé.")
         ) from exc
 
     text = "\n".join(line.strip() for line in text.splitlines() if line.strip())
     if len(text) < 200:
         raise DocumentSummaryError(
-            "Le document ne contient pas assez de texte extractible. Les PDF numérisés "
-            "nécessitent une étape OCR."
+            _(
+                "Le document ne contient pas assez de texte extractible. Les PDF numérisés "
+                "nécessitent une étape OCR."
+            )
         )
     return text[:MAX_DOCUMENT_CHARACTERS]
 
@@ -225,7 +230,7 @@ def extract_document_text(upload) -> str:
 def _validate_docx_archive(contents: bytes) -> None:
     if not contents.startswith(b"PK"):
         raise DocumentSummaryError(
-            "Le contenu du fichier ne correspond pas à un document Word DOCX."
+            _("Le contenu du fichier ne correspond pas à un document Word DOCX.")
         )
     try:
         with ZipFile(BytesIO(contents)) as archive:
@@ -233,20 +238,22 @@ def _validate_docx_archive(contents: bytes) -> None:
             names = {entry.filename for entry in entries}
             if {"[Content_Types].xml", "word/document.xml"} - names:
                 raise DocumentSummaryError(
-                    "Le fichier DOCX ne contient pas une structure Word valide."
+                    _("Le fichier DOCX ne contient pas une structure Word valide.")
                 )
             if len(entries) > MAX_DOCX_ENTRIES:
-                raise DocumentSummaryError("Le fichier DOCX contient trop d’éléments internes.")
+                raise DocumentSummaryError(_("Le fichier DOCX contient trop d’éléments internes."))
             total_size = sum(entry.file_size for entry in entries)
             total_compressed = sum(entry.compress_size for entry in entries)
             if total_size > MAX_DOCX_UNCOMPRESSED_BYTES:
-                raise DocumentSummaryError("Le contenu décompressé du DOCX est trop volumineux.")
+                raise DocumentSummaryError(
+                    _("Le contenu décompressé du DOCX est trop volumineux.")
+                )
             if total_compressed and total_size / total_compressed > MAX_DOCX_COMPRESSION_RATIO:
-                raise DocumentSummaryError("Le taux de compression du DOCX est jugé dangereux.")
+                raise DocumentSummaryError(_("Le taux de compression du DOCX est jugé dangereux."))
             if archive.testzip() is not None:
-                raise DocumentSummaryError("Le fichier DOCX est endommagé.")
+                raise DocumentSummaryError(_("Le fichier DOCX est endommagé."))
     except BadZipFile as exc:
-        raise DocumentSummaryError("Le fichier DOCX est endommagé.") from exc
+        raise DocumentSummaryError(_("Le fichier DOCX est endommagé.")) from exc
 
 
 def _response_text(payload: dict) -> str:
@@ -256,7 +263,7 @@ def _response_text(payload: dict) -> str:
         for content in item.get("content", []):
             if content.get("type") == "output_text" and isinstance(content.get("text"), str):
                 return content["text"]
-    raise DocumentSummaryError("Le service d’IA a renvoyé une réponse vide.")
+    raise DocumentSummaryError(_("Le service d’IA a renvoyé une réponse vide."))
 
 
 def _retry_delay(exc: HTTPError | None, fallback: float) -> float:
@@ -279,13 +286,15 @@ def _openai_response(request: Request) -> dict:
             retryable = exc.code == 429 or exc.code >= 500
             if not retryable or attempt == len(OPENAI_RETRY_DELAYS_SECONDS):
                 if exc.code == 401:
-                    message = "La configuration du service d’IA doit être vérifiée."
+                    message = _("La configuration du service d’IA doit être vérifiée.")
                 elif exc.code == 429:
-                    message = "Le quota du service d’IA est temporairement indisponible ou épuisé."
+                    message = _(
+                        "Le quota du service d’IA est temporairement indisponible ou épuisé."
+                    )
                 elif 400 <= exc.code < 500:
-                    message = "Le service d’IA n’a pas accepté cette demande."
+                    message = _("Le service d’IA n’a pas accepté cette demande.")
                 else:
-                    message = "Le service d’IA est momentanément indisponible."
+                    message = _("Le service d’IA est momentanément indisponible.")
                 raise DocumentSummaryError(message) from exc
             delay = _retry_delay(exc, OPENAI_RETRY_DELAYS_SECONDS[attempt])
             logger.warning(
@@ -298,7 +307,7 @@ def _openai_response(request: Request) -> dict:
         except (URLError, TimeoutError) as exc:
             if attempt == len(OPENAI_RETRY_DELAYS_SECONDS):
                 raise DocumentSummaryError(
-                    "Le service d’IA est momentanément inaccessible."
+                    _("Le service d’IA est momentanément inaccessible.")
                 ) from exc
             delay = OPENAI_RETRY_DELAYS_SECONDS[attempt]
             logger.warning(
@@ -314,8 +323,10 @@ def generate_bilingual_summary(text: str) -> BilingualSummary:
     api_key = os.getenv("OPENAI_API_KEY", "").strip()
     if not api_key:
         raise DocumentSummaryError(
-            "La génération IA n’est pas configurée. Définissez OPENAI_API_KEY puis relancez "
-            "le serveur."
+            _(
+                "La génération IA n’est pas configurée. Définissez OPENAI_API_KEY puis relancez "
+                "le serveur."
+            )
         )
 
     schema = {
@@ -394,4 +405,4 @@ def generate_bilingual_summary(text: str) -> BilingualSummary:
             suggested_doi=result["suggested_doi"].strip(),
         )
     except (KeyError, TypeError, json.JSONDecodeError) as exc:
-        raise DocumentSummaryError("La réponse de l’IA n’a pas le format attendu.") from exc
+        raise DocumentSummaryError(_("La réponse de l’IA n’a pas le format attendu.")) from exc

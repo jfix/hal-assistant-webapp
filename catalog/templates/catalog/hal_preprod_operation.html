@@ -29,7 +29,7 @@
       <div><dt>{% translate "Version de la notice" %}</dt><dd>{{ operation.publication_version }}</dd></div>
       <div><dt>{% translate "Environnement" %}</dt><dd>{% translate "Préproduction" %}</dd></div>
       <div><dt>{% translate "Empreinte SHA-256" %}</dt><dd><code>{{ operation.payload.sha256 }}</code></dd></div>
-      <div><dt>{% translate "Contrôle des doublons" %}</dt><dd>{% blocktranslate with count=operation.duplicate_check.candidates|length %}Multi-champs · {{ count }} candidat{% plural %}Multi-champs · {{ count }} candidats{% endblocktranslate %}</dd></div>
+      <div><dt>{% translate "Contrôle des doublons" %}</dt><dd>{% blocktranslate count count=operation.duplicate_check.candidates|length %}Multi-champs · {{ count }} candidat{% plural %}Multi-champs · {{ count }} candidats{% endblocktranslate %}</dd></div>
       <div><dt>{% translate "Demandé par" %}</dt><dd>{{ operation.requested_by.get_username }}</dd></div>
       <div><dt>{% translate "Créé le" %}</dt><dd>{{ operation.created_at }}</dd></div>
     </dl>

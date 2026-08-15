@@ -4,7 +4,8 @@
     <p class="eyebrow">{% translate "Notice bibliographique" %}</p>
     <h2 id="association-title">{% translate "Associer ce document" %}</h2>
     {% if entry.publication_link %}
-      <p>{% blocktranslate with title=entry.publication_link.publication.title url=entry.publication_link.publication.id %}Ce document, ses résumés et ses mots-clés sont associés à <a href="{% url 'publication-detail' url %}">{{ title }}</a>.{% endblocktranslate %}</p>
+      {% url 'publication-detail' entry.publication_link.publication.id as linked_publication_url %}
+      <p>{% blocktranslate with title=entry.publication_link.publication.title url=linked_publication_url %}Ce document, ses résumés et ses mots-clés sont associés à <a href="{{ url }}">{{ title }}</a>.{% endblocktranslate %}</p>
     {% elif not can_review %}
       <p class="subtle">{% translate "Un compte disposant du droit de révision doit confirmer l'association." %}</p>
     {% else %}

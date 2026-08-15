@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 from cryptography.fernet import Fernet, InvalidToken
 from django.db import transaction
+from django.utils.translation import gettext as _
 
 from catalog.models import AuditEvent, HALCredential
 
@@ -22,12 +23,12 @@ class DecryptedHALCredential:
 def _fernet() -> Fernet:
     key = os.getenv("HAL_CREDENTIAL_ENCRYPTION_KEY", "")
     if not key:
-        raise HALCredentialError("Le chiffrement des identifiants HAL n’est pas configuré.")
+        raise HALCredentialError(_("Le chiffrement des identifiants HAL n’est pas configuré."))
     try:
         return Fernet(key.encode("ascii"))
     except (ValueError, UnicodeEncodeError) as exc:
         raise HALCredentialError(
-            "La clé de chiffrement des identifiants HAL est invalide."
+            _("La clé de chiffrement des identifiants HAL est invalide.")
         ) from exc
 
 
@@ -39,7 +40,7 @@ def _decrypt(value: str) -> str:
     try:
         return _fernet().decrypt(value.encode("ascii")).decode("utf-8")
     except (InvalidToken, UnicodeError) as exc:
-        raise HALCredentialError("Les identifiants HAL enregistrés sont illisibles.") from exc
+        raise HALCredentialError(_("Les identifiants HAL enregistrés sont illisibles.")) from exc
 
 
 def credentials_for(user) -> DecryptedHALCredential:
@@ -47,7 +48,7 @@ def credentials_for(user) -> DecryptedHALCredential:
         stored = HALCredential.objects.get(user=user)
     except HALCredential.DoesNotExist as exc:
         raise HALCredentialError(
-            "Configurez vos identifiants HAL dans « Mon compte » avant de lancer le test."
+            _("Configurez vos identifiants HAL dans « Mon compte » avant de lancer le test.")
         ) from exc
     return DecryptedHALCredential(
         login=_decrypt(stored.encrypted_login),

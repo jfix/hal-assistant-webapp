@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from difflib import SequenceMatcher
 
 from django.db import transaction
+from django.utils.translation import gettext as _
 
 from catalog.models import AuditEvent, DocumentPublicationLink, DocumentSummaryCache, Publication
 from catalog.services.publication_readiness import recalculate_hal_readiness
@@ -41,28 +42,28 @@ def find_publication_matches(
         )
         if title == candidate_title and title:
             score += 70
-            reasons.append("même titre")
+            reasons.append(_("même titre"))
         elif ratio >= 0.9:
             score += 50
-            reasons.append(f"titre très proche ({ratio:.0%})")
+            reasons.append(_("titre très proche (%(ratio)s)") % {"ratio": f"{ratio:.0%}"})
         elif ratio >= 0.75:
             score += 30
-            reasons.append(f"titre proche ({ratio:.0%})")
+            reasons.append(_("titre proche (%(ratio)s)") % {"ratio": f"{ratio:.0%}"})
         candidate_authors = {_normalized(str(item)) for item in publication.authors if item}
         if authors and candidate_authors and any(
             a in c or c in a for a in authors for c in candidate_authors
         ):
             score += 20
-            reasons.append("auteur en commun")
+            reasons.append(_("auteur en commun"))
         if (
             summary.suggested_publication_year
             and publication.publication_year == summary.suggested_publication_year
         ):
             score += 10
-            reasons.append("même année")
+            reasons.append(_("même année"))
         if doi and doi == _normalized(publication.doi):
             score += 100
-            reasons.append("même DOI")
+            reasons.append(_("même DOI"))
         if score >= 30:
             matches.append(PublicationMatch(publication, score, tuple(reasons)))
     return sorted(matches, key=lambda item: (-item.score, item.publication.title))[:limit]
@@ -118,7 +119,7 @@ def create_draft_from_summary(*, summary: DocumentSummaryCache, actor):
     existing = find_publication_matches(summary)
     if any(match.score >= 90 for match in existing):
         raise ValueError(
-            "Une notice correspondante très probable existe déjà ; associez-la au document."
+            _("Une notice correspondante très probable existe déjà ; associez-la au document.")
         )
     key = f"document-{summary.document_sha256[:16]}"
     publication, created = Publication.objects.get_or_create(

@@ -4,6 +4,7 @@ from typing import TypedDict
 
 from django.contrib.auth.models import AbstractBaseUser
 from django.utils import timezone
+from django.utils.translation import gettext as _
 
 from catalog.models import Publication
 
@@ -25,10 +26,10 @@ def traceability_events(publication: Publication) -> list[TraceabilityEvent]:
             {
                 "created_at": removal.created_at,
                 "kind": "hal",
-                "title": "Dissociation de HAL",
+                "title": _("Dissociation de HAL"),
                 "description": (
-                    f"La notice {removal.former_hal_id} a été déclarée supprimée "
-                    "directement dans HAL."
+                    _("La notice %(hal_id)s a été déclarée supprimée directement dans HAL.")
+                    % {"hal_id": removal.former_hal_id}
                 ),
                 "actor": removal.actor,
                 "reason": removal.reason,
@@ -39,23 +40,28 @@ def traceability_events(publication: Publication) -> list[TraceabilityEvent]:
             {
                 "created_at": decision.created_at,
                 "kind": "decision",
-                "title": f"Décision éditoriale · {decision.field_path}",
+                "title": _("Décision éditoriale · %(field)s") % {"field": decision.field_path},
                 "description": (
-                    f"{decision.get_outcome_display()} · version "
-                    f"{decision.base_version} → {decision.resulting_version}"
+                    _("%(outcome)s · version %(base)s → %(resulting)s")
+                    % {
+                        "outcome": decision.get_outcome_display(),
+                        "base": decision.base_version,
+                        "resulting": decision.resulting_version,
+                    }
                 ),
                 "actor": decision.actor,
                 "reason": decision.reason,
             }
         )
     for link in publication.document_links.all():
-        filename = link.summary.source_filename or "Document sans nom"
+        filename = link.summary.source_filename or _("Document sans nom")
         events.append(
             {
                 "created_at": link.created_at,
                 "kind": "document",
-                "title": "Document associé",
-                "description": f"{filename} · {link.get_action_display()}",
+                "title": _("Document associé"),
+                "description": _("%(filename)s · %(action)s")
+                % {"filename": filename, "action": link.get_action_display()},
                 "actor": link.actor,
                 "reason": "",
             }
@@ -65,7 +71,7 @@ def traceability_events(publication: Publication) -> list[TraceabilityEvent]:
             {
                 "created_at": deposit.created_at,
                 "kind": "hal",
-                "title": "Dépôt HAL production",
+                "title": _("Dépôt HAL production"),
                 "description": deposit.get_state_display(),
                 "actor": deposit.requested_by,
                 "reason": "",
@@ -76,7 +82,7 @@ def traceability_events(publication: Publication) -> list[TraceabilityEvent]:
             {
                 "created_at": operation.created_at,
                 "kind": "hal",
-                "title": "Test HAL préproduction",
+                "title": _("Test HAL préproduction"),
                 "description": operation.get_state_display(),
                 "actor": operation.requested_by,
                 "reason": "",
@@ -87,8 +93,9 @@ def traceability_events(publication: Publication) -> list[TraceabilityEvent]:
             {
                 "created_at": source.created_at,
                 "kind": "source",
-                "title": "Source importée",
-                "description": f"{source.source_import.source_name} · {source.locator}",
+                "title": _("Source importée"),
+                "description": _("%(source_name)s · %(locator)s")
+                % {"source_name": source.source_import.source_name, "locator": source.locator},
                 "actor": None,
                 "reason": "",
             }

@@ -5,6 +5,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from django.utils.translation import gettext_lazy as _
+
 from hal_assistant.hal_requirements import audit_record
 from hal_assistant.hal_xml import HAL_NS, TEI_NS, XSI_NS, build_tei, validate_tei
 from hal_assistant.review_cli import HAL_DOCUMENT_TYPES
@@ -17,18 +19,18 @@ if TYPE_CHECKING:
 DEFAULT_HAL_DOMAIN = "shs.litt"
 
 HAL_DOCUMENT_TYPE_LABELS_FR = {
-    "ART": "Article dans une revue",
-    "COMM": "Communication dans un congrès",
-    "COUV": "Chapitre d’ouvrage",
-    "OUV": "Ouvrages scientifiques (y compris édition critique et traduction)",
-    "DOUV": "Direction d’ouvrage",
+    "ART": _("Article dans une revue"),
+    "COMM": _("Communication dans un congrès"),
+    "COUV": _("Chapitre d’ouvrage"),
+    "OUV": _("Ouvrages scientifiques (y compris édition critique et traduction)"),
+    "DOUV": _("Direction d’ouvrage"),
 }
 
 
 def hal_document_type_display(
     *, publication_type: str, explicit_type: str = ""
 ) -> tuple[str, str]:
-    """Return the HAL code and its French interface label.
+    """Return the HAL code and its translated interface label.
 
     Imported HAL evidence wins. New local drafts fall back to the mapping owned
     by the pinned reusable package rather than duplicating classification rules.
@@ -36,7 +38,7 @@ def hal_document_type_display(
     code = explicit_type.strip().upper() or HAL_DOCUMENT_TYPES.get(
         publication_type, publication_type.upper()
     )
-    label = HAL_DOCUMENT_TYPE_LABELS_FR.get(code, f"Type de document HAL : {code}")
+    label = HAL_DOCUMENT_TYPE_LABELS_FR.get(code, _("Type de document HAL : %(code)s") % {"code": code})
     return code, label
 
 

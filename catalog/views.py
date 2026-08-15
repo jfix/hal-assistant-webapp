@@ -10,7 +10,7 @@ from django.db.models import Q
 from django.http import FileResponse, Http404, HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from django.utils.translation import gettext as _, ngettext
+from django.utils.translation import gettext as _, gettext_lazy, ngettext
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_GET, require_POST
 
@@ -88,36 +88,36 @@ PRODUCTION_PERMISSION = "catalog.submit_hal_production"
 
 # (label, field name, display kind) in detail-page order.
 METADATA_FIELDS = (
-    ("Titre", "title", "text"),
-    ("Année", "publication_year", "year"),
-    ("Type HAL", "hal_document_type", "text"),
-    ("Auteurs", "authors", "list"),
-    ("Directeurs d'ouvrage", "editors", "list"),
-    ("Revue", "journal_title", "text"),
-    ("Ouvrage / actes", "book_title", "text"),
-    ("Volume", "volume", "text"),
-    ("Numéro", "issue", "text"),
-    ("Pages", "pages", "text"),
-    ("Éditeur", "publisher", "text"),
-    ("Ville d'édition", "publisher_city", "text"),
-    ("DOI", "doi", "doi"),
-    ("ISBN", "isbn", "isbn"),
-    ("ISSN", "issn", "list"),
-    ("Langue", "language", "text"),
-    ("URL source", "source_url", "url"),
+    (gettext_lazy("Titre"), "title", "text"),
+    (gettext_lazy("Année"), "publication_year", "year"),
+    (gettext_lazy("Type HAL"), "hal_document_type", "text"),
+    (gettext_lazy("Auteurs"), "authors", "list"),
+    (gettext_lazy("Directeurs d'ouvrage"), "editors", "list"),
+    (gettext_lazy("Revue"), "journal_title", "text"),
+    (gettext_lazy("Ouvrage / actes"), "book_title", "text"),
+    (gettext_lazy("Volume"), "volume", "text"),
+    (gettext_lazy("Numéro"), "issue", "text"),
+    (gettext_lazy("Pages"), "pages", "text"),
+    (gettext_lazy("Éditeur"), "publisher", "text"),
+    (gettext_lazy("Ville d'édition"), "publisher_city", "text"),
+    (gettext_lazy("DOI"), "doi", "doi"),
+    (gettext_lazy("ISBN"), "isbn", "isbn"),
+    (gettext_lazy("ISSN"), "issn", "list"),
+    (gettext_lazy("Langue"), "language", "text"),
+    (gettext_lazy("URL source"), "source_url", "url"),
 )
 CONFERENCE_FIELDS = (
-    ("Événement", "conference_title", "text"),
-    ("Début", "conference_start_date", "date"),
-    ("Fin", "conference_end_date", "date"),
-    ("Ville", "conference_city", "text"),
-    ("Pays", "conference_country", "text"),
+    (gettext_lazy("Événement"), "conference_title", "text"),
+    (gettext_lazy("Début"), "conference_start_date", "date"),
+    (gettext_lazy("Fin"), "conference_end_date", "date"),
+    (gettext_lazy("Ville"), "conference_city", "text"),
+    (gettext_lazy("Pays"), "conference_country", "text"),
 )
 SUMMARY_FIELDS = (
-    ("Résumé français", "abstract_fr", "multiline"),
-    ("Mots-clés français", "keywords_fr", "keywords"),
-    ("English abstract", "abstract_en", "multiline"),
-    ("English keywords", "keywords_en", "keywords"),
+    (gettext_lazy("Résumé français"), "abstract_fr", "multiline"),
+    (gettext_lazy("Mots-clés français"), "keywords_fr", "keywords"),
+    (gettext_lazy("English abstract"), "abstract_en", "multiline"),
+    (gettext_lazy("English keywords"), "keywords_en", "keywords"),
 )
 
 
@@ -538,7 +538,7 @@ def publication_list(request: HttpRequest):
 def publication_search(request: HttpRequest) -> JsonResponse:
     """Small permission-gated lookup used by the document association typeahead."""
     if not request.user.has_perm(REVIEW_PERMISSION):
-        return JsonResponse({"error": "Accès refusé."}, status=403)
+        return JsonResponse({"error": _("Accès refusé.")}, status=403)
     query = request.GET.get("q", "").strip()
     if len(query) < 2:
         return JsonResponse({"results": []})
@@ -570,7 +570,7 @@ def publication_search(request: HttpRequest) -> JsonResponse:
 def publication_reference_search(request: HttpRequest) -> JsonResponse:
     """Search HAL references, with corpus values as a fail-soft fallback."""
     if not request.user.has_perm(REVIEW_PERMISSION):
-        return JsonResponse({"error": "Accès refusé."}, status=403)
+        return JsonResponse({"error": _("Accès refusé.")}, status=403)
     query = request.GET.get("q", "").strip()[:80]
     kind = request.GET.get("kind", "")
     if kind not in {"journal", "book", "author"} or len(query) < 2:
@@ -994,7 +994,9 @@ def edit_field_view(request: HttpRequest, publication_id):
     except ReviewError as exc:
         messages.error(request, str(exc))
     else:
-        messages.success(request, f"Champ « {decision.field_path} » modifié.")
+        messages.success(
+            request, _("Champ « %(field)s » modifié.") % {"field": decision.field_path}
+        )
     return redirect("publication-detail", publication_id=publication_id)
 
 

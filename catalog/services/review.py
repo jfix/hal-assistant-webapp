@@ -5,6 +5,7 @@ from typing import Any
 
 from django.contrib.auth.models import AbstractBaseUser
 from django.db import IntegrityError, transaction
+from django.utils.translation import gettext as _
 
 from catalog.models import AssertionDecision, AuditEvent, FieldAssertion, Publication
 from catalog.services.imports import MATERIALIZED_FIELDS, coerce_field_value
@@ -89,20 +90,24 @@ def decide_assertion(
     an audit event.
     """
     if outcome not in AssertionDecision.Outcome.values:
-        raise ReviewError(f"Décision inconnue : {outcome}")
+        raise ReviewError(_("Décision inconnue : %(outcome)s") % {"outcome": outcome})
     if assertion.field_path not in MATERIALIZED_FIELDS:
-        raise ReviewError(f"Champ non révisable : {assertion.field_path}")
+        raise ReviewError(
+            _("Champ non révisable : %(field)s") % {"field": assertion.field_path}
+        )
     if assertion.state != FieldAssertion.State.PROPOSED:
-        raise ReviewError("Seules les modifications proposées peuvent être décidées.")
+        raise ReviewError(_("Seules les modifications proposées peuvent être décidées."))
     if outcome == AssertionDecision.Outcome.EDITED and edited_value is None:
-        raise ReviewError("Une valeur modifiée est requise.")
+        raise ReviewError(_("Une valeur modifiée est requise."))
 
     # Lock the publication row for the duration of the decision.
     publication = Publication.objects.select_for_update().get(pk=assertion.publication_id)
     if publication.version != base_version:
         raise ReviewConflict(
-            "Cette notice a changé depuis son chargement. "
-            "Rechargez la page et vérifiez les valeurs actuelles."
+            _(
+                "Cette notice a changé depuis son chargement. "
+                "Rechargez la page et vérifiez les valeurs actuelles."
+            )
         )
 
     previous_value = _json_safe(getattr(publication, assertion.field_path))
@@ -143,7 +148,7 @@ def decide_assertion(
             resulting_version=resulting_version,
         )
     except IntegrityError as exc:  # one decision per assertion (OneToOne)
-        raise ReviewError("Cette modification a déjà été décidée.") from exc
+        raise ReviewError(_("Cette modification a déjà été décidée.")) from exc
 
     AuditEvent.objects.create(
         actor=decision.actor,
@@ -178,13 +183,15 @@ def edit_field(
     may be changed. Never contacts HAL.
     """
     if field_path not in EDITABLE_FIELDS:
-        raise ReviewError(f"Champ non modifiable : {field_path}")
+        raise ReviewError(_("Champ non modifiable : %(field)s") % {"field": field_path})
 
     locked = Publication.objects.select_for_update().get(pk=publication.pk)
     if locked.version != base_version:
         raise ReviewConflict(
-            "Cette notice a changé depuis son chargement. "
-            "Rechargez la page et vérifiez les valeurs actuelles."
+            _(
+                "Cette notice a changé depuis son chargement. "
+                "Rechargez la page et vérifiez les valeurs actuelles."
+            )
         )
 
     previous_value = _json_safe(getattr(locked, field_path))

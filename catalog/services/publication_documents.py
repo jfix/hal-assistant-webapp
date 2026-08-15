@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from django.db import transaction
+from django.utils.translation import gettext as _
 
 from catalog.models import (
     AuditEvent,
@@ -98,7 +99,7 @@ def propose_generated_fields(*, publication: Publication, summary: DocumentSumma
     publication = Publication.objects.select_for_update().get(pk=publication.pk)
     existing_link = DocumentPublicationLink.objects.filter(summary=summary).first()
     if existing_link and existing_link.publication_id != publication.id:
-        raise ValueError("Ce document est déjà associé à une autre notice.")
+        raise ValueError(_("Ce document est déjà associé à une autre notice."))
 
     if existing_link:
         assertions = list(

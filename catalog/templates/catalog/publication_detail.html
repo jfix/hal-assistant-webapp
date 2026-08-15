@@ -38,7 +38,7 @@
         {% if hal_journey.published %}
           <strong>{% translate "Objectif atteint" %}</strong>
         {% else %}
-          <strong>{% blocktranslate with completed=hal_journey.completed total=hal_journey.total %}{{ completed }} étape{{ completed|pluralize }} sur {{ total }}{% endblocktranslate %}</strong>
+          <strong>{% blocktranslate count completed=hal_journey.completed with total=hal_journey.total %}{{ completed }} étape sur {{ total }}{% plural %}{{ completed }} étapes sur {{ total }}{% endblocktranslate %}</strong>
         {% endif %}
         <progress value="{{ hal_journey.completed }}" max="{{ hal_journey.total }}">{{ hal_journey.completed }}/{{ hal_journey.total }}</progress>
       </div>

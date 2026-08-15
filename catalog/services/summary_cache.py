@@ -5,6 +5,7 @@ from datetime import timedelta
 
 from django.db import transaction
 from django.utils import timezone
+from django.utils.translation import gettext as _
 
 from catalog.models import AuditEvent, DocumentSummaryCache
 
@@ -21,7 +22,7 @@ def cache_retention_days() -> int:
 def delete_summary_cache_entry(*, entry: DocumentSummaryCache, actor, reason: str) -> None:
     """Delete generated content while preserving a content-free audit record."""
     if hasattr(entry, "publication_link"):
-        raise ValueError("Un résultat associé à une notice ne peut pas être supprimé.")
+        raise ValueError(_("Un résultat associé à une notice ne peut pas être supprimé."))
     AuditEvent.objects.create(
         actor=actor,
         action="document_summary_cache.deleted",

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from django.db import transaction
+from django.utils.translation import gettext as _
 
 from catalog.models import AuditEvent, HALRemovalRecord, Publication
 from catalog.services.publication_readiness import recalculate_hal_readiness
@@ -26,16 +27,16 @@ def mark_removed_from_hal(
     locked = Publication.objects.select_for_update().get(pk=publication.pk)
     former_hal_id = locked.hal_id.strip()
     if not former_hal_id:
-        raise HALReconciliationError("Cette notice n’a pas d’identifiant HAL actif.")
+        raise HALReconciliationError(_("Cette notice n’a pas d’identifiant HAL actif."))
     if not remote_removal_confirmed:
         raise HALReconciliationError(
-            "Confirmez que la suppression a déjà été effectuée dans l’interface HAL."
+            _("Confirmez que la suppression a déjà été effectuée dans l’interface HAL.")
         )
     if confirmed_hal_id.strip() != former_hal_id:
-        raise HALReconciliationError("L’identifiant HAL saisi ne correspond pas.")
+        raise HALReconciliationError(_("L’identifiant HAL saisi ne correspond pas."))
     cleaned_reason = reason.strip()
     if not cleaned_reason:
-        raise HALReconciliationError("Indiquez la raison de cette remise en brouillon.")
+        raise HALReconciliationError(_("Indiquez la raison de cette remise en brouillon."))
 
     record = HALRemovalRecord.objects.create(
         publication=locked,

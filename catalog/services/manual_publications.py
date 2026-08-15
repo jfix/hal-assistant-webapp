@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from difflib import SequenceMatcher
 
 from django.db import transaction
+from django.utils.translation import gettext as _
 
 from catalog.integrations.hal_assistant import readiness_for
 from catalog.models import AuditEvent, Publication
@@ -44,13 +45,13 @@ def find_manual_publication_matches(data: dict, limit: int = 5):
         ratio = SequenceMatcher(None, title, candidate_title).ratio()
         if title and title == candidate_title:
             score += 70
-            reasons.append("même titre")
+            reasons.append(_("même titre"))
         elif ratio >= 0.9:
             score += 50
-            reasons.append(f"titre très proche ({ratio:.0%})")
+            reasons.append(_("titre très proche (%(ratio)s)") % {"ratio": f"{ratio:.0%}"})
         elif ratio >= 0.75:
             score += 30
-            reasons.append(f"titre proche ({ratio:.0%})")
+            reasons.append(_("titre proche (%(ratio)s)") % {"ratio": f"{ratio:.0%}"})
         candidate_authors = {_normalized(str(item)) for item in publication.authors if item}
         if authors and candidate_authors and any(
             author in candidate or candidate in author
@@ -58,13 +59,13 @@ def find_manual_publication_matches(data: dict, limit: int = 5):
             for candidate in candidate_authors
         ):
             score += 20
-            reasons.append("auteur en commun")
+            reasons.append(_("auteur en commun"))
         if data.get("publication_year") == publication.publication_year:
             score += 10
-            reasons.append("même année")
+            reasons.append(_("même année"))
         if doi and doi == _normalized(publication.doi):
             score += 100
-            reasons.append("même DOI")
+            reasons.append(_("même DOI"))
         if score >= 30:
             matches.append(ManualPublicationMatch(publication, score, tuple(reasons)))
     return sorted(matches, key=lambda item: (-item.score, item.publication.title))[:limit]
@@ -75,11 +76,13 @@ def create_manual_draft(*, data: dict, actor, duplicate_reviewed: bool) -> Publi
     matches = find_manual_publication_matches(data)
     if any(match.score >= 90 for match in matches):
         raise ValueError(
-            "Une notice correspondante très probable existe déjà. "
-            "Ouvrez-la au lieu de créer un doublon."
+            _(
+                "Une notice correspondante très probable existe déjà. "
+                "Ouvrez-la au lieu de créer un doublon."
+            )
         )
     if matches and not duplicate_reviewed:
-        raise ValueError("Les rapprochements possibles doivent être examinés.")
+        raise ValueError(_("Les rapprochements possibles doivent être examinés."))
 
     hal_type = data["hal_document_type"]
     publication_type = PUBLICATION_TYPE_BY_HAL[hal_type]
@@ -91,7 +94,10 @@ def create_manual_draft(*, data: dict, actor, duplicate_reviewed: bool) -> Publi
     }
     ready, missing, resolved_type = readiness_for(record)
     if not ready:
-        raise ValueError("Des champs HAL requis sont encore manquants : " + ", ".join(missing))
+        raise ValueError(
+            _("Des champs HAL requis sont encore manquants : %(fields)s")
+            % {"fields": ", ".join(missing)}
+        )
 
     publication = Publication.objects.create(
         publication_key=f"manual-{uuid.uuid4().hex[:16]}",

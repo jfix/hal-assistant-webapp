@@ -102,7 +102,7 @@ def test_account_page_explains_ios_and_android_installation(client, user) -> Non
 
     content = client.get(reverse("account-settings")).content.decode()
 
-    assert "Installer l’application" in content
+    assert "Installer l'application" in content
     assert "iPhone ou iPad" in content
     assert "Android" in content
     assert "ne sont pas enregistrés pour une consultation hors connexion" in content
@@ -749,7 +749,7 @@ def test_publication_detail_shows_linked_document_analysis_before_sources(
     assert label in content
     assert "Ouvrir le résultat en cache" in content
     assert content.index("Analyses de documents associées") < content.index(
-        "Sources d’origine"
+        "Sources d'origine"
     )
 
 
@@ -873,7 +873,7 @@ def test_publication_meta_sections_are_collapsed_by_default(
     assert content.count('<details class="panel meta-panel') == 1
     assert '<details class="panel meta-panel" open>' not in content
     assert "Historique et traçabilité" in content
-    assert "Sources d’origine" in content
+    assert "Sources d'origine" in content
     assert "Assertions de champs" in content
     assert "Détails des décisions éditoriales" in content
 

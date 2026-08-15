@@ -12,6 +12,7 @@ from urllib.parse import urlencode
 from urllib.request import urlopen
 
 from django.db import transaction
+from django.utils.translation import gettext as _
 from hal_assistant.sword import (
     PREPROD_URL,
     PRODUCTION_URL,
@@ -125,8 +126,10 @@ def check_live_duplicates(
             body = json.load(response)
     except Exception as exc:
         raise HALSubmissionError(
-            "La vérification des doublons HAL est indisponible ; "
-            "aucune soumission n’a été préparée."
+            _(
+                "La vérification des doublons HAL est indisponible ; "
+                "aucune soumission n’a été préparée."
+            )
         ) from exc
     evidence = [
         _candidate_evidence(publication, candidate)
@@ -141,8 +144,10 @@ def check_live_duplicates(
     }
     if blocked:
         raise HALDuplicateError(
-            "HAL contient un doublon probable ou une correspondance à examiner. "
-            "La nouvelle notice est bloquée.",
+            _(
+                "HAL contient un doublon probable ou une correspondance à examiner. "
+                "La nouvelle notice est bloquée."
+            ),
             check=check,
         )
     return check
@@ -151,21 +156,21 @@ def check_live_duplicates(
 def _submission_for(publication: Publication):
     source = publication.source_records.order_by("-created_at").first()
     if source is None:
-        raise HALSubmissionError("Aucune source immuable n’est associée à cette notice.")
+        raise HALSubmissionError(_("Aucune source immuable n’est associée à cette notice."))
     submission = build_submission_xml(source.raw_data, publication=publication)
     if not submission.xml or submission.errors:
-        details = "; ".join(submission.errors) or "XML vide"
-        raise HALSubmissionError(f"La notice XML n’est pas valide : {details}")
+        details = "; ".join(submission.errors) or _("XML vide")
+        raise HALSubmissionError(_("La notice XML n’est pas valide : %(details)s") % {"details": details})
     return submission
 
 
 def _require_new_deposit_ready(publication: Publication) -> None:
     if publication.hal_id:
-        raise HALSubmissionError("Cette notice possède déjà un identifiant HAL.")
+        raise HALSubmissionError(_("Cette notice possède déjà un identifiant HAL."))
     if publication.readiness_state != Publication.ReadinessState.HAL_READY:
-        raise HALSubmissionError("La notice n’est pas marquée prête pour HAL.")
+        raise HALSubmissionError(_("La notice n’est pas marquée prête pour HAL."))
     if publication.missing_required_fields:
-        raise HALSubmissionError("Des champs obligatoires sont encore manquants.")
+        raise HALSubmissionError(_("Des champs obligatoires sont encore manquants."))
 
 
 def prepare_preprod_operation(
@@ -246,13 +251,13 @@ def execute_preprod_operation(
         raise HALSubmissionError(str(exc)) from exc
     if operation.publication_version != publication.version:
         raise HALSubmissionError(
-            "La notice a changé depuis la préparation ; préparez un nouveau contrôle."
+            _("La notice a changé depuis la préparation ; préparez un nouveau contrôle.")
         )
     duplicate_checker(publication)
     with transaction.atomic():
         locked = HALOperation.objects.select_for_update().get(pk=operation.pk)
         if locked.state != HALOperation.State.PREPARED:
-            raise HALSubmissionError("Cette opération a déjà été exécutée.")
+            raise HALSubmissionError(_("Cette opération a déjà été exécutée."))
         locked.state = HALOperation.State.SUBMITTING
         locked.save(update_fields=["state", "updated_at"])
 
@@ -330,15 +335,17 @@ def prepare_production_deposit(
 ) -> HALProductionDeposit:
     publication = Publication.objects.get(pk=preprod_operation.publication_id)
     if publication.hal_id:
-        raise HALSubmissionError("Cette notice possède déjà un identifiant HAL.")
+        raise HALSubmissionError(_("Cette notice possède déjà un identifiant HAL."))
     if preprod_operation.state != HALOperation.State.ACCEPTED:
-        raise HALSubmissionError("Le test en préproduction doit d’abord être accepté.")
+        raise HALSubmissionError(_("Le test en préproduction doit d’abord être accepté."))
     if preprod_operation.publication_version != publication.version:
-        raise HALSubmissionError("La notice a changé depuis le test ; relancez la préproduction.")
+        raise HALSubmissionError(
+            _("La notice a changé depuis le test ; relancez la préproduction.")
+        )
     payload = preprod_operation.payload
     accepted_attempt = preprod_operation.attempts.filter(accepted=True).first()
     if accepted_attempt is None or accepted_attempt.payload_id != payload.id:
-        raise HALSubmissionError("Aucun reçu de préproduction accepté ne correspond au XML.")
+        raise HALSubmissionError(_("Aucun reçu de préproduction accepté ne correspond au XML."))
     duplicate_check = duplicate_checker(publication)
     existing = HALProductionDeposit.objects.filter(
         preprod_operation=preprod_operation
@@ -376,13 +383,13 @@ def execute_production_deposit(
 ) -> HALProductionAttempt:
     publication = Publication.objects.get(pk=deposit.publication_id)
     if publication.hal_id:
-        raise HALSubmissionError("Cette notice possède déjà un identifiant HAL.")
+        raise HALSubmissionError(_("Cette notice possède déjà un identifiant HAL."))
     if deposit.publication_version != publication.version:
-        raise HALSubmissionError("La notice a changé ; le dépôt préparé est obsolète.")
+        raise HALSubmissionError(_("La notice a changé ; le dépôt préparé est obsolète."))
     if deposit.preprod_operation.state != HALOperation.State.ACCEPTED:
-        raise HALSubmissionError("Le test en préproduction n’est plus valide.")
+        raise HALSubmissionError(_("Le test en préproduction n’est plus valide."))
     if deposit.payload_sha256 != deposit.preprod_operation.payload.sha256:
-        raise HALSubmissionError("Le XML ne correspond plus au test accepté.")
+        raise HALSubmissionError(_("Le XML ne correspond plus au test accepté."))
     try:
         credential = credentials_for(actor)
     except HALCredentialError as exc:
@@ -391,7 +398,7 @@ def execute_production_deposit(
     with transaction.atomic():
         locked = HALProductionDeposit.objects.select_for_update().get(pk=deposit.pk)
         if locked.state != HALProductionDeposit.State.PREPARED:
-            raise HALSubmissionError("Ce dépôt de production a déjà été exécuté.")
+            raise HALSubmissionError(_("Ce dépôt de production a déjà été exécuté."))
         locked.state = HALProductionDeposit.State.SUBMITTING
         locked.save(update_fields=["state", "updated_at"])
 

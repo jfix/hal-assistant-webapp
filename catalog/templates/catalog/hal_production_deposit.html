@@ -14,7 +14,7 @@
       <div><dt>{% translate "Préproduction" %}</dt><dd>{% translate "Acceptée" %}</dd></div>
       <div><dt>{% translate "Version de la notice" %}</dt><dd>{{ deposit.publication_version }}</dd></div>
       <div><dt>{% translate "XML testé et figé" %}</dt><dd><code>{{ deposit.payload_sha256 }}</code></dd></div>
-      <div><dt>{% translate "Doublons" %}</dt><dd>{% blocktranslate with count=deposit.duplicate_check.candidates|length %}Contrôle multi-champs relancé · {{ count }} candidat{% plural %}Contrôle multi-champs relancé · {{ count }} candidats{% endblocktranslate %}</dd></div>
+      <div><dt>{% translate "Doublons" %}</dt><dd>{% blocktranslate count count=deposit.duplicate_check.candidates|length %}Contrôle multi-champs relancé · {{ count }} candidat{% plural %}Contrôle multi-champs relancé · {{ count }} candidats{% endblocktranslate %}</dd></div>
       <div><dt>{% translate "Compte demandeur" %}</dt><dd>{{ deposit.requested_by.get_username }}</dd></div>
     </dl>
   </section>

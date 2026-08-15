@@ -6,6 +6,7 @@ from datetime import timedelta
 
 from django.db import IntegrityError, transaction
 from django.utils import timezone
+from django.utils.translation import gettext as _
 
 from catalog.models import (
     ActiveDocumentSummaryGeneration,
@@ -47,7 +48,7 @@ def generation_slot(*, owner, document_sha256: str, model_name: str):
             ).count()
             if recent_user_attempts >= minute_limit:
                 raise SummaryLimitError(
-                    "Trop de générations récentes. Attendez une minute avant de réessayer."
+                    _("Trop de générations récentes. Attendez une minute avant de réessayer.")
                 )
             daily_user_attempts = attempts.filter(
                 owner=owner,
@@ -55,11 +56,11 @@ def generation_slot(*, owner, document_sha256: str, model_name: str):
             ).count()
             if daily_user_attempts >= daily_limit:
                 raise SummaryLimitError(
-                    "Votre limite quotidienne de générations a été atteinte."
+                    _("Votre limite quotidienne de générations a été atteinte.")
                 )
             if attempts.filter(created_at__gte=now - timedelta(days=1)).count() >= global_limit:
                 raise SummaryLimitError(
-                    "La limite quotidienne de l’application a été atteinte."
+                    _("La limite quotidienne de l’application a été atteinte.")
                 )
             DocumentSummaryGenerationAttempt.objects.create(
                 owner=owner,
@@ -68,7 +69,7 @@ def generation_slot(*, owner, document_sha256: str, model_name: str):
             )
     except IntegrityError as exc:
         raise SummaryLimitError(
-            "Une génération est déjà en cours pour votre compte."
+            _("Une génération est déjà en cours pour votre compte.")
         ) from exc
 
     try:
