@@ -52,3 +52,34 @@ jobs:
 
       - name: Build production container
         run: docker build --tag hal-assistant-webapp:ci .
+
+      - name: Smoke-test production container
+        # Runs as the same non-root user the container serves traffic as, so
+        # this catches two classes of bug that "docker build" alone cannot:
+        # files present on disk but unreadable (e.g. permissions baked in
+        # from the build host), and files silently missing from the image
+        # (e.g. a directory never COPYed in). Both broke production once.
+        run: |
+          docker run --rm --user app \
+            -e DJANGO_DEBUG=0 \
+            -e DJANGO_SECRET_KEY="ci-smoke-test-key-with-enough-length-for-django-validation-000000" \
+            -e OPENAI_API_KEY=ci-placeholder \
+            -e DJANGO_ALLOWED_HOSTS=ci.invalid \
+            -e DJANGO_CSRF_TRUSTED_ORIGINS=https://ci.invalid \
+            hal-assistant-webapp:ci python -c "
+          import django, os
+          os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'hal_webapp.settings')
+          django.setup()
+
+          from django.db.migrations.loader import MigrationLoader
+          loader = MigrationLoader(None, ignore_no_migrations=True)
+          assert len(loader.disk_migrations) > 0, 'no migrations could be loaded'
+          print(f'migrations: {len(loader.disk_migrations)} loaded OK')
+
+          from django.utils import translation
+          from django.utils.translation import gettext
+          translation.activate('en')
+          translated = gettext('Titre')
+          assert translated == 'Title', f'English catalog missing or stale: got {translated!r}'
+          print(f'translation: {translated!r} OK')
+          "

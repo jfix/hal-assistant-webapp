@@ -19,7 +19,7 @@ COPY catalog ./catalog
 COPY templates ./templates
 COPY locale ./locale
 
-RUN chmod -R a+rX ./locale \
+RUN chmod -R a+rX . \
     && uv sync --frozen --no-dev --no-editable \
     && DJANGO_DEBUG=0 \
        DJANGO_SECRET_KEY="BuildOnly9xQ2mV7kR4tN8pL5sF1hJ6cD3wE0yU7iO2aB9gH4zX8vK" \
