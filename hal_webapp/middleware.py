@@ -10,6 +10,10 @@ class UserLanguageMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
+        # LocaleMiddleware runs before us and already activated the
+        # browser/cookie-detected language. Snapshot it so views can offer an
+        # accurate "automatic" fallback even after we override it below.
+        request.BROWSER_LANGUAGE_CODE = translation.get_language()
         user = request.user
         if user.is_authenticated:
             from catalog.models import UserInterfacePreference

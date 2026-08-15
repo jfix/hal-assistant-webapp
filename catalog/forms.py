@@ -28,6 +28,7 @@ class HALCredentialForm(forms.Form):
 class InterfaceLanguageForm(forms.Form):
     language = forms.ChoiceField(
         label=_("Langue de l’interface"),
+        required=False,
         choices=(
             ("", _("Automatique — langue du navigateur")),
             ("fr", _("Français")),

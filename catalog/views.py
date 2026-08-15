@@ -9,7 +9,7 @@ from django.db import connection, models
 from django.db.models import Q
 from django.http import FileResponse, Http404, HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.utils import timezone
+from django.utils import timezone, translation
 from django.utils.translation import gettext as _, gettext_lazy, ngettext
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_GET, require_POST
@@ -160,11 +160,16 @@ def account_settings(request: HttpRequest):
         if action == "save_interface_language":
             language_form = InterfaceLanguageForm(request.POST)
             if language_form.is_valid():
+                new_language = language_form.cleaned_data["language"]
                 UserInterfacePreference.objects.update_or_create(
                     user=request.user,
-                    defaults={"language": language_form.cleaned_data["language"]},
+                    defaults={"language": new_language},
                 )
-                messages.success(request, _("Votre langue d’interface a été enregistrée."))
+                resolved_language = new_language or request.BROWSER_LANGUAGE_CODE
+                with translation.override(resolved_language):
+                    messages.success(
+                        request, _("Votre langue d’interface a été enregistrée.")
+                    )
                 return redirect("account-settings")
         if action == "delete_hal_credentials":
             delete_credentials(user=request.user)
