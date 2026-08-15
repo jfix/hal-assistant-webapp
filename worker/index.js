@@ -2,6 +2,7 @@ import { Container, getContainer } from "@cloudflare/containers";
 import { env } from "cloudflare:workers";
 
 import { definedEnvironment } from "./environment.js";
+import { proxyToContainer } from "./proxy.js";
 
 export class DjangoContainer extends Container {
   defaultPort = 8080;
@@ -30,20 +31,8 @@ export class DjangoContainer extends Container {
 
 export default {
   async fetch(request, workerEnv) {
-    try {
-      const container = getContainer(workerEnv.DJANGO_CONTAINER, "primary");
-      return await container.fetch(request);
-    } catch (error) {
-      console.error(
-        JSON.stringify({
-          event: "django_container_proxy_error",
-          message: error instanceof Error ? error.message : String(error),
-        }),
-      );
-      return Response.json(
-        { error: "Application temporarily unavailable" },
-        { status: 503, headers: { "retry-after": "10" } },
-      );
-    }
+    return proxyToContainer(request, (req) =>
+      getContainer(workerEnv.DJANGO_CONTAINER, "primary").fetch(req),
+    );
   },
 };
