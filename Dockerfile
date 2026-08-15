@@ -34,4 +34,11 @@ RUN chmod -R a+rX . \
 USER app
 EXPOSE 8080
 
-CMD ["gunicorn", "hal_webapp.wsgi:application", "--bind", "0.0.0.0:8080", "--workers", "2", "--threads", "2", "--timeout", "120", "--access-logfile", "-", "--error-logfile", "-"]
+# Fail closed: apply migrations before gunicorn ever binds the port. If
+# migrate fails, this shell exits non-zero, gunicorn never starts, the port
+# never opens, and Cloudflare's own startup-timeout/retry path
+# (waitForPort -> onError) refuses to bring the container up — instead of
+# silently serving traffic against a stale schema. Safe because
+# wrangler.jsonc pins max_instances to 1, so there is no concurrent-instance
+# migration race. See docs/adr/0001-cloudflare-ready-django.md.
+CMD ["sh", "-c", "python manage.py migrate --noinput && exec gunicorn hal_webapp.wsgi:application --bind 0.0.0.0:8080 --workers 2 --threads 2 --timeout 120 --access-logfile - --error-logfile -"]

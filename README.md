@@ -132,17 +132,16 @@ before deployment.
 npm run cf:deploy
 ```
 
-`DjangoContainer.onStart()` in [`worker/index.js`](worker/index.js) runs
-`manage.py migrate --noinput` inside the container automatically before it
-starts serving, so a normal deploy applies any pending migrations on its own.
-This is safe because `wrangler.jsonc` pins `max_instances: 1` — there is no
-concurrent-instance race. It is **not** currently fail-closed: if that
-migration errors, the Worker logs the failure but still starts the container
-and serves traffic against whatever schema the database already has, which
-can surface as unrelated-looking bugs rather than an obvious outage. Always
-run `npx wrangler tail` for a few seconds and load a page immediately after
-any deploy that touches models or migrations, rather than assuming this step
-succeeded silently.
+The container's [`Dockerfile`](Dockerfile) runs `manage.py migrate --noinput`
+before gunicorn starts, so a normal deploy applies any pending migrations on
+its own — and fails closed: if the migration errors, the shell command exits
+non-zero, gunicorn never binds the port, and the container refuses to come up
+rather than silently serving traffic against a stale schema. This is safe
+because `wrangler.jsonc` pins `max_instances: 1` — there is no
+concurrent-instance migration race. Still run `npx wrangler tail` for a few
+seconds and load a page immediately after any deploy that touches models or
+migrations — a failed container start shows up there immediately, before a
+user has to report it.
 
 See [ADR 0001](docs/adr/0001-cloudflare-ready-django.md) and the imported
 handover documents under `docs/`. The durable

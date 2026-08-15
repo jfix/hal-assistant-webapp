@@ -116,10 +116,10 @@ For every release:
 3. build and smoke-test the Docker image on `linux/amd64` (CI does this on
    every push — see the "Smoke-test production container" step);
 4. take a database backup before migrations outside development;
-5. migrations apply automatically on deploy (`DjangoContainer.onStart()` in
-   `worker/index.js`), but that step is not fail-closed — check
-   `npx wrangler tail` immediately after deploying and confirm no exceptions
-   rather than assuming it succeeded;
+5. migrations apply automatically and fail closed on deploy (the Dockerfile's
+   `CMD` runs `migrate --noinput` before gunicorn starts, refusing to come up
+   on failure) — still check `npx wrangler tail` immediately after deploying
+   to confirm it actually applied;
 6. verify `/healthz`, authentication, and one representative imported record;
 7. do not add HAL credentials until a separately authorized write milestone.
 

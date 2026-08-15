@@ -55,15 +55,20 @@ The importer has two phases:
   SQLite and source snapshots in a host-mounted `var/` directory.
 - Node and Wrangler are needed only to exercise the Cloudflare adapter.
 - Cloudflare deployment requires a managed PostgreSQL database and Workers Paid.
-- Database migrations run automatically: `DjangoContainer.onStart()` in
-  `worker/index.js` execs `manage.py migrate --noinput` inside the container
-  before it starts serving. This is safe under the current `max_instances: 1`
-  cap (no concurrent-instance race), but the Worker does not currently block
-  startup or fail loudly if that migration errors — the container still comes
-  up and serves traffic against whatever schema the database already has. See
-  [`worker/index.js`](../../worker/index.js) and
-  [`worker/container-startup.js`](../../worker/container-startup.js). Always
-  check `wrangler tail` immediately after a deploy that includes new
-  migrations rather than assuming this step succeeded silently.
+- Database migrations run automatically and fail closed: the container's
+  [`Dockerfile`](../../Dockerfile) `CMD` runs `manage.py migrate --noinput`
+  before gunicorn ever binds the port, `&&`-chained so a failed migration
+  exits non-zero and gunicorn never starts. This deliberately relies on
+  `@cloudflare/containers`' own port-readiness path (`waitForPort` ->
+  `onError()`) as the failure gate, rather than a Worker-side hook — an
+  earlier version of this ran the migration from `DjangoContainer.onStart()`
+  in `worker/index.js`, but that hook runs *after* the library already marks
+  the container healthy (`setHealthy()` precedes `onStart()` in
+  `startAndWaitForPorts`), so a migration failure there was logged but never
+  blocked traffic. This is safe under the current `max_instances: 1` cap (no
+  concurrent-instance migration race); if that ever changes, this needs
+  revisiting. Always check `wrangler tail` immediately after a deploy that
+  includes new migrations to confirm it actually applied, rather than only
+  finding out from a failed container start.
 - Future background enrichment can move to Queues/Workflows without changing
   domain ownership.
