@@ -2,7 +2,7 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "hal-publication-manager",
   "main": "worker/index.js",
-  "workers_dev": true,
+  "workers_dev": false,
   "routes": [
     {
       "pattern": "hal.jfix.com",
@@ -13,8 +13,8 @@
   "compatibility_flags": ["nodejs_compat"],
   "vars": {
     "DJANGO_DEBUG": "0",
-    "DJANGO_ALLOWED_HOSTS": "hal.jfix.com,hal-publication-manager.jakob-fix.workers.dev",
-    "DJANGO_CSRF_TRUSTED_ORIGINS": "https://hal.jfix.com,https://hal-publication-manager.jakob-fix.workers.dev",
+    "DJANGO_ALLOWED_HOSTS": "hal.jfix.com",
+    "DJANGO_CSRF_TRUSTED_ORIGINS": "https://hal.jfix.com",
     "R2_BUCKET_NAME": "hal-publication-snapshots",
     "OPENAI_MODEL": "gpt-5.6-terra",
     "SUMMARY_USER_MINUTE_LIMIT": "3",

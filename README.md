@@ -121,9 +121,10 @@ base64 encoding of 32 random bytes and must never be committed.
 
 Production startup fails closed unless `DJANGO_ALLOWED_HOSTS` contains exact
 hostnames, `DJANGO_CSRF_TRUSTED_ORIGINS` contains exact HTTPS origins, the
-Django secret is at least 50 characters, and the OpenAI key is configured. The
-placeholder broad `workers.dev` values in `wrangler.jsonc` must therefore be
-replaced with the exact deployment hostname before deployment.
+Django secret is at least 50 characters, and the OpenAI key is configured.
+The Worker serves only the custom domain: `workers_dev` is disabled in
+`wrangler.jsonc` so the `*.workers.dev` URL cannot bypass the Cloudflare
+Access policy protecting `hal.jfix.com`.
 
 Set the non-secret R2 bucket name and final allowed hosts in `wrangler.jsonc`
 before deployment.
