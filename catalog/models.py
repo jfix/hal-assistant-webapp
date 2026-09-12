@@ -117,6 +117,10 @@ class Publication(models.Model):
                 "submit_hal_production",
                 _("Peut déposer une nouvelle notice dans HAL production"),
             ),
+            (
+                "update_hal_production",
+                _("Peut mettre à jour une notice existante sur HAL production"),
+            ),
         ]
 
     def __str__(self) -> str:
@@ -761,3 +765,76 @@ class HALProductionAttempt(ImmutableModel):
 
     def __str__(self) -> str:
         return f"{self.deposit_id} · {self.status_code or 'résultat inconnu'}"
+
+
+class HALUpdateOperation(models.Model):
+    """A gated metadata update of one record that already exists on HAL.
+
+    The payload is frozen at preparation time. A production X-test must accept
+    the exact payload before the real update can be executed, and the executed
+    XML is checksum-locked to the tested one.
+    """
+
+    class State(models.TextChoices):
+        PREPARED = "prepared", _("Prêt pour le test")
+        TEST_ACCEPTED = "test_accepted", _("Test accepté")
+        SUBMITTING = "submitting", _("Mise à jour en cours")
+        ACCEPTED = "accepted", _("Acceptée par HAL")
+        REJECTED = "rejected", _("Refusée par HAL")
+        UNCERTAIN = "uncertain", _("Résultat à vérifier")
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    publication = models.ForeignKey(
+        Publication, on_delete=models.PROTECT, related_name="hal_update_operations"
+    )
+    requested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="requested_hal_update_operations",
+    )
+    publication_version = models.PositiveIntegerField()
+    hal_id = models.CharField(max_length=80)
+    hal_document_version = models.PositiveIntegerField()
+    payload_content = models.TextField()
+    payload_sha256 = models.CharField(max_length=64)
+    state = models.CharField(
+        max_length=20, choices=State.choices, default=State.PREPARED
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["publication", "-created_at"])]
+
+    def __str__(self) -> str:
+        return f"{self.hal_id}v{self.hal_document_version} · {self.state}"
+
+
+class HALUpdateAttempt(ImmutableModel):
+    """Append-only record of one HAL metadata-update request (test or real)."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    operation = models.ForeignKey(
+        HALUpdateOperation, on_delete=models.PROTECT, related_name="attempts"
+    )
+    requested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="hal_update_attempts",
+    )
+    test_mode = models.BooleanField(default=True)
+    target_url = models.URLField(max_length=500)
+    payload_sha256 = models.CharField(max_length=64)
+    status_code = models.PositiveSmallIntegerField(null=True, blank=True)
+    accepted = models.BooleanField(default=False)
+    returned_hal_id = models.CharField(max_length=80, blank=True)
+    returned_hal_url = models.URLField(max_length=1000, blank=True)
+    error = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return f"{self.operation_id} · {self.status_code or 'network error'}"

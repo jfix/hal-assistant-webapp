@@ -107,6 +107,14 @@ preproduction and production as different permissions and workflows, preserve
 every exact payload and response, and never allow an update path to fall back to
 a new deposit.
 
+Delivered 2026-09-12 (explicitly authorized): metadata updates of existing HAL
+records behind the dedicated `update_hal_production` permission. The payload is
+frozen at preparation, a production `X-test` must accept it, the executed XML
+is checksum-locked to the tested one, the SWORD target embeds the known HAL
+identifier and live document version (`.../{hal_id}v{N}`), and an identifier
+mismatch in HAL's response marks the attempt rejected — an update cannot
+create a new record.
+
 ## Deployment acceptance gates
 
 For every release:

@@ -100,6 +100,26 @@ urlpatterns = [
         name="hal-production-execute",
     ),
     path(
+        "publications/<uuid:publication_id>/hal/update/prepare/",
+        views.prepare_hal_update,
+        name="hal-update-prepare",
+    ),
+    path(
+        "hal/update/<uuid:operation_id>/",
+        views.hal_update_operation,
+        name="hal-update-operation",
+    ),
+    path(
+        "hal/update/<uuid:operation_id>/test/",
+        views.execute_hal_update_test,
+        name="hal-update-test",
+    ),
+    path(
+        "hal/update/<uuid:operation_id>/execute/",
+        views.execute_hal_update,
+        name="hal-update-execute",
+    ),
+    path(
         "publications/<uuid:publication_id>/edit/",
         views.edit_field_view,
         name="publication-edit-field",

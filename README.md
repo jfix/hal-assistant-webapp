@@ -5,10 +5,13 @@ metadata while reusing the safety-focused
 [`hal-assistant`](https://github.com/jfix/hal-assistant) package.
 
 The current milestone imports immutable reviewed-workbook snapshots and exposes
-authenticated publication list and detail pages. Authorized users can run an
-explicitly confirmed, immutable-payload HAL preproduction `X-test` for a new
-deposit after a live multi-field duplicate check. It deliberately contains no
-HAL production-write or update route.
+authenticated publication list and detail pages. Separately permissioned users
+can run explicitly confirmed, immutable-payload HAL workflows: a preproduction
+`X-test` then a production deposit for a new record (after a live multi-field
+duplicate check), and a metadata update of an existing HAL record (production
+`X-test` first, checksum-locked payload, affiliations and domains preserved).
+An update always targets the known HAL identifier and can never fall back to
+creating a new deposit.
 
 ## Local development
 

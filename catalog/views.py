@@ -28,6 +28,7 @@ from .models import (
     HALCredential,
     HALOperation,
     HALProductionDeposit,
+    HALUpdateOperation,
     Publication,
     UserInterfacePreference,
 )
@@ -58,6 +59,12 @@ from .services.hal_submission import (
     prepare_preprod_operation,
     prepare_production_deposit,
 )
+from .services.hal_update import (
+    HALUpdateError,
+    execute_update,
+    execute_update_test,
+    prepare_update_operation,
+)
 from .services.imports import LIST_FIELDS
 from .services.manual_publications import (
     create_manual_draft,
@@ -86,6 +93,7 @@ from .services.traceability import traceability_events
 REVIEW_PERMISSION = "catalog.review_publication"
 PREPROD_PERMISSION = "catalog.submit_hal_preprod"
 PRODUCTION_PERMISSION = "catalog.submit_hal_production"
+UPDATE_PERMISSION = "catalog.update_hal_production"
 
 # (label, field name, display kind) in detail-page order.
 METADATA_FIELDS = (
@@ -700,6 +708,7 @@ def publication_detail(request: HttpRequest, publication_id):
             "document_links__actor",
             "hal_operations__attempts",
             "hal_production_deposits__requested_by",
+            "hal_update_operations__attempts",
             "hal_removal_records__actor",
         ),
         id=publication_id,
@@ -759,6 +768,12 @@ def publication_detail(request: HttpRequest, publication_id):
             "latest_hal_operation": latest_hal_operation,
             "can_submit_preprod": can_submit_preprod,
             "can_submit_production": can_submit_production,
+            "can_update_hal": request.user.has_perm(UPDATE_PERMISSION),
+            "hal_update_pending": bool(
+                publication.hal_id
+                and publication.hal_synced_version != publication.version
+            ),
+            "latest_hal_update": publication.hal_update_operations.first(),
             "hal_journey": hal_journey,
             "latest_hal_removal": publication.hal_removal_records.first(),
             "traceability_events": traceability_events(publication),
@@ -969,6 +984,97 @@ def execute_hal_production(request: HttpRequest, deposit_id):
             else:
                 messages.error(request, _("HAL a refusé le dépôt réel."))
     return redirect("hal-production-deposit", deposit_id=deposit.id)
+
+
+@login_required
+@require_POST
+def prepare_hal_update(request: HttpRequest, publication_id):
+    publication = get_object_or_404(Publication, id=publication_id)
+    if not request.user.has_perm(UPDATE_PERMISSION):
+        messages.error(
+            request, _("Vous n’avez pas le droit de mettre à jour une notice sur HAL.")
+        )
+        return redirect("publication-detail", publication_id=publication.id)
+    try:
+        operation = prepare_update_operation(publication=publication, actor=request.user)
+    except (HALUpdateError, HALSubmissionError) as exc:
+        messages.error(request, str(exc))
+        return redirect("publication-detail", publication_id=publication.id)
+    return redirect("hal-update-operation", operation_id=operation.id)
+
+
+@login_required
+def hal_update_operation(request: HttpRequest, operation_id):
+    operation = get_object_or_404(
+        HALUpdateOperation.objects.select_related(
+            "publication", "requested_by"
+        ).prefetch_related("attempts"),
+        id=operation_id,
+    )
+    return render(
+        request,
+        "catalog/hal_update_operation.html",
+        {
+            "operation": operation,
+            "publication": operation.publication,
+            "can_update_hal": request.user.has_perm(UPDATE_PERMISSION),
+        },
+    )
+
+
+@login_required
+@require_POST
+def execute_hal_update_test(request: HttpRequest, operation_id):
+    operation = get_object_or_404(
+        HALUpdateOperation.objects.select_related("publication"), id=operation_id
+    )
+    if not request.user.has_perm(UPDATE_PERMISSION):
+        messages.error(
+            request, _("Vous n’avez pas le droit de mettre à jour une notice sur HAL.")
+        )
+    else:
+        try:
+            attempt = execute_update_test(operation=operation, actor=request.user)
+        except HALUpdateError as exc:
+            messages.error(request, str(exc))
+        else:
+            if attempt.accepted:
+                messages.success(request, _("HAL a accepté le test de mise à jour."))
+            else:
+                messages.error(request, _("HAL a refusé le test de mise à jour."))
+    return redirect("hal-update-operation", operation_id=operation.id)
+
+
+@login_required
+@require_POST
+def execute_hal_update(request: HttpRequest, operation_id):
+    operation = get_object_or_404(
+        HALUpdateOperation.objects.select_related("publication"), id=operation_id
+    )
+    if not request.user.has_perm(UPDATE_PERMISSION):
+        messages.error(
+            request, _("Vous n’avez pas le droit de mettre à jour une notice sur HAL.")
+        )
+    elif request.POST.get("confirmation", "").strip() != operation.hal_id:
+        messages.error(request, _("La confirmation ne correspond pas à l’identifiant HAL."))
+    elif request.POST.get("understood") != "yes":
+        messages.error(
+            request, _("Confirmez que cette mise à jour remplacera la notice réelle sur HAL.")
+        )
+    else:
+        try:
+            attempt = execute_update(operation=operation, actor=request.user)
+        except HALUpdateError as exc:
+            messages.error(request, str(exc))
+        else:
+            operation.refresh_from_db()
+            if attempt.accepted:
+                messages.success(request, _("HAL a accepté la mise à jour de la notice."))
+            elif operation.state == HALUpdateOperation.State.UNCERTAIN:
+                messages.error(request, _("Résultat incertain : vérification manuelle requise."))
+            else:
+                messages.error(request, _("HAL a refusé la mise à jour de la notice."))
+    return redirect("hal-update-operation", operation_id=operation.id)
 
 
 @login_required

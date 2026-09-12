@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: HAL Publication Manager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-08-15 22:45+0200\n"
+"POT-Creation-Date: 2026-09-12 16:07+0200\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -26,33 +26,33 @@ msgstr "The saved password is never displayed."
 msgid "Langue de l’interface"
 msgstr "Interface language"
 
-#: catalog/forms.py:32 catalog/models.py:22
+#: catalog/forms.py:33 catalog/models.py:22
 msgid "Automatique — langue du navigateur"
 msgstr "Automatic — browser language"
 
-#: catalog/forms.py:33 catalog/forms.py:76 catalog/models.py:23
+#: catalog/forms.py:34 catalog/forms.py:77 catalog/models.py:23
 msgid "Français"
 msgstr "French"
 
-#: catalog/forms.py:37
+#: catalog/forms.py:38
 msgid ""
 "Le français est utilisé si la langue du navigateur n’est pas prise en "
 "charge."
 msgstr "French is used if your browser language is not supported."
 
-#: catalog/forms.py:44
+#: catalog/forms.py:45
 msgid "Type de publication HAL"
 msgstr "HAL publication type"
 
-#: catalog/forms.py:50 catalog/views.py:91
+#: catalog/forms.py:51 catalog/views.py:100
 msgid "Titre"
 msgstr "Title"
 
-#: catalog/forms.py:52 catalog/views.py:94
+#: catalog/forms.py:53 catalog/views.py:103
 msgid "Auteurs"
 msgstr "Authors"
 
-#: catalog/forms.py:54
+#: catalog/forms.py:55
 msgid ""
 "Ajoutez librement un auteur ou choisissez une forme existante dans HAL. "
 "Séparez plusieurs auteurs par un point-virgule."
@@ -60,94 +60,94 @@ msgstr ""
 "Freely add an author or choose an existing HAL entry. Separate multiple "
 "authors with a semicolon."
 
-#: catalog/forms.py:69 catalog/templates/catalog/home.html:37
-#: catalog/templates/catalog/publication_list.html:85 catalog/views.py:92
+#: catalog/forms.py:70 catalog/templates/catalog/home.html:37
+#: catalog/templates/catalog/publication_list.html:85 catalog/views.py:101
 msgid "Année"
 msgstr "Year"
 
-#: catalog/forms.py:74
+#: catalog/forms.py:75
 msgid "Langue principale"
 msgstr "Main language"
 
-#: catalog/forms.py:77
+#: catalog/forms.py:78
 msgid "Anglais"
 msgstr "English"
 
-#: catalog/forms.py:78
+#: catalog/forms.py:79
 msgid "Allemand"
 msgstr "German"
 
-#: catalog/forms.py:79
+#: catalog/forms.py:80
 msgid "Espagnol"
 msgstr "Spanish"
 
-#: catalog/forms.py:80
+#: catalog/forms.py:81
 msgid "Italien"
 msgstr "Italian"
 
-#: catalog/forms.py:81
+#: catalog/forms.py:82
 msgid "Danois"
 msgstr "Danish"
 
-#: catalog/forms.py:82
+#: catalog/forms.py:83
 msgid "Norvégien"
 msgstr "Norwegian"
 
-#: catalog/forms.py:83
+#: catalog/forms.py:84
 msgid "Suédois"
 msgstr "Swedish"
 
-#: catalog/forms.py:87
+#: catalog/forms.py:88
 msgid "DOI (facultatif)"
 msgstr "DOI (optional)"
 
-#: catalog/forms.py:93
+#: catalog/forms.py:94
 #: catalog/templates/catalog/publication_create_manual.html:41
-#: catalog/views.py:96
+#: catalog/views.py:105
 msgid "Revue"
 msgstr "Journal"
 
-#: catalog/forms.py:110
+#: catalog/forms.py:111
 msgid "Titre de l’ouvrage"
 msgstr "Book title"
 
-#: catalog/forms.py:124
+#: catalog/forms.py:125
 msgid "Nom du congrès"
 msgstr "Conference name"
 
-#: catalog/forms.py:130
+#: catalog/forms.py:131
 msgid "Date de début"
 msgstr "Start date"
 
-#: catalog/forms.py:135
+#: catalog/forms.py:136
 msgid "Date de fin"
 msgstr "End date"
 
-#: catalog/forms.py:140 catalog/views.py:113
+#: catalog/forms.py:141 catalog/views.py:122
 msgid "Ville"
 msgstr "City"
 
-#: catalog/forms.py:146 catalog/views.py:114
+#: catalog/forms.py:147 catalog/views.py:123
 msgid "Pays"
 msgstr "Country"
 
-#: catalog/integrations/hal_assistant.py:22
+#: catalog/integrations/hal_assistant.py:21
 msgid "Article dans une revue"
 msgstr "Journal article"
 
-#: catalog/integrations/hal_assistant.py:23
+#: catalog/integrations/hal_assistant.py:22
 msgid "Communication dans un congrès"
 msgstr "Conference paper"
 
-#: catalog/integrations/hal_assistant.py:24
+#: catalog/integrations/hal_assistant.py:23
 msgid "Chapitre d’ouvrage"
 msgstr "Book chapter"
 
-#: catalog/integrations/hal_assistant.py:25
+#: catalog/integrations/hal_assistant.py:24
 msgid "Ouvrages scientifiques (y compris édition critique et traduction)"
 msgstr "Scholarly books (including critical editions and translations)"
 
-#: catalog/integrations/hal_assistant.py:26
+#: catalog/integrations/hal_assistant.py:25
 msgid "Direction d’ouvrage"
 msgstr "Edited book"
 
@@ -156,12 +156,12 @@ msgstr "Edited book"
 msgid "Type de document HAL : %(code)s"
 msgstr "HAL document type: %(code)s"
 
-#: catalog/models.py:39 catalog/models.py:168 catalog/models.py:172
+#: catalog/models.py:39 catalog/models.py:172 catalog/models.py:176
 msgid "Brouillon"
 msgstr "Draft"
 
-#: catalog/models.py:40 catalog/models.py:47 catalog/models.py:203
-#: catalog/models.py:245 catalog/models.py:247
+#: catalog/models.py:40 catalog/models.py:47 catalog/models.py:207
+#: catalog/models.py:249 catalog/models.py:251
 msgid "À vérifier"
 msgstr "Needs review"
 
@@ -169,7 +169,7 @@ msgstr "Needs review"
 msgid "Approuvé"
 msgstr "Approved"
 
-#: catalog/models.py:42 catalog/models.py:237 catalog/models.py:239
+#: catalog/models.py:42 catalog/models.py:241 catalog/models.py:243
 msgid "Bloqué"
 msgstr "Blocked"
 
@@ -181,7 +181,7 @@ msgstr "Parsed"
 msgid "À enrichir"
 msgstr "Needs enrichment"
 
-#: catalog/models.py:48 catalog/models.py:212
+#: catalog/models.py:48 catalog/models.py:216
 #: catalog/templates/catalog/home.html:43
 msgid "Prêt pour HAL"
 msgstr "Ready for HAL"
@@ -206,185 +206,177 @@ msgstr "Can validate a new record in HAL pre-production"
 msgid "Peut déposer une nouvelle notice dans HAL production"
 msgstr "Can submit a new record to HAL production"
 
-#: catalog/models.py:164
+#: catalog/models.py:122
+msgid "Peut mettre à jour une notice existante sur HAL production"
+msgstr "Can update an existing record on HAL production"
+
+#: catalog/models.py:168
 msgid "Publié sur HAL"
 msgstr "Published on HAL"
 
-#: catalog/models.py:166
+#: catalog/models.py:170
 msgid "Déposé sur HAL"
 msgstr "Deposited on HAL"
 
-#: catalog/models.py:172
+#: catalog/models.py:176
 msgid "Publié"
 msgstr "Published"
 
-#: catalog/models.py:172
+#: catalog/models.py:176
 msgid "Déposé"
 msgstr "Deposited"
 
-#: catalog/models.py:184
+#: catalog/models.py:188
 msgid "Prêt pour mise à jour HAL"
 msgstr "Ready for HAL update"
 
-#: catalog/models.py:186
+#: catalog/models.py:190
 msgid "Mise à jour à compléter"
 msgstr "Update to complete"
 
-#: catalog/models.py:188
+#: catalog/models.py:192
 msgid "Prêt à mettre à jour"
 msgstr "Ready to update"
 
-#: catalog/models.py:188 catalog/models.py:212 catalog/models.py:214
+#: catalog/models.py:192 catalog/models.py:216 catalog/models.py:218
 msgid "À compléter"
 msgstr "To complete"
 
-#: catalog/models.py:190
+#: catalog/models.py:194
 msgid "Minimum HAL atteint"
 msgstr "HAL minimum reached"
 
-#: catalog/models.py:190
+#: catalog/models.py:194
 msgid "Minimum HAL incomplet"
 msgstr "HAL minimum incomplete"
 
-#: catalog/models.py:194 catalog/models.py:196 catalog/models.py:211
-#: catalog/models.py:213 catalog/templates/catalog/home.html:37
+#: catalog/models.py:198 catalog/models.py:200 catalog/models.py:215
+#: catalog/models.py:217 catalog/templates/catalog/home.html:37
 msgid "Données"
 msgstr "Data"
 
-#: catalog/models.py:205 catalog/models.py:487
+#: catalog/models.py:209 catalog/models.py:491
 msgid "Modifié"
 msgstr "Modified"
 
-#: catalog/models.py:207
+#: catalog/models.py:211
 msgid "À jour"
 msgstr "Up to date"
 
-#: catalog/models.py:214
+#: catalog/models.py:218
 msgid "Prêt"
 msgstr "Ready"
 
-#: catalog/models.py:219
+#: catalog/models.py:223
 msgid "Jamais synchronisé"
 msgstr "Never synced"
 
-#: catalog/models.py:223
+#: catalog/models.py:227
 msgid "Synchronisation"
 msgstr "Sync"
 
-#: catalog/models.py:225
+#: catalog/models.py:229
 msgid "Sync."
 msgstr "Sync."
 
-#: catalog/models.py:226
+#: catalog/models.py:230
 msgid "Jamais"
 msgstr "Never"
 
-#: catalog/models.py:236 catalog/models.py:238 catalog/models.py:244
-#: catalog/models.py:246
+#: catalog/models.py:240 catalog/models.py:242 catalog/models.py:248
+#: catalog/models.py:250
 msgid "Attention"
 msgstr "Attention"
 
-#: catalog/models.py:297
+#: catalog/models.py:301
 msgid "Notice existante"
 msgstr "Existing record"
 
-#: catalog/models.py:298
+#: catalog/models.py:302
 msgid "Nouveau brouillon local"
 msgstr "New local draft"
 
-#: catalog/models.py:369
+#: catalog/models.py:373
 msgid "Instantané Google Sheet"
 msgstr "Google Sheet snapshot"
 
-#: catalog/models.py:370
+#: catalog/models.py:374
 msgid "Instantané API HAL"
 msgstr "HAL API snapshot"
 
-#: catalog/models.py:371
+#: catalog/models.py:375
 msgid "Manuel"
 msgstr "Manual"
 
-#: catalog/models.py:425
+#: catalog/models.py:429
 msgid "Proposé"
 msgstr "Proposed"
 
-#: catalog/models.py:426 catalog/models.py:485
+#: catalog/models.py:430 catalog/models.py:489
 msgid "Accepté"
 msgstr "Accepted"
 
-#: catalog/models.py:427 catalog/models.py:486
+#: catalog/models.py:431 catalog/models.py:490
 msgid "Rejeté"
 msgstr "Rejected"
 
-#: catalog/models.py:428
+#: catalog/models.py:432
 msgid "Remplacé"
 msgstr "Superseded"
 
-#: catalog/models.py:610 catalog/models.py:706
+#: catalog/models.py:614 catalog/models.py:710
 msgid "Prêt à confirmer"
 msgstr "Ready to confirm"
 
-#: catalog/models.py:611
+#: catalog/models.py:615
 msgid "Envoi en cours"
 msgstr "Sending in progress"
 
-#: catalog/models.py:612
+#: catalog/models.py:616
 msgid "Accepté en préproduction"
 msgstr "Accepted in pre-production"
 
-#: catalog/models.py:613
+#: catalog/models.py:617
 msgid "Refusé en préproduction"
 msgstr "Rejected in pre-production"
 
-#: catalog/models.py:707
+#: catalog/models.py:711
 msgid "Dépôt en cours"
 msgstr "Deposit in progress"
 
-#: catalog/models.py:708
+#: catalog/models.py:712
 msgid "Accepté par HAL"
 msgstr "Accepted by HAL"
 
-#: catalog/models.py:709
+#: catalog/models.py:713
 msgid "Refusé par HAL"
 msgstr "Rejected by HAL"
 
-#: catalog/models.py:710
+#: catalog/models.py:714 catalog/models.py:784
 msgid "Résultat à vérifier"
 msgstr "Result to verify"
 
-#: catalog/services/document_matching.py:45
-#: catalog/services/manual_publications.py:48
-msgid "même titre"
-msgstr "same title"
+#: catalog/models.py:779
+msgid "Prêt pour le test"
+msgstr "Ready for the test"
 
-#: catalog/services/document_matching.py:48
-#: catalog/services/manual_publications.py:51
-#, python-format
-msgid "titre très proche (%(ratio)s)"
-msgstr "title very close (%(ratio)s)"
+#: catalog/models.py:780
+msgid "Test accepté"
+msgstr "Test accepted"
 
-#: catalog/services/document_matching.py:51
-#: catalog/services/manual_publications.py:54
-#, python-format
-msgid "titre proche (%(ratio)s)"
-msgstr "title close (%(ratio)s)"
+#: catalog/models.py:781
+msgid "Mise à jour en cours"
+msgstr "Update in progress"
 
-#: catalog/services/document_matching.py:57
-#: catalog/services/manual_publications.py:62
-msgid "auteur en commun"
-msgstr "shared author"
+#: catalog/models.py:782
+msgid "Acceptée par HAL"
+msgstr "Accepted by HAL"
 
-#: catalog/services/document_matching.py:63
-#: catalog/services/manual_publications.py:65
-msgid "même année"
-msgstr "same year"
+#: catalog/models.py:783
+msgid "Refusée par HAL"
+msgstr "Rejected by HAL"
 
-#: catalog/services/document_matching.py:66
-#: catalog/services/manual_publications.py:68
-msgid "même DOI"
-msgstr "same DOI"
-
-#: catalog/services/document_matching.py:122
+#: catalog/services/document_matching.py:73
 msgid ""
 "Une notice correspondante très probable existe déjà ; associez-la au "
 "document."
@@ -563,7 +555,7 @@ msgstr "HAL will be queried before preparing the test."
 msgid "Cette étape sera débloquée après le contrôle des doublons."
 msgstr "This step will unlock after the duplicate check."
 
-#: catalog/services/hal_journey.py:93 catalog/views.py:891
+#: catalog/services/hal_journey.py:93 catalog/views.py:914
 msgid "HAL préproduction a accepté la notice de test."
 msgstr "HAL pre-production has accepted the test record."
 
@@ -653,63 +645,109 @@ msgstr "No immutable source is associated with this record."
 msgid "XML vide"
 msgstr "Empty XML"
 
-#: catalog/services/hal_submission.py:163
+#: catalog/services/hal_submission.py:164
 #, python-format
 msgid "La notice XML n’est pas valide : %(details)s"
 msgstr "The record XML is not valid: %(details)s"
 
-#: catalog/services/hal_submission.py:169
-#: catalog/services/hal_submission.py:338
-#: catalog/services/hal_submission.py:386
+#: catalog/services/hal_submission.py:171
+#: catalog/services/hal_submission.py:340
+#: catalog/services/hal_submission.py:388
 msgid "Cette notice possède déjà un identifiant HAL."
 msgstr "This record already has a HAL identifier."
 
-#: catalog/services/hal_submission.py:171
+#: catalog/services/hal_submission.py:173
 msgid "La notice n’est pas marquée prête pour HAL."
 msgstr "The record is not marked ready for HAL."
 
-#: catalog/services/hal_submission.py:173
+#: catalog/services/hal_submission.py:175 catalog/services/hal_update.py:58
 msgid "Des champs obligatoires sont encore manquants."
 msgstr "Required fields are still missing."
 
-#: catalog/services/hal_submission.py:254
+#: catalog/services/hal_submission.py:256
 msgid ""
 "La notice a changé depuis la préparation ; préparez un nouveau contrôle."
 msgstr "The record has changed since preparation; prepare a new check."
 
-#: catalog/services/hal_submission.py:260
+#: catalog/services/hal_submission.py:262
 msgid "Cette opération a déjà été exécutée."
 msgstr "This operation has already been executed."
 
-#: catalog/services/hal_submission.py:340
+#: catalog/services/hal_submission.py:342
 msgid "Le test en préproduction doit d’abord être accepté."
 msgstr "The pre-production test must be accepted first."
 
-#: catalog/services/hal_submission.py:343
+#: catalog/services/hal_submission.py:345
 msgid "La notice a changé depuis le test ; relancez la préproduction."
 msgstr "The record has changed since the test; rerun pre-production."
 
-#: catalog/services/hal_submission.py:348
+#: catalog/services/hal_submission.py:350
 msgid "Aucun reçu de préproduction accepté ne correspond au XML."
 msgstr "No accepted pre-production receipt matches the XML."
 
-#: catalog/services/hal_submission.py:388
+#: catalog/services/hal_submission.py:390
 msgid "La notice a changé ; le dépôt préparé est obsolète."
 msgstr "The record has changed; the prepared deposit is stale."
 
-#: catalog/services/hal_submission.py:390
+#: catalog/services/hal_submission.py:392
 msgid "Le test en préproduction n’est plus valide."
 msgstr "The pre-production test is no longer valid."
 
-#: catalog/services/hal_submission.py:392
+#: catalog/services/hal_submission.py:394
 msgid "Le XML ne correspond plus au test accepté."
 msgstr "The XML no longer matches the accepted test."
 
-#: catalog/services/hal_submission.py:401
+#: catalog/services/hal_submission.py:403
 msgid "Ce dépôt de production a déjà été exécuté."
 msgstr "This production deposit has already been executed."
 
-#: catalog/services/manual_publications.py:80
+#: catalog/services/hal_update.py:38
+msgid ""
+"La version du document HAL est introuvable ; aucune mise à jour préparée."
+msgstr "The HAL document version cannot be found; no update was prepared."
+
+#: catalog/services/hal_update.py:43
+#, python-format
+msgid "La notice %(hal_id)s est introuvable sur HAL."
+msgstr "Record %(hal_id)s cannot be found on HAL."
+
+#: catalog/services/hal_update.py:48
+#, python-format
+msgid "HAL n’a pas renvoyé de version exploitable pour %(hal_id)s."
+msgstr "HAL did not return a usable version for %(hal_id)s."
+
+#: catalog/services/hal_update.py:56
+msgid "Cette notice n’a pas d’identifiant HAL."
+msgstr "This record has no HAL identifier."
+
+#: catalog/services/hal_update.py:61
+msgid ""
+"Aucune modification locale à publier : la notice est déjà à jour sur HAL."
+msgstr "No local changes to publish: the record is already up to date on HAL."
+
+#: catalog/services/hal_update.py:188
+msgid ""
+"La notice a changé depuis la préparation ; préparez une nouvelle mise à "
+"jour."
+msgstr "The record has changed since preparation; prepare a new update."
+
+#: catalog/services/hal_update.py:191 catalog/services/hal_update.py:242
+msgid "L’identifiant HAL de la notice a changé depuis la préparation."
+msgstr "The record’s HAL identifier has changed since preparation."
+
+#: catalog/services/hal_update.py:196
+msgid "Le test de cette mise à jour a déjà été exécuté."
+msgstr "The test for this update has already been executed."
+
+#: catalog/services/hal_update.py:239
+msgid "La notice a changé depuis le test ; préparez une nouvelle mise à jour."
+msgstr "The record has changed since the test; prepare a new update."
+
+#: catalog/services/hal_update.py:247
+msgid "Un test de mise à jour accepté est requis."
+msgstr "An accepted update test is required."
+
+#: catalog/services/manual_publications.py:37
 msgid ""
 "Une notice correspondante très probable existe déjà. Ouvrez-la au lieu de "
 "créer un doublon."
@@ -717,14 +755,40 @@ msgstr ""
 "A very likely matching record already exists. Open it instead of creating a "
 "duplicate."
 
-#: catalog/services/manual_publications.py:85
+#: catalog/services/manual_publications.py:42
 msgid "Les rapprochements possibles doivent être examinés."
 msgstr "Possible matches must be reviewed."
 
-#: catalog/services/manual_publications.py:98
+#: catalog/services/manual_publications.py:55
 #, python-format
 msgid "Des champs HAL requis sont encore manquants : %(fields)s"
 msgstr "Required HAL fields are still missing: %(fields)s"
+
+#: catalog/services/matching.py:51
+msgid "même titre"
+msgstr "same title"
+
+#: catalog/services/matching.py:54
+#, python-format
+msgid "titre très proche (%(ratio)s)"
+msgstr "title very close (%(ratio)s)"
+
+#: catalog/services/matching.py:57
+#, python-format
+msgid "titre proche (%(ratio)s)"
+msgstr "title close (%(ratio)s)"
+
+#: catalog/services/matching.py:63
+msgid "auteur en commun"
+msgstr "shared author"
+
+#: catalog/services/matching.py:66
+msgid "même année"
+msgstr "same year"
+
+#: catalog/services/matching.py:69
+msgid "même DOI"
+msgstr "same DOI"
 
 #: catalog/services/publication_documents.py:102
 msgid "Ce document est déjà associé à une autre notice."
@@ -1028,7 +1092,7 @@ msgstr "New document"
 #: catalog/templates/catalog/document_summary.html:38
 #: catalog/templates/catalog/document_summary_cache_detail.html:23
 #: catalog/templates/catalog/publication_detail.html:210
-#: catalog/templates/catalog/publication_list.html:63 catalog/views.py:117
+#: catalog/templates/catalog/publication_list.html:63 catalog/views.py:126
 msgid "Résumé français"
 msgstr "French abstract"
 
@@ -1041,7 +1105,7 @@ msgstr "Copy"
 
 #: catalog/templates/catalog/document_summary.html:42
 #: catalog/templates/catalog/document_summary_cache_detail.html:27
-#: catalog/templates/catalog/publication_detail.html:211 catalog/views.py:119
+#: catalog/templates/catalog/publication_detail.html:211 catalog/views.py:128
 msgid "English abstract"
 msgstr "English abstract"
 
@@ -1055,13 +1119,13 @@ msgstr "Copy"
 #: catalog/templates/catalog/document_summary.html:46
 #: catalog/templates/catalog/document_summary_cache_detail.html:31
 #: catalog/templates/catalog/publication_detail.html:212
-#: catalog/templates/catalog/publication_list.html:66 catalog/views.py:118
+#: catalog/templates/catalog/publication_list.html:66 catalog/views.py:127
 msgid "Mots-clés français"
 msgstr "French keywords"
 
 #: catalog/templates/catalog/document_summary.html:50
 #: catalog/templates/catalog/document_summary_cache_detail.html:35
-#: catalog/templates/catalog/publication_detail.html:213 catalog/views.py:120
+#: catalog/templates/catalog/publication_detail.html:213 catalog/views.py:129
 msgid "English keywords"
 msgstr "English keywords"
 
@@ -1097,6 +1161,7 @@ msgstr "Delete"
 #: catalog/templates/catalog/document_summary_cache_detail.html:7
 #: catalog/templates/catalog/hal_preprod_operation.html:7
 #: catalog/templates/catalog/hal_production_deposit.html:7
+#: catalog/templates/catalog/hal_update_operation.html:7
 #: catalog/templates/catalog/publication_create_manual.html:7
 #: catalog/templates/catalog/publication_detail.html:7
 msgid "Fil d'Ariane"
@@ -1155,6 +1220,7 @@ msgstr "Immutable payload"
 
 #: catalog/templates/catalog/hal_preprod_operation.html:29
 #: catalog/templates/catalog/hal_production_deposit.html:15
+#: catalog/templates/catalog/hal_update_operation.html:14
 msgid "Version de la notice"
 msgstr "Record version"
 
@@ -1163,6 +1229,7 @@ msgid "Environnement"
 msgstr "Environment"
 
 #: catalog/templates/catalog/hal_preprod_operation.html:31
+#: catalog/templates/catalog/hal_update_operation.html:15
 msgid "Empreinte SHA-256"
 msgstr "SHA-256 fingerprint"
 
@@ -1174,10 +1241,12 @@ msgstr[0] "Multi-field · %(count)s candidate"
 msgstr[1] "Multi-field · %(count)s candidates"
 
 #: catalog/templates/catalog/hal_preprod_operation.html:33
+#: catalog/templates/catalog/hal_update_operation.html:16
 msgid "Demandé par"
 msgstr "Requested by"
 
 #: catalog/templates/catalog/hal_preprod_operation.html:34
+#: catalog/templates/catalog/hal_update_operation.html:17
 msgid "Créé le"
 msgstr "Created on"
 
@@ -1204,10 +1273,12 @@ msgstr "Immutable attempts"
 
 #: catalog/templates/catalog/hal_preprod_operation.html:56
 #: catalog/templates/catalog/hal_production_deposit.html:14
+#: catalog/templates/catalog/hal_update_operation.html:59
 msgid "Acceptée"
 msgstr "Accepted"
 
 #: catalog/templates/catalog/hal_preprod_operation.html:56
+#: catalog/templates/catalog/hal_update_operation.html:59
 msgid "Refusée"
 msgstr "Rejected"
 
@@ -1225,6 +1296,7 @@ msgid "Dépôt HAL"
 msgstr "HAL deposit"
 
 #: catalog/templates/catalog/hal_production_deposit.html:7
+#: catalog/templates/catalog/hal_update_operation.html:7
 #: catalog/templates/catalog/publication_detail.html:10
 msgid "Notice"
 msgstr "Record"
@@ -1238,6 +1310,7 @@ msgid "Déposer cette notice sur HAL"
 msgstr "Deposit this record on HAL"
 
 #: catalog/templates/catalog/hal_production_deposit.html:10
+#: catalog/templates/catalog/hal_update_operation.html:36
 msgid "Cette action est réelle."
 msgstr "This action is real."
 
@@ -1273,6 +1346,7 @@ msgid "Compte demandeur"
 msgstr "Requesting account"
 
 #: catalog/templates/catalog/hal_production_deposit.html:24
+#: catalog/templates/catalog/hal_update_operation.html:35
 msgid "Confirmation finale"
 msgstr "Final confirmation"
 
@@ -1303,6 +1377,106 @@ msgstr "Deposit not confirmed"
 #: catalog/templates/catalog/hal_production_deposit.html:37
 msgid "Identifiant :"
 msgstr "Identifier:"
+
+#: catalog/templates/catalog/hal_update_operation.html:4
+#: catalog/templates/catalog/hal_update_operation.html:7
+msgid "Mise à jour HAL"
+msgstr "HAL update"
+
+#: catalog/templates/catalog/hal_update_operation.html:8
+msgid "HAL production · mise à jour de notice"
+msgstr "HAL production · record update"
+
+#: catalog/templates/catalog/hal_update_operation.html:8
+msgid "Mettre à jour cette notice sur HAL"
+msgstr "Update this record on HAL"
+
+#: catalog/templates/catalog/hal_update_operation.html:11
+msgid "Charge utile figée"
+msgstr "Frozen payload"
+
+#: catalog/templates/catalog/hal_update_operation.html:13
+msgid "Notice HAL ciblée"
+msgstr "Targeted HAL record"
+
+#: catalog/templates/catalog/hal_update_operation.html:13
+#, python-format
+msgid "version HAL %(version)s"
+msgstr "HAL version %(version)s"
+
+#: catalog/templates/catalog/hal_update_operation.html:19
+msgid ""
+"Les affiliations et domaines existants de la notice HAL sont préservés par "
+"la mise à jour."
+msgstr ""
+"The HAL record’s existing affiliations and domains are preserved by the "
+"update."
+
+#: catalog/templates/catalog/hal_update_operation.html:24
+msgid "Test de mise à jour"
+msgstr "Update test"
+
+#: catalog/templates/catalog/hal_update_operation.html:25
+msgid "HAL valide la charge utile exacte sans modifier la notice réelle."
+msgstr "HAL validates the exact payload without modifying the real record."
+
+#: catalog/templates/catalog/hal_update_operation.html:28
+msgid "Lancer le test de mise à jour"
+msgstr "Run the update test"
+
+#: catalog/templates/catalog/hal_update_operation.html:36
+msgid ""
+"Elle remplacera les métadonnées de la notice existante sur HAL production."
+msgstr "It will replace the existing record’s metadata on HAL production."
+
+#: catalog/templates/catalog/hal_update_operation.html:39
+msgid "Je comprends que cette action modifie une notice réelle dans HAL."
+msgstr "I understand that this action modifies a real record in HAL."
+
+#: catalog/templates/catalog/hal_update_operation.html:40
+#: catalog/templates/catalog/publication_detail.html:307
+#, python-format
+msgid "Recopiez l'identifiant <code>%(hal_id)s</code>"
+msgstr "Type the identifier <code>%(hal_id)s</code>"
+
+#: catalog/templates/catalog/hal_update_operation.html:43
+msgid "Mettre à jour maintenant sur HAL"
+msgstr "Update now on HAL"
+
+#: catalog/templates/catalog/hal_update_operation.html:50
+msgid "Historique des tentatives"
+msgstr "Attempt history"
+
+#: catalog/templates/catalog/hal_update_operation.html:52
+#: catalog/templates/catalog/publication_detail.html:270
+msgid "Date"
+msgstr "Date"
+
+#: catalog/templates/catalog/hal_update_operation.html:52
+#: catalog/templates/catalog/publication_list.html:31
+#: catalog/templates/catalog/publication_list.html:86
+msgid "Type"
+msgstr "Type"
+
+#: catalog/templates/catalog/hal_update_operation.html:52
+msgid "Statut HTTP"
+msgstr "HTTP status"
+
+#: catalog/templates/catalog/hal_update_operation.html:52
+msgid "Résultat"
+msgstr "Result"
+
+#: catalog/templates/catalog/hal_update_operation.html:52
+msgid "Détail"
+msgstr "Detail"
+
+#: catalog/templates/catalog/hal_update_operation.html:57
+msgid "Test"
+msgstr "Test"
+
+#: catalog/templates/catalog/hal_update_operation.html:57
+msgid "Mise à jour réelle"
+msgstr "Real update"
 
 #: catalog/templates/catalog/home.html:4
 #: catalog/templates/catalog/publication_create_manual.html:8
@@ -1790,10 +1964,6 @@ msgid "Détails des décisions éditoriales"
 msgstr "Editorial decision details"
 
 #: catalog/templates/catalog/publication_detail.html:270
-msgid "Date"
-msgstr "Date"
-
-#: catalog/templates/catalog/publication_detail.html:270
 msgid "Décision"
 msgstr "Decision"
 
@@ -1818,14 +1988,36 @@ msgid "Aucune décision de révision enregistrée pour l'instant."
 msgstr "No review decision recorded yet."
 
 #: catalog/templates/catalog/publication_detail.html:283
+msgid "Mettre à jour la notice sur HAL"
+msgstr "Update the record on HAL"
+
+#: catalog/templates/catalog/publication_detail.html:284
+msgid ""
+"Cette notice a été modifiée localement depuis sa dernière synchronisation "
+"avec HAL. La mise à jour remplace les métadonnées de la notice HAL "
+"existante, après un test obligatoire."
+msgstr ""
+"This record has been modified locally since its last synchronization with "
+"HAL. The update replaces the existing HAL record’s metadata, after a "
+"mandatory test."
+
+#: catalog/templates/catalog/publication_detail.html:288
+msgid "Préparer la mise à jour HAL"
+msgstr "Prepare the HAL update"
+
+#: catalog/templates/catalog/publication_detail.html:291
+msgid "Consulter la dernière mise à jour"
+msgstr "View the latest update"
+
+#: catalog/templates/catalog/publication_detail.html:299
 msgid "Gestion exceptionnelle de la présence sur HAL"
 msgstr "Exceptional management of HAL presence"
 
-#: catalog/templates/catalog/publication_detail.html:285
+#: catalog/templates/catalog/publication_detail.html:301
 msgid "Cette action ne supprime rien dans HAL."
 msgstr "This action deletes nothing in HAL."
 
-#: catalog/templates/catalog/publication_detail.html:285
+#: catalog/templates/catalog/publication_detail.html:301
 msgid ""
 "Elle sert uniquement à remettre notre notice en brouillon après une "
 "suppression déjà effectuée dans l'interface HAL."
@@ -1833,20 +2025,15 @@ msgstr ""
 "This is used only to revert the record to draft after a deletion already "
 "performed in the HAL interface."
 
-#: catalog/templates/catalog/publication_detail.html:288
+#: catalog/templates/catalog/publication_detail.html:304
 msgid "Raison de la remise en brouillon"
 msgstr "Reason for reverting to draft"
 
-#: catalog/templates/catalog/publication_detail.html:291
-#, python-format
-msgid "Recopiez l'identifiant <code>%(hal_id)s</code>"
-msgstr "Type the identifier <code>%(hal_id)s</code>"
-
-#: catalog/templates/catalog/publication_detail.html:294
+#: catalog/templates/catalog/publication_detail.html:310
 msgid "Je confirme avoir déjà supprimé cette notice dans l'interface HAL."
 msgstr "I confirm I have already removed this record from the HAL interface."
 
-#: catalog/templates/catalog/publication_detail.html:295
+#: catalog/templates/catalog/publication_detail.html:311
 msgid "Marquer comme supprimée de HAL"
 msgstr "Mark as removed from HAL"
 
@@ -1883,11 +2070,6 @@ msgstr "Deposit status"
 #: catalog/templates/catalog/publication_list.html:60
 msgid "Tous"
 msgstr "All"
-
-#: catalog/templates/catalog/publication_list.html:31
-#: catalog/templates/catalog/publication_list.html:86
-msgid "Type"
-msgstr "Type"
 
 #: catalog/templates/catalog/publication_list.html:40
 msgid "État de préparation"
@@ -1967,221 +2149,249 @@ msgstr "Page %(num)s of %(total)s"
 msgid "Suivant"
 msgstr "Next"
 
-#: catalog/views.py:93
+#: catalog/views.py:102
 msgid "Type HAL"
 msgstr "HAL type"
 
-#: catalog/views.py:95
+#: catalog/views.py:104
 msgid "Directeurs d'ouvrage"
 msgstr "Editors"
 
-#: catalog/views.py:97
+#: catalog/views.py:106
 msgid "Ouvrage / actes"
 msgstr "Book / proceedings"
 
-#: catalog/views.py:98
+#: catalog/views.py:107
 msgid "Volume"
 msgstr "Volume"
 
-#: catalog/views.py:99
+#: catalog/views.py:108
 msgid "Numéro"
 msgstr "Issue"
 
-#: catalog/views.py:100
+#: catalog/views.py:109
 msgid "Pages"
 msgstr "Pages"
 
-#: catalog/views.py:101
+#: catalog/views.py:110
 msgid "Éditeur"
 msgstr "Publisher"
 
-#: catalog/views.py:102
+#: catalog/views.py:111
 msgid "Ville d'édition"
 msgstr "Publisher city"
 
-#: catalog/views.py:103
+#: catalog/views.py:112
 msgid "DOI"
 msgstr "DOI"
 
-#: catalog/views.py:104
+#: catalog/views.py:113
 msgid "ISBN"
 msgstr "ISBN"
 
-#: catalog/views.py:105
+#: catalog/views.py:114
 msgid "ISSN"
 msgstr "ISSN"
 
-#: catalog/views.py:106
+#: catalog/views.py:115
 msgid "Langue"
 msgstr "Language"
 
-#: catalog/views.py:107
+#: catalog/views.py:116
 msgid "URL source"
 msgstr "Source URL"
 
-#: catalog/views.py:110
+#: catalog/views.py:119
 msgid "Événement"
 msgstr "Event"
 
-#: catalog/views.py:111
+#: catalog/views.py:120
 msgid "Début"
 msgstr "Start"
 
-#: catalog/views.py:112
+#: catalog/views.py:121
 msgid "Fin"
 msgstr "End"
 
-#: catalog/views.py:167
+#: catalog/views.py:180
 msgid "Votre langue d’interface a été enregistrée."
 msgstr "Your interface language has been saved."
 
-#: catalog/views.py:171
+#: catalog/views.py:185
 msgid "Vos identifiants HAL ont été supprimés."
 msgstr "Your HAL credentials have been deleted."
 
-#: catalog/views.py:184
+#: catalog/views.py:198
 msgid "Vos identifiants HAL ont été enregistrés."
 msgstr "Your HAL credentials have been saved."
 
-#: catalog/views.py:254 catalog/views.py:804
+#: catalog/views.py:268 catalog/views.py:825
 msgid "Sélectionnez un document PDF ou Word."
 msgstr "Select a PDF or Word document."
 
-#: catalog/views.py:289
+#: catalog/views.py:303
 msgid "Le résultat mis en cache a été supprimé."
 msgstr "The cached result has been deleted."
 
-#: catalog/views.py:298
+#: catalog/views.py:312
 msgid "Vous n'avez pas le droit d’associer une notice."
 msgstr "You do not have permission to link a record."
 
-#: catalog/views.py:300 catalog/views.py:323
+#: catalog/views.py:314 catalog/views.py:337
 msgid "Ce document est déjà associé à une notice."
 msgstr "This document is already linked to a record."
 
-#: catalog/views.py:311
+#: catalog/views.py:325
 msgid "Le document, les résumés et les mots-clés sont associés à la notice."
 msgstr "The document, abstracts, and keywords have been linked to the record."
 
-#: catalog/views.py:321
+#: catalog/views.py:335
 msgid "Vous n'avez pas le droit de créer un brouillon."
 msgstr "You do not have permission to create a draft."
 
-#: catalog/views.py:332
+#: catalog/views.py:346
 msgid "Un brouillon local a été créé. Aucune donnée n’a été envoyée à HAL."
 msgstr "A local draft has been created. No data was sent to HAL."
 
-#: catalog/views.py:541 catalog/views.py:573
+#: catalog/views.py:555 catalog/views.py:587
 msgid "Accès refusé."
 msgstr "Access denied."
 
-#: catalog/views.py:619
+#: catalog/views.py:633
 msgid "Vous n’avez pas le droit de créer un brouillon."
 msgstr "You do not have permission to create a draft."
 
-#: catalog/views.py:641
+#: catalog/views.py:655
 msgid "Le brouillon local a été créé. Aucune donnée n’a été envoyée à HAL."
 msgstr "The local draft has been created. No data was sent to HAL."
 
-#: catalog/views.py:770
+#: catalog/views.py:791
 msgid "Vous n’avez pas le droit de modifier l’état HAL de cette notice."
 msgstr "You do not have permission to change the HAL status of this record."
 
-#: catalog/views.py:786
+#: catalog/views.py:807
 msgid ""
 "La notice a été remise en brouillon localement. L’historique HAL est "
 "conservé."
 msgstr ""
 "The record has been reverted to draft locally. The HAL history is preserved."
 
-#: catalog/views.py:798
+#: catalog/views.py:819
 msgid "Vous n’avez pas le droit de proposer des résumés et mots-clés."
 msgstr "You do not have permission to propose abstracts and keywords."
 
-#: catalog/views.py:818
+#: catalog/views.py:839
 msgid "Ce document a déjà été analysé pour cette notice."
 msgstr "This document has already been analysed for this record."
 
-#: catalog/views.py:820
+#: catalog/views.py:841
 msgid " Le résultat existant a été réutilisé."
 msgstr " The existing result has been reused."
 
-#: catalog/views.py:824
+#: catalog/views.py:845
 #, python-format
 msgid "%(count)d proposition à vérifier a été créée."
 msgid_plural "%(count)d propositions à vérifier ont été créées."
 msgstr[0] "%(count)d review proposal has been created."
 msgstr[1] "%(count)d review proposals have been created."
 
-#: catalog/views.py:832
+#: catalog/views.py:853
 msgid ""
 "Le document est associé ; les valeurs générées sont identiques à la notice."
 msgstr ""
 "The document is linked; the generated values are identical to the record."
 
-#: catalog/views.py:841 catalog/views.py:881
+#: catalog/views.py:862 catalog/views.py:902
 msgid "Vous n’avez pas le droit de valider dans HAL préproduction."
 msgstr "You do not have permission to validate in HAL pre-production."
 
-#: catalog/views.py:883
+#: catalog/views.py:905
 msgid "La confirmation ne correspond pas à l’identifiant de la notice."
 msgstr "The confirmation does not match the record identifier."
 
-#: catalog/views.py:893
+#: catalog/views.py:916
 msgid "HAL préproduction a refusé la notice de test."
 msgstr "HAL pre-production rejected the test record."
 
-#: catalog/views.py:902 catalog/views.py:945
+#: catalog/views.py:925 catalog/views.py:968
 msgid "Vous n’avez pas le droit de déposer dans HAL production."
 msgstr "You do not have permission to deposit to HAL production."
 
-#: catalog/views.py:906
+#: catalog/views.py:929
 msgid "Un test de préproduction accepté est requis."
 msgstr "An accepted pre-production test is required."
 
-#: catalog/views.py:946
+#: catalog/views.py:969
 msgid "DÉPOSER SUR HAL"
 msgstr "DEPOSIT ON HAL"
 
-#: catalog/views.py:947
+#: catalog/views.py:970
 msgid "La phrase de confirmation ne correspond pas."
 msgstr "The confirmation phrase does not match."
 
-#: catalog/views.py:949
+#: catalog/views.py:972
 msgid "Confirmez que ce dépôt créera une notice réelle dans HAL."
 msgstr "Confirm that this deposit will create an actual record in HAL."
 
-#: catalog/views.py:958
+#: catalog/views.py:981
 msgid "HAL a accepté le dépôt réel."
 msgstr "HAL has accepted the actual deposit."
 
-#: catalog/views.py:960
+#: catalog/views.py:983 catalog/views.py:1074
 msgid "Résultat incertain : vérification manuelle requise."
 msgstr "Uncertain result: manual verification required."
 
-#: catalog/views.py:962
+#: catalog/views.py:985
 msgid "HAL a refusé le dépôt réel."
 msgstr "HAL rejected the actual deposit."
 
-#: catalog/views.py:970
+#: catalog/views.py:995 catalog/views.py:1033 catalog/views.py:1056
+msgid "Vous n’avez pas le droit de mettre à jour une notice sur HAL."
+msgstr "You do not have permission to update a record on HAL."
+
+#: catalog/views.py:1042
+msgid "HAL a accepté le test de mise à jour."
+msgstr "HAL accepted the update test."
+
+#: catalog/views.py:1044
+msgid "HAL a refusé le test de mise à jour."
+msgstr "HAL rejected the update test."
+
+#: catalog/views.py:1059
+msgid "La confirmation ne correspond pas à l’identifiant HAL."
+msgstr "The confirmation does not match the HAL identifier."
+
+#: catalog/views.py:1062
+msgid "Confirmez que cette mise à jour remplacera la notice réelle sur HAL."
+msgstr "Confirm that this update will replace the real record on HAL."
+
+#: catalog/views.py:1072
+msgid "HAL a accepté la mise à jour de la notice."
+msgstr "HAL accepted the record update."
+
+#: catalog/views.py:1076
+msgid "HAL a refusé la mise à jour de la notice."
+msgstr "HAL rejected the record update."
+
+#: catalog/views.py:1084
 msgid "Vous n'avez pas le droit de modifier les champs."
 msgstr "You do not have permission to edit fields."
 
-#: catalog/views.py:979 catalog/views.py:1020
+#: catalog/views.py:1093 catalog/views.py:1134
 msgid ""
 "Jeton de version manquant ou invalide ; rechargez la page et réessayez."
 msgstr "Version token missing or invalid; reload the page and try again."
 
-#: catalog/views.py:998
+#: catalog/views.py:1112
 #, python-format
 msgid "Champ « %(field)s » modifié."
 msgstr "Field \"%(field)s\" modified."
 
-#: catalog/views.py:1007
+#: catalog/views.py:1121
 msgid "Vous n'avez pas le droit de réviser les modifications."
 msgstr "You do not have permission to review changes."
 
-#: catalog/views.py:1043
+#: catalog/views.py:1157
 #, python-format
 msgid "Champ « %(field_path)s » — %(outcome)s."
 msgstr "Field “%(field_path)s” — %(outcome)s."

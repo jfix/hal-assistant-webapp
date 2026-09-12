@@ -278,6 +278,22 @@
     </div>
   </details>
 
+  {% if publication.hal_id and hal_update_pending and can_update_hal %}
+    <section class="panel">
+      <h2>{% translate "Mettre à jour la notice sur HAL" %}</h2>
+      <p>{% translate "Cette notice a été modifiée localement depuis sa dernière synchronisation avec HAL. La mise à jour remplace les métadonnées de la notice HAL existante, après un test obligatoire." %}</p>
+      <div class="stack">
+        <form method="post" action="{% url 'hal-update-prepare' publication.id %}">
+          {% csrf_token %}
+          <button class="primary-button" type="submit">{% translate "Préparer la mise à jour HAL" %}</button>
+        </form>
+        {% if latest_hal_update %}
+          <a class="secondary-button" href="{% url 'hal-update-operation' latest_hal_update.id %}">{% translate "Consulter la dernière mise à jour" %}</a>
+        {% endif %}
+      </div>
+    </section>
+  {% endif %}
+
   {% if publication.hal_id and can_review %}
     <details class="panel meta-panel hal-removal-reconciliation">
       <summary><span class="meta-panel-title">{% translate "Gestion exceptionnelle de la présence sur HAL" %}</span></summary>
