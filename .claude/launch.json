@@ -4,8 +4,35 @@
     {
       "name": "hal-webapp",
       "runtimeExecutable": "uv",
-      "runtimeArgs": ["run", "python", "manage.py", "runserver"],
+      "runtimeArgs": [
+        "run",
+        "python",
+        "manage.py",
+        "runserver"
+      ],
       "port": 8000
+    },
+    {
+      "name": "biblio",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "/Users/jakob/Projects/biblio",
+        "run",
+        "dev"
+      ],
+      "port": 5173
+    },
+    {
+      "name": "shirts",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "/Users/jakob/Projects/shirts",
+        "run",
+        "dev"
+      ],
+      "port": 5174
     }
   ]
 }
