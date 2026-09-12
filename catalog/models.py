@@ -105,21 +105,26 @@ class Publication(models.Model):
             models.Index(fields=["hal_status"]),
         ]
         permissions = [
+            # Plain English on purpose: permission names are stored in the
+            # database at migration time, so a translatable name would be
+            # frozen in whatever language the migrate process happened to
+            # run under. Django's auto-generated permissions are English;
+            # these match them.
             (
                 "review_publication",
-                _("Peut accepter ou rejeter les modifications de champs proposées"),
+                "Can accept or reject proposed field changes",
             ),
             (
                 "submit_hal_preprod",
-                _("Peut valider une nouvelle notice dans HAL préproduction"),
+                "Can validate a new record in HAL pre-production",
             ),
             (
                 "submit_hal_production",
-                _("Peut déposer une nouvelle notice dans HAL production"),
+                "Can submit a new record to HAL production",
             ),
             (
                 "update_hal_production",
-                _("Peut mettre à jour une notice existante sur HAL production"),
+                "Can update an existing record on HAL production",
             ),
         ]
 
